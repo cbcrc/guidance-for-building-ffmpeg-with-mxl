@@ -57,6 +57,8 @@ fetch_mxl_repo() {
     git checkout --detach 52aea5a
 }
 
+# Adds check for error conditions that are not reflected by the ctest
+# exit status.
 safer_ctest() {
     local log_file="$1"
     shift
@@ -75,39 +77,40 @@ safer_ctest() {
 
 build_variant() {
     local preset="$1"
-    local shared="$2"
+    local linkage="$2"
 
-    local lib_type
-    case "${shared}" in
-        ON) lib_type="shared" ;;
-        OFF) lib_type="static" ;;
+    local shared
+    case "${linkage}" in
+        shared) shared="ON" ;;
+        static) shared="OFF" ;;
         *)
-            log "invalid shared value: \"${shared}\" (expected ON|OFF)"
+            log "invalid linkage value: \"${linkage}\" (expected shared|static)"
             return 2
             ;;
     esac
 
-    log "build MXL preset ${preset} with shared ${shared}..."
+    log "build MXL preset ${preset} with ${shared} linkage"
 
-    local build_dir="${MXL_BUILD}/${preset}/${lib_type}"
-    local install_dir="${MXL_INSTALL}/${preset}/${lib_type}"
+    local variant_build_dir="${MXL_BUILD}/${preset}/${linkage}"
+    local variant_install_dir="${MXL_INSTALL}/${preset}/${linkage}"
 
     mkdir -p -- "${MXL_BUILD}"
 
     export VCPKG_ROOT="${MXL_SRC}/vcpkg"
-    cmake -S "${MXL_SRC}/mxl" -B "${build_dir}" --preset "${preset}" \
+    cmake -S "${MXL_SRC}/mxl" -B "${variant_build_dir}" --preset "${preset}" \
         -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
         -DBUILD_SHARED_LIBS="${shared}" \
-        -DCMAKE_INSTALL_PREFIX="${install_dir}"
+        -DCMAKE_INSTALL_PREFIX="${variant_install_dir}"
 
-    cmake --build "${build_dir}" -j --target all
+    cmake --build "${variant_build_dir}" -j --target all
 
     log "testing MXL preset ${preset} with shared ${shared}..."
-    cd "${build_dir}"
-    safer_ctest "${build_dir}/ctest_output.log" --test-dir "${build_dir}" --stop-on-failure --output-on-failure
+    cd "${variant_build_dir}"
+    safer_ctest "${variant_build_dir}/ctest_output.log" \
+                --test-dir "${variant_build_dir}" --stop-on-failure --output-on-failure
 
-    cmake --build "${build_dir}" -j --target doc
-    cmake --install "${build_dir}"
+    cmake --build "${variant_build_dir}" -j --target doc
+    cmake --install "${variant_build_dir}"
 }
 
 main() {
@@ -121,10 +124,10 @@ main() {
     fetch_vcpkg_repo
     fetch_mxl_repo
 
-    build_variant Linux-GCC-Release ON
-    build_variant Linux-GCC-Release OFF
-    build_variant Linux-GCC-Debug ON
-    build_variant Linux-GCC-Debug OFF
+    build_variant Linux-GCC-Release shared
+    build_variant Linux-GCC-Release static
+    build_variant Linux-GCC-Debug shared
+    build_variant Linux-GCC-Debug static
 
     log "MXL build dir: ${MXL_BUILD}"
 }
