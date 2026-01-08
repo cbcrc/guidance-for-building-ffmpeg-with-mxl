@@ -35,7 +35,7 @@ setup_paths() {
 }
 
 fetch_vcpkg_repo() {
-    log "setup vcpkg..."
+    log "fetch vcpkg git repository..."
 
     mkdir -p -- "${MXL_SRC}"
     cd "${MXL_SRC}"
@@ -110,11 +110,6 @@ build_variant() {
 main() {
     check_help "$@"
     set_build_dir "$@"
-
-    local skip_setup=0
-    if ! has_opt "--skip-setup" "$@"; then
-        skip_setup=1
-    fi
 
     setup_paths
 
