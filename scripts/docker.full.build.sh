@@ -15,7 +15,7 @@ Arguments:
   <build-dir>   Host directory to place build artifacts
 
 Options:
-  --skip_setup  Skip environment setup.
+  --skip-setup  Skip environment setup.
 
 Setup container environment and build both MXL and FFmpeg.
 EOF
