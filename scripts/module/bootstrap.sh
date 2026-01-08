@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Usage: source "$SCRIPT_DIR"/module/bootstrap.sh file1.sh file2.sh ...
 #
 # Check the bash version requirment, set shell options, and source
@@ -28,7 +29,9 @@ set_build_dir() {
         usage
         exit 2
     fi
-    readonly BUILD_DIR="$1"
+    BUILD_DIR="$1"
+    export BUILD_DIR
+    readonly BUILD_DIR
     shift
 }
 

@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Usage: source "$SCRIPT_DIR"/module/exit_trap.sh
 #
 # Setup exit trap that outputs a final PASS or FAIL message and then
@@ -9,7 +10,8 @@ fi
 readonly EXIT_TRAP_BASH_SOURCE_GUARD=1
 
 : "${SCRIPT_DIR:?SCRIPT_DIR not set}"
-source "${SCRIPT_DIR}/module/logging.sh"
+# shellcheck source=./module/logging.sh
+source "${SCRIPT_DIR}"/module/logging.sh
 
 _on_err_trap() {
     local status=$?
@@ -22,10 +24,10 @@ _on_exit_trap() {
 
     if ((status != 0)); then
         echo
-        log_error "FAIL ($0 ${SCRIPT_ARGS[@]})"
+        log_error "FAIL ($0 ${SCRIPT_ARGS[*]})"
     else
         echo
-        log "PASS ($0 ${SCRIPT_ARGS[@]})"
+        log "PASS ($0 ${SCRIPT_ARGS[*]})"
     fi
 
     exit "${status}"

@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Usage: source "$SCRIPT_DIR"/module/safe_sudo.sh
 #
 # Lock down sudo to avoid accidental permission elevation of
@@ -68,7 +69,7 @@ safe_sudo() {
 
     if is_container && ((EUID == 0)); then
         # already root, sudo may not be available in container
-        log "$reason: $cmd $@"
+        log "$reason: $cmd $*"
         "$cmd" "$@"
     else
         # force a fresh password prompt every time, with a clear message

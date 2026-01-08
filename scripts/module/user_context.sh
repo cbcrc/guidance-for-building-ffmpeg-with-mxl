@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Usage: source "$SCRIPT_DIR"/module/user_context.sh
 #
 # Utility functions to manage user context, i.e. root vs ordinary

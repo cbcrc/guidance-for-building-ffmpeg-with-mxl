@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Usage: source "$SCRIPT_DIR"/module/logging.sh
 #
 # Provide simple logging functions.

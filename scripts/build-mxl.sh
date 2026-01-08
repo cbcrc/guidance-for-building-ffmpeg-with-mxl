@@ -6,8 +6,11 @@
 
 set -e
 
-readonly SCRIPT_ARGS=("$@")
+SCRIPT_ARGS=("$@")
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+export SCRIPT_ARGS SCRIPT_DIR
+readonly SCRIPT_ARGS SCRIPT_DIR
+# shellcheck source=./module/bootstrap.sh
 source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh user_context.sh
 
 usage() {

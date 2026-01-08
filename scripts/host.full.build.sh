@@ -4,7 +4,11 @@
 
 set -e
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_ARGS=("$@")
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+export SCRIPT_ARGS SCRIPT_DIR
+readonly SCRIPT_ARGS SCRIPT_DIR
+# shellcheck source=./module/bootstrap.sh
 source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh
 
 usage() {
@@ -36,8 +40,8 @@ main() {
 
     mkdir -p -- "$BUILD_DIR"
 
-    ./build-mxl.sh $BUILD_DIR "$@"
-    ./build-ffmpeg.sh $BUILD_DIR "$@"
+    ./build-mxl.sh "$BUILD_DIR" "$@"
+    ./build-ffmpeg.sh "$BUILD_DIR" "$@"
 }
 
 main "$@"

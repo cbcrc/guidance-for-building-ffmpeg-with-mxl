@@ -4,8 +4,11 @@
 
 set -e
 
-readonly SCRIPT_ARGS=("$@")
-readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+SCRIPT_ARGS=("$@")
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+export SCRIPT_ARGS SCRIPT_DIR
+readonly SCRIPT_ARGS SCRIPT_DIR
+# shellcheck source=./module/bootstrap.sh
 source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh user_context.sh
 
 usage() {
@@ -30,7 +33,6 @@ setup_paths() {
     FFMPEG_SRC="${FFMPEG_SANDBOX}/src"
     FFMPEG_BUILD="${FFMPEG_SANDBOX}/build"
     FFMPEG_INSTALL="${FFMPEG_SANDBOX}/install"
-    FFMPEG_FATE_SUITE="${FFMPEG_SANDBOX}/fate-suite"
 
     log "FFMPEG_SANDBOX=${FFMPEG_SANDBOX}"
 }
@@ -46,7 +48,7 @@ ffmpeg_configure() {
     log_cmd "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
 
     local -a cmd=(
-        ${FFMPEG_SRC}/FFmpeg/configure
+        "${FFMPEG_SRC}"/FFmpeg/configure
         --disable-everything
         --enable-demuxer=mxl --enable-muxer=mxl --enable-libmxl
         --enable-muxer=framemd5
@@ -117,11 +119,11 @@ build_variant() {
     local build_dir="${FFMPEG_BUILD}/${mxl_preset}/${linkage}"
     local install_dir="${FFMPEG_INSTALL}/${mxl_preset}/${linkage}"
 
-    mkdir -p -- ${build_dir}
-    pushd ${build_dir}
+    mkdir -p -- "${build_dir}"
+    pushd "${build_dir}"
 
-    ffmpeg_configure --prefix=${install_dir} "${extra_config_opts[@]}"
-    ffmpeg_build_test_install "$variant_name"
+    ffmpeg_configure --prefix="${install_dir}" "${extra_config_opts[@]}"
+    ffmpeg_build_test_install "${variant_name}"
 
     popd
 }
