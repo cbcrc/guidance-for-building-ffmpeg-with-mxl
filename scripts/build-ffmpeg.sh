@@ -39,7 +39,13 @@ setup_paths() {
 
 clone_ffmpeg() {
     log "clone FFmpeg repository"
+    mkdir -p -- "$FFMPEG_SRC"
+    cd "$FFMPEG_SRC"
+
     git clone --single-branch --branch dmf-mxl/master --depth 1 https://github.com/cbcrc/FFmpeg.git
+
+    cd FFmpeg
+    git checkout --detach a8441ff
 }
 
 ffmpeg_configure() {
@@ -136,11 +142,8 @@ main() {
 
     enforce_build_context
 
-    mkdir -p -- "$FFMPEG_SRC"
-    cd "$FFMPEG_SRC"
     clone_ffmpeg
 
-    cd FFmpeg
     build_variant Linux-GCC-Release shared
     build_variant Linux-GCC-Release static
     build_variant Linux-GCC-Debug shared
