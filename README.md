@@ -34,26 +34,26 @@ The tag/commit is the last known good version.
 
 Clone the entire repository:
 
-```
+```bash
 $ git clone https://github.com/<repository>
 ```
 
 Or reduce the size of the download, especially with FFmpeg, using:
 
-```
+```bash
 $ git clone --single-branch --branch <branch> --depth 1 https://github.com/<repository>
 ```
 
 Followed by:
 
-```
+```bash
 $ git switch --detach <tag/commit>
 ```
 
 The branch is the point from which development can optionally continue
 after this revision:
 
-```
+```bash
 $ git switch <branch>
 ```
 
@@ -74,19 +74,16 @@ $ git switch <branch>
 
 ## MXL Build
 
-Ensure MXL is built and installed in your environment. The MXL project
-does not publish pre-built binaries. It's necessary to build the MXL
-libraries from source.
+Ensure MXL is built and installed in your environment. The MXL
+libraries must be built from source.
 
 See also: [MXL project's build documentation](https://github.com/dmf-mxl/mxl/blob/main/docs/Building.md).
 
 ## FFmpeg Build
 
-This section describes the minimal FFmpeg configuration required to
-build and run the regression tests for the MXL-related FFmpeg
-components. The configuration enables only the FFmpeg components that
-implement MXL support, rather than a full-featured FFmpeg build. It
-also includes the components necessary to run ffplay with MXL sources.
+This section describes the minimal FFmpeg configuration options to
+build the FFmpeg/MXL regression tests and to ensure that `ffplay`
+works with flows produced by the MXL SDK examples.
 
 ### System Dependencies
 
@@ -106,29 +103,25 @@ The additional packages required to build FFmpeg with MXL support are listed her
 The FFmpeg configure options that are required to enable MXL support
 are:
 
-* `--enable-demuxer=mxl`
-* `--enable-muxer=mxl`
-* `--enable-libmxl`
+```bash
+$ ./configure --enable-demuxer=mxl --enable-muxer=mxl --enable-libmxl ...
+```
 
 The FFmpeg build requires MXL to be discoverable via
 `pkg-config`. Ensure that `PKG_CONFIG_PATH` includes the directory
 containing the MXL `libmxl.pc` file. For example, test with:
 
 ```bash
-$ PKG_CONFIG_PATH=~/build/mxl/build/Linux-GCC-Debug/shared/lib pkg-config --modversion libmxl
+$ PKG_CONFIG_PATH=~/build/mxl/install/Linux-GCC-Debug/static/lib/pkgconfig pkg-config --modversion libmxl
 ```
 
-The FFmpeg `./configure` options used to build and run the FFmpeg/MXL
-regression tests are listed in the following file:
+The FFmpeg `configure` options used to build and run the FFmpeg/MXL
+regression tests are listed in the following files:
 
 * [`ffmpeg-configure-base-options.txt`](scripts/deps/ffmpeg-configure-base-options.txt)
 * [`ffmpeg-configure-debug-options.txt`](scripts/deps/ffmpeg-configure-debug-options.txt)
 * [`ffmpeg-configure-static-options.txt`](scripts/deps/ffmpeg-configure-static-options.txt)
 * [`ffmpeg-configure-shared-options.txt`](scripts/deps/ffmpeg-configure-shared-options.txt)
-
-This configuration enables the MXL-related FFmpeg components and disables
-unrelated features where possible. It also includes the components
-required to run ffplay with MXL sources.
 
 See also: [FFmpeg Compilation Guide](https://trac.ffmpeg.org/wiki/CompilationGuide)
 
@@ -136,11 +129,11 @@ See also: [FFmpeg Compilation Guide](https://trac.ffmpeg.org/wiki/CompilationGui
 
 The FFmpeg/MXL integration has three FFmpeg regression tests:
 
-|   |   |
+|||
 |---|---|
-| fate-mxl-json | JSON parser test |
-| fate-mxl-video-encdec | MXL video muxer to MXL video demuxer smoke test |
-| fate-mxl-audio-encdec| MXL audio muxer to MXL audio demuxer smoke test |
+| `fate-mxl-json` | JSON parser test |
+| `fate-mxl-video-encdec` | MXL video muxer to MXL video demuxer smoke test |
+| `fate-mxl-audio-encdec` | MXL audio muxer to MXL audio demuxer smoke test |
 
 Run these in the FFmpeg build directory:
 
@@ -177,15 +170,15 @@ $ make fate-mxl-json fate-mxl-video-encdec fate-mxl-audio-encdec
 
 ## Build scripts
 
-|   |   |
+|||
 |---|---|
-| setup-env-mxl.sh | Install MXL build dependencies |
-| setup-env-ffmpeg.sh | Install FFmpeg build dependencies |
-| build-mxl.sh | Build MXL, test, and install. |
-| build-ffmpeg.sh | Build FFmpeg, test, and install |
-| cmake-repo-upgrade.sh | Update to latest cmake repositories. |
-| host-full-build.sh | Full environment setup and build on host |
-| docker-full-build.sh | Full environment setup and build in container |
+| [`setup-env-mxl.sh`](scripts/setup-env-mxl.sh) | Install MXL build dependencies |
+| [`setup-env-ffmpeg.sh`](scripts/setup-env-ffmpeg.sh) | Install FFmpeg build dependencies |
+| [`build-mxl.sh`](scripts/build-mxl.sh) | Build MXL, test, and install. |
+| [`build-ffmpeg.sh`](scripts/build-ffmpeg.sh) | Build FFmpeg, test, and install |
+| [`cmake-repo-upgrade.sh`](scripts/cmake-repo-upgrade.sh) | Update to latest cmake repositories. |
+| [`host-full-build.sh`](scripts/host-full-build.sh) | Full environment setup and build on host |
+| [`docker-full-build.sh`](scripts/docker-full-build.sh) | Full environment setup and build in container |
 
 The [scripts](scripts) directory has a set of Bash scripts to setup
 the environment and build both MXL and FFmpeg. These scripts are a
@@ -222,7 +215,7 @@ directory:
 $ build-mxl.sh ~/build && build-ffmpeg.sh ~/build
 ```
 
-Look in the `~/build` for the results:
+Look in the `~/build` directory for the results:
 
 ```bash
 $ tree -L 4 ~/build
@@ -312,7 +305,7 @@ $ ~/build/ffmpeg/install/Linux-GCC-Debug/static/bin/ffprobe /dev/shm/mxl/b3bb5be
 
 #### ffprobe Expected Output
 
-```sh
+```bash
 Input #0, mxl, from '/dev/shm/mxl/5fbec3b1-1b0f-417d-9059-8b94a47197ed.mxl-flow':
   Duration: N/A, start: 0.000000, bitrate: N/A
   Stream #0:0: Video: v210 (v210 / 0x30313276), yuv422p10le(progressive), 1920x1080 [SAR 1:1 DAR 16:9], 29.97 fps, 29.97 tbr, 29.97 tbn
@@ -325,7 +318,7 @@ Input #0, mxl, from '/dev/shm/mxl/5fbec3b1-1b0f-417d-9059-8b94a47197ed.mxl-flow'
       mxl_colorspace  : BT709
 ```
 
-```sh
+```bash
 Input #0, mxl, from '/dev/shm/mxl/b3bb5be7-9fe9-4324-a5bb-4c70e1084449.mxl-flow':
   Duration: N/A, start: 0.000000, bitrate: 3072 kb/s
   Stream #0:0: Audio: pcm_f32le, 48000 Hz, 2 channels, flt, 3072 kb/s
