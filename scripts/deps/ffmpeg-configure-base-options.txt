@@ -1,3 +1,4 @@
+# FFmpeg base configure options
 --disable-everything
 --enable-demuxer=mxl
 --enable-muxer=mxl

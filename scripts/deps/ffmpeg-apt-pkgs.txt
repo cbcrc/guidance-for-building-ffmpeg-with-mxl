@@ -1,2 +1,3 @@
+# FFmpeg system dependencies (apt packages)
 libsdl2-dev
 nasm

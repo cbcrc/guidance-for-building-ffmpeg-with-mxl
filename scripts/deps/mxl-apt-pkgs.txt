@@ -1,3 +1,4 @@
+# MXL system dependencies (apt packages)
 curl
 zip
 unzip

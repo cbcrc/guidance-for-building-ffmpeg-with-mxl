@@ -1,2 +1,3 @@
+# FFmpeg shared build configure options
 --disable-static
 --enable-shared

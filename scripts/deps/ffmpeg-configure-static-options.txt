@@ -1,3 +1,4 @@
+# FFmpeg static build configure options
 --pkg-config-flags=--static
 --enable-static
 --disable-shared
