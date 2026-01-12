@@ -120,7 +120,7 @@ build_variant() {
     mkdir -p -- "${build_dir}"
     pushd "${build_dir}"
 
-    ffmpeg_configure $install_dir ${config_opts_files[@]}
+    ffmpeg_configure "$install_dir" "${config_opts_files[@]}"
     ffmpeg_build_test_install "${variant_name}"
 
     popd

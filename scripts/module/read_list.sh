@@ -79,6 +79,7 @@ read_one_list() {
 #   configure "${options[@]}"
 read_list() {
     local array_name="$1"
+    # shellcheck disable=SC2178
     local -n out="$array_name"
     shift
 
