@@ -17,3 +17,10 @@ wget --quiet --output-document - https://apt.kitware.com/keys/kitware-archive-la
 apt-get update
 
 apt-get install kitware-archive-keyring
+
+# pin version to 4.2.x
+install -m 0644 /dev/stdin /etc/apt/preferences.d/cmake <<'EOF'
+Package: cmake
+Pin: version 4.2.*
+Pin-Priority: 1001
+EOF

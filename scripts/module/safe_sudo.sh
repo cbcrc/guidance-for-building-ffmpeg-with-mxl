@@ -24,7 +24,7 @@ source "${SCRIPT_DIR}/module/user_context.sh"
 # Allow-list (absolute paths only)
 readonly SAFE_SUDO_ALLOWED_LIST=(
     "/usr/bin/apt-get"
-    "${SCRIPT_DIR}/cmake_repo_upgrade.sh"
+    "${SCRIPT_DIR}/cmake-repo-upgrade.sh"
 )
 
 _safe_sudo_is_allowed() {

@@ -1,0 +1,4 @@
+ca-certificates
+lsb-release
+wget
+gpg

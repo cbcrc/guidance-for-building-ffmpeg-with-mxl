@@ -1,0 +1,4 @@
+--enable-debug=2
+--assert-level=2
+--disable-optimizations
+--disable-stripping

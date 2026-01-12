@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 export SCRIPT_ARGS SCRIPT_DIR
 readonly SCRIPT_ARGS SCRIPT_DIR
 # shellcheck source=./module/bootstrap.sh
-source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh user_context.sh
+source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh user_context.sh read_list.sh
 
 usage() {
     cat <<EOF
@@ -29,12 +29,9 @@ EOF
 setup_environment() {
     log "install FFmpeg dependencies..."
 
-    local -a pkgs=(
-        libsdl2-dev
-        nasm
-    )
-
-    safe_sudo "install FFmpeg dependencies" apt-get install -y --no-install-recommends "${pkgs[@]}"
+    local -a ffmpeg_apt_pkgs
+    read_list ffmpeg_apt_pkgs "deps/ffmpeg-apt-pkgs.txt" 
+    safe_sudo "install FFmpeg dependencies" apt-get install -y --no-install-recommends "${ffmpeg_apt_pkgs[@]}"
 }
 
 main() {

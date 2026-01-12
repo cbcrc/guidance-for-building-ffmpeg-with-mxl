@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 export SCRIPT_ARGS SCRIPT_DIR
 readonly SCRIPT_ARGS SCRIPT_DIR
 # shellcheck source=./module/bootstrap.sh
-source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh user_context.sh
+source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh user_context.sh read_list.sh
 
 usage() {
     cat <<EOF
@@ -36,39 +36,15 @@ setup_environment() {
 
     safe_sudo "update repositories" apt-get update
 
-    local -a pkgs_cmake=(
-        ca-certificates
-        lsb-release
-        wget
-        gpg
-    )
+    local -a cmake_repo_apt_pkgs
+    read_list cmake_repo_apt_pkgs "deps/cmake-repo-apt-pkgs.txt"
+    safe_sudo "install cmake repo dependencies" apt-get install -y --no-install-recommends "${cmake_repo_apt_pkgs[@]}"
 
-    safe_sudo "install cmake repo dependencies" apt-get install -y --no-install-recommends "${pkgs_cmake[@]}"
+    safe_sudo "update cmake repo" "${SCRIPT_DIR}/cmake-repo-upgrade.sh"
 
-    safe_sudo "update cmake repo" "${SCRIPT_DIR}/cmake_repo_upgrade.sh"
-
-    local -a pkgs=(
-        curl
-        zip
-        unzip
-        git
-        pkg-config
-        build-essential
-        doxygen
-        autoconf
-        automake
-        libtool
-        bison
-        flex
-        rustup
-        clang-19
-        cmake
-        ninja-build
-        libgstreamer1.0-dev
-        libgstreamer-plugins-base1.0-dev
-    )
-
-    safe_sudo "install MXL dependencies" apt-get install -y --no-install-recommends "${pkgs[@]}"
+    local -a mxl_apt_pkgs
+    read_list mxl_apt_pkgs "deps/mxl-apt-pkgs.txt"
+    safe_sudo "install MXL dependencies" apt-get install -y --no-install-recommends "${mxl_apt_pkgs[@]}"
 
     rustup default 1.88.0
 }

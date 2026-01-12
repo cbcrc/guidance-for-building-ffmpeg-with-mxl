@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 export SCRIPT_ARGS SCRIPT_DIR
 readonly SCRIPT_ARGS SCRIPT_DIR
 # shellcheck source=./module/bootstrap.sh
-source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh user_context.sh
+source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh user_context.sh read_list.sh
 
 usage() {
     cat <<EOF
@@ -49,30 +49,22 @@ clone_ffmpeg() {
 }
 
 ffmpeg_configure() {
+    local install_dir="$1"
+    shift
+
     log "FFmpeg configure (in $PWD)"
 
     log_cmd "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
 
+    local -a config_options
+    read_list config_options "$@"
+    
     local -a cmd=(
-        "${FFMPEG_SRC}"/FFmpeg/configure
-        --disable-everything
-        --enable-demuxer=mxl --enable-muxer=mxl --enable-libmxl
-        --enable-muxer=framemd5
-        --enable-encoder=pcm_f32le --enable-decoder=pcm_f32le
-        --enable-encoder=pcm_s16le --enable-decoder=pcm_s16le
-        --enable-encoder=rawvideo --enable-decoder=rawvideo
-        --enable-encoder=v210 --enable-decoder=v210
-        --enable-decoder=wrapped_avframe
-        --enable-indev=lavfi
-        --enable-filter=scale
-        --enable-filter=testsrc2
-        --enable-filter=anoisesrc
-        --enable-filter=aresample
-        --enable-protocol=pipe
+        "${FFMPEG_SRC}/FFmpeg/configure"
+        --prefix="${install_dir}"
+        "${config_options[@]}"
     )
-
-    cmd+=("$@")
-
+    
     log_cmd "${cmd[@]}"
 
     "${cmd[@]}"
@@ -106,19 +98,19 @@ build_variant() {
     local full_mxl_build_dir="${MXL_BUILD}/${mxl_preset}/${linkage}"
     export PKG_CONFIG_PATH="${full_mxl_install_dir}/lib/pkgconfig:${full_mxl_build_dir}/vcpkg_installed/x64-linux/${vcpkg_build_dir}lib/pkgconfig"
 
-    local extra_config_opts=()
+    local -a config_opts_files=("deps/ffmpeg-configure-base-options.txt")
 
     if ((is_debug)); then
-        extra_config_opts+=(--enable-debug=2 --assert-level=2 --disable-optimizations --disable-stripping)
+        config_opts_files+=("deps/ffmpeg-configure-debug-options.txt")
     fi
 
     if [[ "$linkage" == static ]]; then
         unset LD_LIBRARY_PATH
-        extra_config_opts+=(--pkg-config-flags=--static --enable-static --disable-shared)
+        config_opts_files+=("deps/ffmpeg-configure-static-options.txt")
     else
         export LD_LIBRARY_PATH="${full_mxl_install_dir}/lib:libswscale:libswresample:libavutil:libavformat:libavfilter:libavdevice:libavcodec"
         log_cmd "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
-        extra_config_opts+=(--disable-static --enable-shared)
+        config_opts_files+=("deps/ffmpeg-configure-shared-options.txt")
     fi
 
     # Note: intentional use of "mxl_peset" to match mxl build convention
@@ -128,7 +120,7 @@ build_variant() {
     mkdir -p -- "${build_dir}"
     pushd "${build_dir}"
 
-    ffmpeg_configure --prefix="${install_dir}" "${extra_config_opts[@]}"
+    ffmpeg_configure $install_dir ${config_opts_files[@]}
     ffmpeg_build_test_install "${variant_name}"
 
     popd
