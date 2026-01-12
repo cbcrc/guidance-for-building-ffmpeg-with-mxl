@@ -269,7 +269,7 @@ $ docker-full-build.sh ~/build
 ```
 
 Will create the Docker container, run the setup scripts, and build MXL
-and FFmpeg. The results will be in the host's ~/build directory.
+and FFmpeg. The results will be in the host's `~/build` directory.
 
 To rebuild, but skip the setup, use:
 
