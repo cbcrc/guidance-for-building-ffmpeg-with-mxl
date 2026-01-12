@@ -6,9 +6,9 @@
 #
 # Also provide a few utility functions.
 
-# bash >= 4.2 requirement
+# bash >= 4.3 requirement
 if [[ -z "${BASH_VERSINFO:-}" ]] ||
-    ((BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 2))); then
+    ((BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 3))); then
     echo "This script requires bash >= 4.2" >&2
     exit 1
 fi

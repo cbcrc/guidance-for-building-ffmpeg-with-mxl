@@ -44,27 +44,27 @@ _require_declared_empty_array() {
 #   read_one_list apt_pkgs apt-dependencies.txt
 #   apt-get install -y --no-install-recommends "${apt_pkgs[@]}"
 read_one_list() {
-    local array_name="$1"
+    local -n out="$1"
     local file="${SCRIPT_DIR}/$2"
-    
+
     if [[ ! -f "$file" ]]; then
         log_error "read_one_list: file not found: $file"
         exit 1
     fi
 
-    _require_declared_empty_array "$array_name"
+    _require_declared_empty_array "$1"
 
-    local -a tmp=()
     local line
-
     while IFS= read -r line; do
-        tmp+=("$line")
+        out+=("$line")
     done < <(
-        grep -Ev '^\s*(#|$)' "$file" |
-        sed 's/\s\+#.*$//'
+        sed -E '
+            s/[[:space:]]+#.*$//;   # remove trailing comments
+            s/[[:space:]]+$//;      # remove trailing whitespace
+            /^[[:space:]]*$/d;      # drop empty lines
+            /^[[:space:]]*#/d       # drop comment-only
+        ' "$file"
     )
-
-    eval "$array_name"='("${tmp[@]}")'
 }
 
 # read_list <array-name> <list-file>...
@@ -79,6 +79,7 @@ read_one_list() {
 #   configure "${options[@]}"
 read_list() {
     local array_name="$1"
+    local -n out="$array_name"
     shift
 
     if [[ $# -lt 1 ]]; then
@@ -89,13 +90,9 @@ read_list() {
     _require_declared_empty_array "$array_name"
 
     local list_file
-    local -a tmp=()
-
     for list_file in "$@"; do
         local -a part=()
         read_one_list part "$list_file" || exit 1
-        tmp+=( "${part[@]}" )
+        out+=( "${part[@]}" )
     done
-
-    eval "$array_name"='("${tmp[@]}")'
 }
