@@ -12,7 +12,6 @@ libtool
 bison
 flex
 rustup
-clang-19
 cmake
 ninja-build
 libgstreamer1.0-dev
