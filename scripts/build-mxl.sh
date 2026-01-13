@@ -70,8 +70,8 @@ safer_ctest() {
     ctest "$@" 2>&1 | tee "${log_file}"
 
     if grep --quiet "No tests were found" "${log_file}"; then
-        log "ctest found no tests"
-        return 1
+        log_error "ctest found no tests"
+        exit 1
     fi
 }
 
@@ -84,8 +84,8 @@ build_variant() {
         shared) shared="ON" ;;
         static) shared="OFF" ;;
         *)
-            log "invalid linkage value: \"${linkage}\" (expected shared|static)"
-            return 2
+            log_error "invalid linkage value: \"${linkage}\" (expected shared|static)"
+            exit 2
             ;;
     esac
 
