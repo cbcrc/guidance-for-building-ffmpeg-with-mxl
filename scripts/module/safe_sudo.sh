@@ -8,7 +8,7 @@
 # The sudo prompt includes a reason and echos the command so that the
 # user is not blindly elevating permission.
 #
-# Commands executed in containers is exempted from using sudo if the
+# Commands executed in containers are exempted from using sudo if the
 # effective user is root but those commands are not exempted from the
 # safe list check.
 
