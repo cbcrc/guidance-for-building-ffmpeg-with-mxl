@@ -177,8 +177,8 @@ $ make fate-mxl-json fate-mxl-video-encdec fate-mxl-audio-encdec
 | [`build-mxl.sh`](scripts/build-mxl.sh) | Build MXL, test, and install. |
 | [`build-ffmpeg.sh`](scripts/build-ffmpeg.sh) | Build FFmpeg, test, and install |
 | [`cmake-repo-upgrade.sh`](scripts/cmake-repo-upgrade.sh) | Update to latest cmake repositories. |
-| [`host-full-build.sh`](scripts/host-full-build.sh) | Full environment setup and build on host |
-| [`docker-full-build.sh`](scripts/docker-full-build.sh) | Full environment setup and build in container |
+| [`host-setup-and-build.sh`](scripts/host-setup-and-build.sh) | Full environment setup and build on host |
+| [`docker-setup-and-build.sh`](scripts/docker-setup-and-build.sh) | Full environment setup and build in container |
 
 The [scripts](scripts) directory has a set of Bash scripts to setup
 the environment and build both MXL and FFmpeg. These scripts are a
@@ -259,13 +259,13 @@ $ tree -L 4 ~/build
 A full Docker container setup and build is possible with:
 
 ``` bash
-$ docker-full-build.sh <build-dir> [--skip-setup]
+$ docker-setup-and-build.sh <build-dir> [--skip-setup]
 ```
 
 For example:
 
 ```bash
-$ docker-full-build.sh ~/build
+$ docker-setup-and-build.sh ~/build
 ```
 
 Will create the Docker container, run the setup scripts, and build MXL
@@ -274,16 +274,16 @@ and FFmpeg. The results will be in the host's `~/build` directory.
 To rebuild, but skip the setup, use:
 
 ```bash
-$ docker-full-build.sh ~/build --skip-setup
+$ docker-setup-and-build.sh ~/build --skip-setup
 ```
 
-The `host-full-build.sh` script works similarly but operates directly
+The `host-setup-and-build.sh` script works similarly but operates directly
 on the host.
 
 ## Usage Examples
 
 The following examples assume that MXL and FFmpeg were built using
-`host-full-build.sh ~/build` or `docker-full-build.sh ~/build`.
+`host-setup-and-build.sh ~/build` or `docker-setup-and-build.sh ~/build`.
 
 ### mxl-gst-videotestsrc mxl write → FFplay mxl read
 
