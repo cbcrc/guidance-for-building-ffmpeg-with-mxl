@@ -138,11 +138,21 @@ build_x265() {
   log "building x265"
   mkdir -p "$SRC"
   cd "$SRC"
-  if [ ! -d multicoreware* ]; then
-    wget -O x265.tar.bz2 https://bitbucket.org/multicoreware/x265_git/get/master.tar.bz2
-    tar xjvf x265.tar.bz2
+
+  nullglob_state=$(shopt -p nullglob)
+  shopt -s nullglob
+  dirs=(multicoreware*/)
+
+  if (( ${#dirs[@]} == 0 )); then
+      wget -O x265.tar.bz2 https://bitbucket.org/multicoreware/x265_git/get/master.tar.bz2
+      tar xjvf x265.tar.bz2
+      dirs=(multicoreware*/)
   fi
-  cd multicoreware*/build/linux
+
+  eval "$nullglob_state"
+
+  cd "${dirs[0]}"/build/linux
+
   cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$PREFIX" -DENABLE_SHARED=OFF ../../source
   make -j"$JOBS"
   make install

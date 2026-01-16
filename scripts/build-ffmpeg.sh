@@ -24,7 +24,6 @@ setup_paths() {
     : "${BUILD_DIR:?BUILD_DIR is not set}"
 
     MXL_SANDBOX="${BUILD_DIR}/mxl"
-    MXL_BUILD="${MXL_SANDBOX}/build"
     MXL_INSTALL="${MXL_SANDBOX}/install"
 
     FFMPEG_SANDBOX="${BUILD_DIR}/ffmpeg"

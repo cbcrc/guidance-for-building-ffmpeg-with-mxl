@@ -107,7 +107,7 @@ build_variant() {
     export VCPKG_ROOT="${MXL_SRC}/vcpkg"
     cmake -S "${MXL_SRC}/mxl" -B "${variant_build_dir}" --preset "${preset}" \
         -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
-        -DVCPKG_INSTALLED_DIR=${variant_install_dir} \
+        -DVCPKG_INSTALLED_DIR="${variant_install_dir}" \
         -DBUILD_SHARED_LIBS="${shared}" \
         -DCMAKE_INSTALL_PREFIX="${variant_install_dir}"
 

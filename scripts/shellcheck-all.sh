@@ -9,8 +9,9 @@ shellcheck -x setup-env-mxl.sh
 shellcheck -x setup-env-ffmpeg.sh
 shellcheck -x build-mxl.sh
 shellcheck -x build-ffmpeg.sh
-shellcheck -x host-full-build.sh
-shellcheck -x docker-full-build.sh
+shellcheck -x build-ffmpeg-extended.sh
+shellcheck -x host-setup-and-build.sh
+shellcheck -x docker-setup-and-build.sh
 
 shellcheck -x module/bootstrap.sh
 shellcheck -x module/exit_trap.sh
