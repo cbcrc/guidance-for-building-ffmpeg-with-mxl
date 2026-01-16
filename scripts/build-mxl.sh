@@ -54,7 +54,15 @@ fetch_mxl_repo() {
     git clone https://github.com/dmf-mxl/mxl.git
 
     cd "${MXL_SRC}/mxl"
-    git checkout --detach 52aea5a
+    git checkout --detach f09edc9
+}
+
+fetch_jpt_mxl_repo() {
+    log "fetch MXL git repository..."
+
+    mkdir -p -- "${MXL_SRC}"
+    cd "${MXL_SRC}"
+    git clone https://github.com/jptrainor/mxl.git
 }
 
 # Adds check for error conditions that are not reflected by the ctest
@@ -99,6 +107,7 @@ build_variant() {
     export VCPKG_ROOT="${MXL_SRC}/vcpkg"
     cmake -S "${MXL_SRC}/mxl" -B "${variant_build_dir}" --preset "${preset}" \
         -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
+        -DVCPKG_INSTALLED_DIR=${variant_install_dir} \
         -DBUILD_SHARED_LIBS="${shared}" \
         -DCMAKE_INSTALL_PREFIX="${variant_install_dir}"
 
@@ -122,7 +131,7 @@ main() {
     enforce_build_context
 
     fetch_vcpkg_repo
-    fetch_mxl_repo
+    fetch_jpt_mxl_repo
 
     build_variant Linux-GCC-Release shared
     build_variant Linux-GCC-Release static

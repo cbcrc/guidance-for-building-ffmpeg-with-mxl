@@ -85,22 +85,14 @@ build_variant() {
     local linkage="$2"
 
     local variant_name="${mxl_preset}_${linkage}"
-
-    local vcpkg_build_dir=""
-    local is_debug=0
-    if [[ "$mxl_preset" == *-Debug ]]; then
-        is_debug=1
-        vcpkg_build_dir="debug/"
-    fi
-
     log "configure variant: $variant_name"
+    
     local full_mxl_install_dir="${MXL_INSTALL}/${mxl_preset}/${linkage}"
-    local full_mxl_build_dir="${MXL_BUILD}/${mxl_preset}/${linkage}"
-    export PKG_CONFIG_PATH="${full_mxl_install_dir}/lib/pkgconfig:${full_mxl_build_dir}/vcpkg_installed/x64-linux/${vcpkg_build_dir}lib/pkgconfig"
+    export PKG_CONFIG_PATH="${full_mxl_install_dir}/lib/pkgconfig:${full_mxl_install_dir}/x64-linux/lib/pkgconfig"
 
     local -a config_opts_files=("deps/ffmpeg-configure-base-options.txt")
 
-    if ((is_debug)); then
+    if [[ "$mxl_preset" == *-Debug ]]; then
         config_opts_files+=("deps/ffmpeg-configure-debug-options.txt")
     fi
 
