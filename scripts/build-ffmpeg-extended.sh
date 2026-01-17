@@ -357,11 +357,11 @@ build_all() {
 main() {
     check_help "$@"
     set_build_dir "$@"
+    shift
     
     setup_paths
 
     enforce_setup_context "$@"
-    shift
     
     case "${1:-}" in
         --setup-env) setup_environment;;
