@@ -15,9 +15,9 @@ source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh 
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") <build-dir> {--setup-env} {--build-all} | {--build-ffmpeg} --{test-ffmpeg} {--help|-h} }
+Usage: $(basename "$0") <build-dir> {--setup-env} {--build-all} | {--build-ffmpeg} {--test-ffmpeg} {--help|-h}
 
-  Build ffmpeg with a MXL plus a fuller set of codecs.
+  Build FFmpeg with MXL plus a fuller set of codecs.
 
   - Based on https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
   - Additions: MXL, FATE test support
@@ -82,185 +82,187 @@ setup_paths() {
 
 # Build toggles (1=build, 0=skip), default is 1 if the toggle variable
 # is not set, or set but empty.
-if [ -z "${WITH_X264:-}" ];  then WITH_X264=1;  fi
-if [ -z "${WITH_X265:-}" ];  then WITH_X265=1;  fi
-if [ -z "${WITH_VPX:-}" ];   then WITH_VPX=1;   fi
-if [ -z "${WITH_AOM:-}" ];   then WITH_AOM=1;   fi
-if [ -z "${WITH_DAV1D:-}" ]; then WITH_DAV1D=1; fi
-if [ -z "${WITH_OPUS:-}" ];  then WITH_OPUS=1;  fi
-if [ -z "${WITH_FDKAAC:-}" ];then WITH_FDKAAC=1;fi
-if [ -z "${WITH_VMAF:-}" ];  then WITH_VMAF=1;  fi
+: "${WITH_X264:=1}" 
+: "${WITH_X265:=1}" 
+: "${WITH_VPX:=1}" 
+: "${WITH_AOM:=1}" 
+: "${WITH_DAV1D:=1}" 
+: "${WITH_OPUS:=1}" 
+: "${WITH_FDKAAC:=1}" 
+: "${WITH_VMAF:=1}" 
 
 apt_install() {
-  safe_sudo "install ffmpeg-extended build dependencies" apt-get install -y "$@"
+    safe_sudo "install ffmpeg-extended build dependencies" apt-get install -y "$@"
 }
 
 setup_environment() {
-  log "installing FFMpeg extended build prerequisites"
+    log "installing FFmpeg extended build prerequisites"
 
-  # These packages extend the FFmpeg/MXL build dependencies.
-  local pkgs=(
-    texinfo
-    yasm
-    nasm
-    meson
-    libgnutls28-dev
-    libass-dev
-    libfreetype6-dev
-    libfribidi-dev
-    libvorbis-dev
-    libmp3lame-dev
-    libnuma-dev      # required by the x265 codec build
-    libunistring-dev # required by ffmpeg itself
-  )
-  
-  apt_install "${pkgs[@]}"
+    # These packages extend the FFmpeg/MXL build dependencies.
+    local pkgs=(
+        texinfo
+        yasm
+        nasm
+        meson
+        libgnutls28-dev
+        libass-dev
+        libfreetype6-dev
+        libfribidi-dev
+        libvorbis-dev
+        libmp3lame-dev
+        libnuma-dev      # required by the x265 codec build
+        libunistring-dev # required by ffmpeg itself
+    )
+    
+    apt_install "${pkgs[@]}"
 }
 
 # x264 (source, static)
 build_x264() {
-  [ "$WITH_X264" -eq 1 ] || return 0
-  log "building x264"
-  mkdir -p "$SRC"
-  cd "$SRC"
-  if [ ! -d x264 ]; then
-    git clone --depth 1 https://code.videolan.org/videolan/x264.git
-  fi
-  cd x264
-  ./configure --prefix="$PREFIX" --bindir="$BIN" --enable-static --enable-pic
-  make -j"$JOBS"
-  make install
+    (( WITH_X264 )) || return 0
+    log "building x264"
+    mkdir -p "$SRC"
+    cd "$SRC"
+    if [[ ! -d x264 ]]; then
+        git clone --depth 1 https://code.videolan.org/videolan/x264.git
+    fi
+    cd x264
+    ./configure --prefix="$PREFIX" --bindir="$BIN" --enable-static --enable-pic
+    make -j"$JOBS"
+    make install
 }
 
 # x265 (source, static)
 build_x265() {
-  [ "$WITH_X265" -eq 1 ] || return 0
-  log "building x265"
-  mkdir -p "$SRC"
-  cd "$SRC"
+    (( WITH_X265 )) || return 0
+    log "building x265"
+    mkdir -p "$SRC"
+    cd "$SRC"
 
-  nullglob_state=$(shopt -p nullglob || true)
-  shopt -s nullglob
-  dirs=(multicoreware*/)
+    # subshell to isolate nullglob state
+    (
+        set -eou pipefail
+        shopt -s nullglob
+        dirs=(multicoreware*/)      
 
-  if (( ${#dirs[@]} == 0 )); then
-      wget -O x265.tar.bz2 https://bitbucket.org/multicoreware/x265_git/get/master.tar.bz2
-      tar xjvf x265.tar.bz2
-      dirs=(multicoreware*/)
-  fi
+        if (( ${#dirs[@]} == 0 )); then
+            wget -O x265.tar.bz2 https://bitbucket.org/multicoreware/x265_git/get/master.tar.bz2
+            tar xjvf x265.tar.bz2
+            dirs=(multicoreware*/)
+        fi
 
-  eval "$nullglob_state"
+        cd "${dirs[0]}"/build/linux
 
-  cd "${dirs[0]}"/build/linux
+        cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$PREFIX" -DENABLE_SHARED=OFF ../../source
+        make -j"$JOBS"
+        make install
+    )
 
-  cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$PREFIX" -DENABLE_SHARED=OFF ../../source
-  make -j"$JOBS"
-  make install
 }
 
 # libvpx (source, static)
 build_libvpx() {
-  [ "$WITH_VPX" -eq 1 ] || return 0
-  log "building libvpx"
-  mkdir -p "$SRC"
-  cd "$SRC"
-  if [ ! -d libvpx ]; then
-    git clone --depth 1 https://chromium.googlesource.com/webm/libvpx
-  fi
-  cd libvpx
-  ./configure --prefix="$PREFIX" --disable-examples --disable-unit-tests --enable-vp9-highbitdepth --as=yasm
-  make -j"$JOBS"
-  make install
+    (( WITH_VPX )) || return 0
+    log "building libvpx"
+    mkdir -p "$SRC"
+    cd "$SRC"
+    if [[ ! -d libvpx ]]; then
+        git clone --depth 1 https://chromium.googlesource.com/webm/libvpx
+    fi
+    cd libvpx
+    ./configure --prefix="$PREFIX" --disable-examples --disable-unit-tests --enable-vp9-highbitdepth --as=yasm
+    make -j"$JOBS"
+    make install
 }
 
 # libaom (source, static)
 build_libaom() {
-  [ "$WITH_AOM" -eq 1 ] || return 0
-  log "building libaom"
-  mkdir -p "$SRC"
-  cd "$SRC"
-  if [ ! -d aom ]; then
-    git clone --depth 1 https://aomedia.googlesource.com/aom
-  fi
-  cd aom
-  mkdir -p build && cd build
-  cmake -DCMAKE_INSTALL_PREFIX="$PREFIX" -DBUILD_SHARED_LIBS=0 -DENABLE_TESTS=0 -DENABLE_NASM=1 ..
-  make -j"$JOBS"
-  make install
+    (( WITH_AOM )) || return 0
+    log "building libaom"
+    mkdir -p "$SRC"
+    cd "$SRC"
+    if [[ ! -d aom ]]; then
+        git clone --depth 1 https://aomedia.googlesource.com/aom
+    fi
+    cd aom
+    mkdir -p build && cd build
+    cmake -DCMAKE_INSTALL_PREFIX="$PREFIX" -DBUILD_SHARED_LIBS=0 -DENABLE_TESTS=0 -DENABLE_NASM=1 ..
+    make -j"$JOBS"
+    make install
 }
 
 # libdav1d (source, static)
 build_dav1d() {
-  [ "$WITH_DAV1D" -eq 1 ] || return 0
-  log "building dav1d"
-  mkdir -p "$SRC"
-  cd "$SRC"
-  if [ ! -d dav1d ]; then
-    git clone --depth 1 https://code.videolan.org/videolan/dav1d.git
-  fi
-  cd dav1d
-  meson setup build --prefix "$PREFIX" --libdir lib -Ddefault_library=static -Denable_tests=false -Denable_tools=false
-  ninja -C build -j"$JOBS"
-  ninja -C build -j"$JOBS" install
+    (( WITH_DAV1D )) || return 0
+    log "building dav1d"
+    mkdir -p "$SRC"
+    cd "$SRC"
+    if [[ ! -d dav1d ]]; then
+        git clone --depth 1 https://code.videolan.org/videolan/dav1d.git
+    fi
+    cd dav1d
+    meson setup build --prefix "$PREFIX" --libdir lib -Ddefault_library=static -Denable_tests=false -Denable_tools=false
+    ninja -C build -j"$JOBS"
+    ninja -C build -j"$JOBS" install
 }
 
 # libopus (source, static)
 build_opus() {
-  [ "$WITH_OPUS" -eq 1 ] || return 0
-  log "building opus"
-  mkdir -p "$SRC"
-  cd "$SRC"
-  if [ ! -d opus ]; then
-    git clone --depth 1 https://github.com/xiph/opus.git
-  fi
-  cd opus
-  ./autogen.sh
-  ./configure --prefix="$PREFIX" --disable-shared --enable-static
-  make -j"$JOBS"
-  make install
+    (( WITH_OPUS )) || return 0
+    log "building opus"
+    mkdir -p "$SRC"
+    cd "$SRC"
+    if [[ ! -d opus ]]; then
+        git clone --depth 1 https://github.com/xiph/opus.git
+    fi
+    cd opus
+    ./autogen.sh
+    ./configure --prefix="$PREFIX" --disable-shared --enable-static
+    make -j"$JOBS"
+    make install
 }
 
 # libfdk-aac (source, static; nonfree)
 build_fdk_aac() {
-  [ "$WITH_FDKAAC" -eq 1 ] || return 0
-  log "building libfdk-aac"
-  mkdir -p "$SRC"
-  cd "$SRC"
-  if [ ! -d fdk-aac ]; then
-    git clone --depth 1 https://github.com/mstorsjo/fdk-aac.git
-  fi
-  cd fdk-aac
-  autoreconf -fiv
-  ./configure --prefix="$PREFIX" --disable-shared --enable-static
-  make -j"$JOBS"
-  make install
+    (( WITH_FDKAAC )) || return 0
+    log "building libfdk-aac"
+    mkdir -p "$SRC"
+    cd "$SRC"
+    if [[ ! -d fdk-aac ]]; then
+        git clone --depth 1 https://github.com/mstorsjo/fdk-aac.git
+    fi
+    cd fdk-aac
+    autoreconf -fiv
+    ./configure --prefix="$PREFIX" --disable-shared --enable-static
+    make -j"$JOBS"
+    make install
 }
 
 # libvmaf (source, static)
 build_vmaf() {
-  [ "$WITH_VMAF" -eq 1 ] || return 0
-  log "building libvmaf"
-  mkdir -p "$SRC"
-  cd "$SRC"
-  if [ ! -d vmaf-master ]; then
-    git clone https://github.com/Netflix/vmaf vmaf-master
-  fi
-  mkdir -p "vmaf-master/libvmaf/build"
-  cd "vmaf-master/libvmaf/build"
-  meson setup -Denable_tests=false -Denable_docs=false \
-    --buildtype=release \
-    --default-library=static \
-    ../ \
-    --prefix "$PREFIX" \
-    --bindir "$BIN" \
-    --libdir "$PREFIX/lib"
-  ninja -j"$JOBS"
-  ninja -j"$JOBS" install
+    (( WITH_VMAF )) || return 0
+    log "building libvmaf"
+    mkdir -p "$SRC"
+    cd "$SRC"
+    if [[ ! -d vmaf-master ]]; then
+        git clone https://github.com/Netflix/vmaf vmaf-master
+    fi
+    mkdir -p "vmaf-master/libvmaf/build"
+    cd "vmaf-master/libvmaf/build"
+    meson setup -Denable_tests=false -Denable_docs=false \
+          --buildtype=release \
+          --default-library=static \
+          ../ \
+          --prefix "$PREFIX" \
+          --bindir "$BIN" \
+          --libdir "$PREFIX/lib"
+    ninja -j"$JOBS"
+    ninja -j"$JOBS" install
 }
 
 clone_ffmpeg() {
     log "clone FFmpeg repository"
-    mkdir -p -- "$FFMPEG_SRC"
+    mkdir -p "$FFMPEG_SRC"
     cd "$FFMPEG_SRC"
 
     if [[ ! -d FFmpeg ]]; then
@@ -272,63 +274,63 @@ clone_ffmpeg() {
 }
 
 build_ffmpeg() {
-  clone_ffmpeg
+    clone_ffmpeg
 
-  log "build FFmpeg"
+    log "build FFmpeg"
 
-  conf=(
-    --prefix="$PREFIX"
-    --pkg-config-flags="--static"
-    --extra-cflags="-I$PREFIX/include"
-    --extra-ldflags="-L$PREFIX/lib"
-    --extra-libs="-lpthread -lm"
-    --ld="g++"
-    --bindir="$BIN"
-    --enable-muxer=mxl
-    --enable-demuxer=mxl
-    --enable-libmxl
-    --enable-gpl
-    --enable-gnutls
-    --enable-libass
-    --enable-libfreetype
-    --enable-libfribidi
-    --enable-libmp3lame
-    --enable-libvorbis
-    --enable-debug
-    --disable-stripping
-    --assert-level=2
-    --samples="${FFMPEG_FATE_SUITE}"
-    --ignore-tests=source
-  )
+    conf=(
+        --prefix="$PREFIX"
+        --pkg-config-flags="--static"
+        --extra-cflags="-I$PREFIX/include"
+        --extra-ldflags="-L$PREFIX/lib"
+        --extra-libs="-lpthread -lm"
+        --ld="g++"
+        --bindir="$BIN"
+        --enable-muxer=mxl
+        --enable-demuxer=mxl
+        --enable-libmxl
+        --enable-gpl
+        --enable-gnutls
+        --enable-libass
+        --enable-libfreetype
+        --enable-libfribidi
+        --enable-libmp3lame
+        --enable-libvorbis
+        --enable-debug
+        --disable-stripping
+        --assert-level=2
+        --samples="${FFMPEG_FATE_SUITE}"
+        --ignore-tests=source
+    )
 
-  [ "$WITH_X264"   -eq 1 ] && conf+=( --enable-libx264 )
-  [ "$WITH_X265"   -eq 1 ] && conf+=( --enable-libx265 )
-  [ "$WITH_VPX"    -eq 1 ] && conf+=( --enable-libvpx )
-  [ "$WITH_AOM"    -eq 1 ] && conf+=( --enable-libaom )
-  [ "$WITH_DAV1D"  -eq 1 ] && conf+=( --enable-libdav1d )
-  [ "$WITH_OPUS"   -eq 1 ] && conf+=( --enable-libopus )
-  [ "$WITH_VMAF"   -eq 1 ] && conf+=( --enable-libvmaf )
-  [ "$WITH_FDKAAC" -eq 1 ] && conf+=( --enable-libfdk-aac --enable-nonfree )
+    (( WITH_X264 ))   && conf+=( --enable-libx264 )
+    (( WITH_X265 ))   && conf+=( --enable-libx265 )
+    (( WITH_VPX ))    && conf+=( --enable-libvpx )
+    (( WITH_AOM ))    && conf+=( --enable-libaom )
+    (( WITH_DAV1D ))  && conf+=( --enable-libdav1d )
+    (( WITH_OPUS ))   && conf+=( --enable-libopus )
+    (( WITH_VMAF ))   && conf+=( --enable-libvmaf )
+    (( WITH_FDKAAC )) && conf+=( --enable-libfdk-aac --enable-nonfree )
 
-  mkdir -p -- "$FFMPEG_SRC"
-  cd "$FFMPEG_SRC"/FFmpeg
+    mkdir -p "$FFMPEG_SRC"
+    cd "$FFMPEG_SRC"/FFmpeg
 
-  # pre-check libmxl resolution
-  log_cmd "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-  if pkg-config --exists libmxl; then
-      log "libmxl found by pkg-config"
-  else
-      log_error "libmxl not found by pkg-config"
-  fi
+    # pre-check libmxl resolution
+    log_cmd "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+    if pkg-config --exists libmxl; then
+        log "libmxl found by pkg-config"
+    else
+        log_error "libmxl not found by pkg-config"
+    fi
 
-  ./configure "${conf[@]}"
-  make -j"$JOBS"
-  make install
+    ./configure "${conf[@]}"
+    make -j"$JOBS"
+    make install
 
-  # sanity check
-  "${FFMPEG_BIN}"/ffmpeg -version > /dev/null
-  "${FFMPEG_BIN}"/ffprobe -version > /dev/null
-  "${FFMPEG_BIN}"/ffplay -version > /dev/null
+    # sanity check
+    "${FFMPEG_BIN}"/ffmpeg -version > /dev/null
+    "${FFMPEG_BIN}"/ffprobe -version > /dev/null
+    "${FFMPEG_BIN}"/ffplay -version > /dev/null
 }
 
 test_ffmpeg() {
@@ -340,16 +342,16 @@ test_ffmpeg() {
 }
 
 build_all() {
-  build_x264
-  build_x265
-  build_libvpx
-  build_libaom
-  build_dav1d
-  build_opus
-  build_fdk_aac
-  build_vmaf
-  build_ffmpeg
-  test_ffmpeg
+    build_x264
+    build_x265
+    build_libvpx
+    build_libaom
+    build_dav1d
+    build_opus
+    build_fdk_aac
+    build_vmaf
+    build_ffmpeg
+    test_ffmpeg
 }
 
 main() {
