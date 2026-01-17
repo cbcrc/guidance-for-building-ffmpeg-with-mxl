@@ -139,7 +139,7 @@ build_x265() {
   mkdir -p "$SRC"
   cd "$SRC"
 
-  nullglob_state=$(shopt -p nullglob)
+  nullglob_state=$(shopt -p nullglob || true)
   shopt -s nullglob
   dirs=(multicoreware*/)
 
