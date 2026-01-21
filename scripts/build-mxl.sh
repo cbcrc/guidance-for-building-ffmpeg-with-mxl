@@ -55,8 +55,10 @@ fetch_mxl_repo() {
 
     mkdir -p -- "${MXL_SRC}"
     cd "${MXL_SRC}"
-    #git clone https://github.com/dmf-mxl/mxl.git
+
+    # temporary pending merge of https://github.com/dmf-mxl/mxl/pull/335
     git clone https://github.com/jptrainor/mxl.git
+    #git clone https://github.com/dmf-mxl/mxl.git
 
     cd "${MXL_SRC}/mxl"
     git switch release/v1.0
