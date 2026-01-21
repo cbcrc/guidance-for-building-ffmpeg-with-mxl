@@ -15,12 +15,16 @@ source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh user_context.
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") <build-dir>
+Usage: $(basename "$0") <build-dir> [--clang]
 
 Arguments:
   <build-dir>   Directory to place build artifacts
 
-Build MXL release/debug and static/shared variants.
+Options:
+  --clang       Build with Clang
+
+Build MXL release/debug and static/shared variants.  GCC is always
+built, Clang is optional.
 EOF
 }
 
@@ -51,18 +55,11 @@ fetch_mxl_repo() {
 
     mkdir -p -- "${MXL_SRC}"
     cd "${MXL_SRC}"
-    git clone https://github.com/dmf-mxl/mxl.git
+    #git clone https://github.com/dmf-mxl/mxl.git
+    git clone https://github.com/jptrainor/mxl.git
 
     cd "${MXL_SRC}/mxl"
-    git checkout --detach f09edc9
-}
-
-fetch_jpt_mxl_repo() {
-    log "fetch MXL git repository..."
-
-    mkdir -p -- "${MXL_SRC}"
-    cd "${MXL_SRC}"
-    git clone https://github.com/jptrainor/mxl.git
+    git switch release/v1.0
 }
 
 # Adds check for error conditions that are not reflected by the ctest
@@ -131,13 +128,20 @@ main() {
     enforce_build_context
 
     fetch_vcpkg_repo
-    fetch_jpt_mxl_repo
+    fetch_mxl_repo
 
     build_variant Linux-GCC-Release shared
     build_variant Linux-GCC-Release static
     build_variant Linux-GCC-Debug shared
     build_variant Linux-GCC-Debug static
 
+    if has_opt "--clang" "$@"; then
+        build_variant Linux-Clang-Release shared
+        build_variant Linux-Clang-Release static
+        build_variant Linux-Clang-Debug shared
+        build_variant Linux-Clang-Debug static
+    fi
+    
     log "MXL build dir: ${MXL_BUILD}"
 }
 
