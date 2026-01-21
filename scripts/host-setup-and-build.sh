@@ -13,7 +13,7 @@ source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh safe_sudo.sh
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") <build-dir> [--skip-setup]
+Usage: $(basename "$0") <build-dir> [--skip-setup] [--extended]
 
 Arguments:
   <build-dir>   Directory to place build artifacts
