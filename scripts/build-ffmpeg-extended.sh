@@ -15,7 +15,7 @@ source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh 
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") <build-dir> {--build-all} | {--build-ffmpeg} {--test-ffmpeg} {--help|-h}
+Usage: $(basename "$0") <build-dir> {--build-all} {--build-codecs} {--build-ffmpeg} {--test-ffmpeg} {--help|-h}
 
   Build FFmpeg with MXL plus a fuller set of codecs.
 
@@ -31,9 +31,10 @@ Environment variables:
    1 = build (default), 0 = skip.
 
 Options:
-  --build-all            Download and build external libs and FFmpeg
-  --build-ffmpeg         Build FFmpeg only (for use after --build-all)
-  --test-ffmpeg          Download FATE test suite and run FATE tests.
+  --build-all            Build codecs, ffmpeg, and run tests.
+  --build-codecs         Build codecs
+  --build-ffmpeg         Build FFmpeg only (assumes codecs are built)
+  --test-ffmpeg          Download FATE test suite and run FATE tests
   --help|-h              Help message
 
 Notes:
@@ -314,7 +315,7 @@ test_ffmpeg() {
     make -j"$JOBS" fate
 }
 
-build_all() {
+build_codecs() {
     build_x264
     build_x265
     build_libvpx
@@ -323,6 +324,10 @@ build_all() {
     build_opus
     build_fdk_aac
     build_vmaf
+}
+
+build_all() {
+    build_codecs
     build_ffmpeg
     test_ffmpeg
 }
@@ -339,6 +344,8 @@ main() {
         build_ffmpeg
     elif has_opt "--test-ffmpeg" "$@"; then
         test_ffmpeg
+    elif has_opt "--build-codecs" "$@"; then
+        build_codecs
     elif has_opt "--build-all" "$@"; then
         build_all
     else
