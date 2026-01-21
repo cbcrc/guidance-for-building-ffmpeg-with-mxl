@@ -401,8 +401,9 @@ $ ~/build/mxl/install/Linux-GCC-Debug/static/bin/mxl-info --domain /dev/shm/mxl 
 
 ## Known Limitations & Future Work
 
-* v201a (v210+alpha) is not supported
-* MacOS is not supported
+* video/210a (v210+alpha) is not supported 
+* video/smpt201 (ancillary data) is not supported
+* MacOS FFmpeg/MXL build is not supported
 
 ## Support & Contribution
 
