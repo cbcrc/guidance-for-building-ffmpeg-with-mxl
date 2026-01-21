@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# FFmpeg build environment setup
+# FFmpeg extended build environment setup
 
 set -e
 
@@ -18,9 +18,7 @@ Usage: $(basename "$0") [--allow-root]
 Options:
   --allow-root    Allow execution as root for host builds (normally refused)
 
-Setup environment dependencies for ffmpeg build. The FFmpeg
-configuration includes just enough to run the FFmpeg/MXL FATE
-regression tests.
+Setup environment dependencies for the extended ffmpeg build.
 
 When run on the host, the script is intended to be executed as an
 unprivileged user and uses sudo to perform actions requiring elevated
@@ -31,11 +29,27 @@ EOF
 }
 
 setup_environment() {
-    log "install FFmpeg dependencies..."
+    log "installing FFmpeg extended build prerequisites"
 
-    local -a ffmpeg_apt_pkgs
-    read_list ffmpeg_apt_pkgs "deps/ffmpeg-apt-pkgs.txt" 
-    safe_sudo "install FFmpeg dependencies" apt-get install -y --no-install-recommends "${ffmpeg_apt_pkgs[@]}"
+    local pkgs=(
+        texinfo
+        yasm
+        nasm
+        meson
+        libgnutls28-dev
+        libass-dev
+        libfreetype6-dev
+        libfribidi-dev
+        libvorbis-dev
+        libmp3lame-dev
+        libnuma-dev      # required by the x265 codec build
+        libunistring-dev # required by ffmpeg itself
+        rsync
+        wget
+        tar
+    )
+    
+    safe_sudo "install ffmpeg-extended build dependencies" apt-get install -y --no-install-recommends "${pkgs[@]}"
 }
 
 main() {

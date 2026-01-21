@@ -37,7 +37,7 @@ set_build_dir() {
 
 # Return success if the given command-line option appears in the
 # argument list.
-# e.g.: has_opt --something "$@"
+# e.g.: if has_opt --something "$@"; then do_something; fi 
 has_opt() {
     local opt="$1"
     shift

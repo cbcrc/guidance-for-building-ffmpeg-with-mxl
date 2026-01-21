@@ -15,16 +15,19 @@ source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh 
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") [--allow-root]
+Usage: $(basename "$0") [--allow-root] [--clang]
 
 Options:
   --allow-root    Allow execution as root for host builds (normally refused)
+  --clang         Install and configure Clang
 
 When run on the host, the script is intended to be executed as an
 unprivileged user and uses sudo to perform actions requiring elevated
 privileges. Attempts to run the script as root are rejected unless
 --allow-root is specified. When run inside a container, the script
 expects to be executed as root.
+
+The --clang installs and configures the Clang compiler and linker.
 EOF
 }
 
@@ -36,16 +39,24 @@ setup_environment() {
 
     safe_sudo "update repositories" apt-get update
 
+    # cmake repository environment dependencies
     local -a cmake_repo_apt_pkgs
     read_list cmake_repo_apt_pkgs "deps/cmake-repo-apt-pkgs.txt"
     safe_sudo "install cmake repo dependencies" apt-get install -y --no-install-recommends "${cmake_repo_apt_pkgs[@]}"
-
-    safe_sudo "update cmake repo" "${SCRIPT_DIR}/cmake-repo-upgrade.sh"
-
+    safe_sudo "update cmake repo" "${SCRIPT_DIR}/deps/cmake-repo-upgrade.sh"
+    
+    # MXL build environment dependencies
+    local -a config_opts_files=("deps/mxl-apt-pkgs.txt")
+    if has_opt "--clang" "${SCRIPT_ARGS[@]}"; then
+        config_opts_files+=("deps/mxl-clang-pkgs.txt")
+    fi
+    
     local -a mxl_apt_pkgs
-    read_list mxl_apt_pkgs "deps/mxl-apt-pkgs.txt"
+    echo read_list mxl_apt_pkgs "${config_opts_files[@]}"
+    read_list mxl_apt_pkgs "${config_opts_files[@]}"
     safe_sudo "install MXL dependencies" apt-get install -y --no-install-recommends "${mxl_apt_pkgs[@]}"
-
+    safe_sudo "update MXL alternatives" "${SCRIPT_DIR}/deps/mxl-update-alternatives.sh"
+        
     rustup default 1.88.0
 }
 

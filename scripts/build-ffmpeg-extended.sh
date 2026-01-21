@@ -15,7 +15,7 @@ source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh 
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") <build-dir> {--setup-env} {--build-all} | {--build-ffmpeg} {--test-ffmpeg} {--help|-h}
+Usage: $(basename "$0") <build-dir> {--build-all} | {--build-ffmpeg} {--test-ffmpeg} {--help|-h}
 
   Build FFmpeg with MXL plus a fuller set of codecs.
 
@@ -31,7 +31,6 @@ Environment variables:
    1 = build (default), 0 = skip.
 
 Options:
-  --setup-env            Install prerequisites
   --build-all            Download and build external libs and FFmpeg
   --build-ffmpeg         Build FFmpeg only (for use after --build-all)
   --test-ffmpeg          Download FATE test suite and run FATE tests.
@@ -90,32 +89,6 @@ setup_paths() {
 : "${WITH_OPUS:=1}" 
 : "${WITH_FDKAAC:=1}" 
 : "${WITH_VMAF:=1}" 
-
-apt_install() {
-    safe_sudo "install ffmpeg-extended build dependencies" apt-get install -y "$@"
-}
-
-setup_environment() {
-    log "installing FFmpeg extended build prerequisites"
-
-    # These packages extend the FFmpeg/MXL build dependencies.
-    local pkgs=(
-        texinfo
-        yasm
-        nasm
-        meson
-        libgnutls28-dev
-        libass-dev
-        libfreetype6-dev
-        libfribidi-dev
-        libvorbis-dev
-        libmp3lame-dev
-        libnuma-dev      # required by the x265 codec build
-        libunistring-dev # required by ffmpeg itself
-    )
-    
-    apt_install "${pkgs[@]}"
-}
 
 # x264 (source, static)
 build_x264() {
@@ -357,21 +330,21 @@ build_all() {
 main() {
     check_help "$@"
     set_build_dir "$@"
-    shift
     
     setup_paths
 
-    enforce_setup_context "$@"
-    
-    case "${1:-}" in
-        --setup-env) setup_environment;;
-        --build-all) build_all ;;
-        --build-ffmpeg) build_ffmpeg ;;
-        --test-ffmpeg) test_ffmpeg ;;
-        -h) ;&
-        --help) ;&
-        *) usage; exit 1 ;;
-    esac
+    enforce_build_context
+
+    if has_opt "--build-ffmpeg" "$@"; then
+        build_ffmpeg
+    elif has_opt "--test-ffmpeg" "$@"; then
+        test_ffmpeg
+    elif has_opt "--build-all" "$@"; then
+        build_all
+    else
+        usage
+        exit 1
+    fi
 }
 
 main "$@"

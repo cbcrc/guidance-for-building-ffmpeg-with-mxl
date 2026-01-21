@@ -24,7 +24,10 @@ source "${SCRIPT_DIR}/module/user_context.sh"
 # Allow-list (absolute paths only)
 readonly SAFE_SUDO_ALLOWED_LIST=(
     "/usr/bin/apt-get"
-    "${SCRIPT_DIR}/cmake-repo-upgrade.sh"
+    "/usr/bin/update-alternatives"
+    "${SCRIPT_DIR}/setup-env-all.sh"
+    "${SCRIPT_DIR}/deps/cmake-repo-upgrade.sh"
+    "${SCRIPT_DIR}/deps/mxl-update-alternatives.sh"
 )
 
 _safe_sudo_is_allowed() {

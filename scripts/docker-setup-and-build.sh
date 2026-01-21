@@ -13,13 +13,14 @@ source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") <build-dir> [--skip-setup]
+Usage: $(basename "$0") <build-dir> [--skip-setup] [--extended]
 
 Arguments:
   <build-dir>   Host directory to place build artifacts
 
 Options:
   --skip-setup  Skip environment setup.
+  --extended    Include FFmpeg extended build.
 
 Setup container environment and build both MXL and FFmpeg.
 EOF
@@ -40,7 +41,7 @@ main() {
             --volume "$PWD":/src \
             --workdir /src \
             ubuntu:24.04 \
-            bash -lc './setup-env-mxl.sh "$@" && ./setup-env-ffmpeg.sh "$@"' bash "$@"
+            bash -lc './setup-env-all.sh "$@"' bash "$@"
 
         docker commit mxl-env-setup mxl-env-ubuntu:24.04
         docker rm mxl-env-setup
@@ -65,6 +66,25 @@ main() {
         --workdir /src \
         mxl-env-ubuntu:24.04 \
         bash -lc './build-ffmpeg.sh /build "$@"' bash "$@"
+
+    if has_opt "--extended" "$@"; then
+        docker run -e WITH_X265=0 -it --rm \
+               --user "$(id -u)":"$(id -g)" \
+               --volume "$PWD":/src \
+               --volume "$BUILD_DIR":/build \
+               --workdir /src \
+               mxl-env-ubuntu:24.04 \
+               bash -lc './build-ffmpeg-extended.sh /build "$@"' bash --build-all "$@"
+    fi
+
+    log "docker interactive shell command:"
+    log_cmd docker run -it \
+            --rm --user "$(id -u)":"$(id -g)" \
+            --volume "$PWD":/src \
+            --volume "$BUILD_DIR":/build \
+            --workdir /src \
+            mxl-env-ubuntu:24.04 \
+            bash -li
 }
 
 main "$@"
