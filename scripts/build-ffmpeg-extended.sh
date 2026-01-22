@@ -260,9 +260,28 @@ build_ffmpeg() {
         --extra-libs="-lpthread -lm"
         --ld="g++"
         --bindir="$BIN"
-        --enable-muxer=mxl
+        # base MXL build options:
         --enable-demuxer=mxl
+        --enable-muxer=mxl
         --enable-libmxl
+        --enable-muxer=framemd5
+        --enable-encoder=pcm_f32le
+        --enable-decoder=pcm_f32le
+        --enable-encoder=pcm_s16le
+        --enable-decoder=pcm_s16le
+        --enable-encoder=rawvideo
+        --enable-decoder=rawvideo
+        --enable-encoder=v210
+        --enable-decoder=v210
+        --enable-decoder=wrapped_avframe
+        --enable-indev=lavfi
+        --enable-filter=scale
+        --enable-filter=testsrc2
+        --enable-filter=anoisesrc
+        --enable-filter=sine
+        --enable-filter=aresample
+        --enable-protocol=pipe
+        # extended:
         --enable-gpl
         --enable-gnutls
         --enable-libass
@@ -270,9 +289,6 @@ build_ffmpeg() {
         --enable-libfribidi
         --enable-libmp3lame
         --enable-libvorbis
-        --enable-debug
-        --disable-stripping
-        --assert-level=2
         --samples="${FFMPEG_FATE_SUITE}"
         --ignore-tests=source
     )
