@@ -23,17 +23,23 @@ readonly BOOTSTRAP_BASH_SOURCE_GUARD=1
 set -eou pipefail
 
 # Check if first positional argument is set, ensure it's not an
-# option, and set environment variable BUILD_DIR.
-set_build_dir() {
+# option, and set environment variable named by $1. The named
+# variable is exported and set to readonly.
+# e.g. get_dir SRC_DIR "$@" && shift
+# e.g. get_dir BUILD_DIR "$@" && shift
+get_var() {
+    local -n out_var="$1"
+    shift
+    
     if [[ $# -lt 1 ]] || [[ -z "${1-}" || "$1" == --* ]]; then
         usage
         exit 2
     fi
-    BUILD_DIR="$1"
-    export BUILD_DIR
-    readonly BUILD_DIR
-    shift
+    out_var="$1"
+    export out_var
+    readonly out_var
 }
+
 
 # Return success if the given command-line option appears in the
 # argument list.

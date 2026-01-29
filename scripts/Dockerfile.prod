@@ -1,0 +1,65 @@
+# syntax=docker/dockerfile:1.6
+
+# Production image containing only runtime dependencies and built
+# artifacts.
+
+FROM ubuntu:24.04 as builder
+
+ARG UID=1000
+ARG GID=1000
+ARG EXTENDED
+
+COPY . /scripts
+
+RUN echo "container" > /run/ffmpeg-build-context
+RUN /scripts/setup-env-all.sh
+RUN if [ "$EXTENDED" = "1" ]; then /scripts/setup-env-ffmpeg-extended.sh; fi
+
+RUN set -e; \
+    if ! getent group "${GID}" >/dev/null; then \
+        groupadd -g "${GID}" builder; \
+    fi; \
+    if ! id -u "${UID}" >/dev/null 2>&1; then \
+        useradd -m -u "${UID}" -g "${GID}" builder; \
+    fi
+
+ENV UID=${UID}
+ENV GID=${GID}
+
+RUN install -d -o ${UID} -g ${GID} /build
+RUN install -d -o ${UID} -g ${GID} /src
+
+USER ${UID}:${GID}
+RUN /scripts/get-src.sh /src
+RUN /scripts/build-mxl.sh /src /build --prod
+RUN /scripts/build-ffmpeg.sh /src /build --prod
+RUN if [ "$EXTENDED" = "1" ]; then WITH_X265=0 /scripts/build-ffmpeg-extended.sh /src /build --build-all; fi
+
+FROM ubuntu:24.04
+
+# This is a first attempt at a minimal deployment environment for a
+# production build. It can be refined by, for example, by excluding
+# ffplay and its dependencies from the build (e.g. X11).
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    zlib1g \
+    libdrm2 \
+    libva2 \
+    libva-drm2 \
+    libva-x11-2 \
+    libvdpau1 \
+    libx11-6 \
+    libxext6 \
+    libxfixes3 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcb-dri3-0 \
+    libxau6 \
+    libxdmcp6 \
+    libbsd0 \
+    libmd0 \
+     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /build/ffmpeg/install/Linux-GCC-Release/static /opt
+
+ENV PATH=/opt/bin:$PATH

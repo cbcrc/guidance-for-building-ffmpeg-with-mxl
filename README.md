@@ -22,13 +22,12 @@ supported via Docker containers.
 
 The FFmpeg/MXL integration currently supports only Linux.
 
-## Github Repositories
+## GitHub Repositories
 
 | component | repository | branch | tag/commit |
 |-----------|------------|--------|------------|
-| MXL | /dmf-mxl/mxl |  release/1.0 | TBD |
+| MXL | /dmf-mxl/mxl |  release/1.0 | 0e38256 |
 | FFmpeg | /cbcrc/ffmpeg | dmf-mxl/master | a8441ff |
-
 
 The tag/commit is the last known good version.
 
@@ -70,7 +69,7 @@ $ git switch <branch>
 * GCC 13
 
 **Build tools**
-* Cmake >= 3.24 (for MXL)
+* CMake >= 3.24 (for MXL)
 
 ## MXL Build
 
@@ -174,13 +173,18 @@ $ make fate-mxl-json fate-mxl-video-encdec fate-mxl-audio-encdec
 |---|---|
 | [`setup-env-mxl.sh`](scripts/setup-env-mxl.sh) | Install MXL build dependencies |
 | [`setup-env-ffmpeg.sh`](scripts/setup-env-ffmpeg.sh) | Install FFmpeg build dependencies |
+| [`setup-env-all.sh`](scripts/setup-env-all.sh) | Install MXL and FFmpeg build dependencies |
+| [`get-src.sh`](scripts/get-src.sh) | Get the MXL and FFmpeg source code, and configure version. |
 | [`build-mxl.sh`](scripts/build-mxl.sh) | Build MXL, test, and install. |
 | [`build-ffmpeg.sh`](scripts/build-ffmpeg.sh) | Build FFmpeg, test, and install |
-| [`cmake-repo-upgrade.sh`](scripts/cmake-repo-upgrade.sh) | Update to latest cmake repositories. |
+| [`mxl-update-alternatives.sh`](scripts/deps/mxl-update-alternatives.sh) | Update to build tools version. |
+| [`cmake-repo-upgrade.sh`](scripts/deps/cmake-repo-upgrade.sh) | Update to latest CMake repositories. |
 | [`host-setup-and-build.sh`](scripts/host-setup-and-build.sh) | Full environment setup and build on host |
-| [`docker-setup-and-build.sh`](scripts/docker-setup-and-build.sh) | Full environment setup and build in container |
+| [`docker-setup-and-build.sh`](scripts/docker-setup-and-build.sh) | Full environment setup and build in development container |
+| [`Dockerfile.dev`](scripts/Dockerfile.dev)  | Development container definition with build tools and dependencies. |
+| [`Dockerfile.prod`](scripts/Dockerfile.prod) | Production container definition with runtime dependencies and built artifacts. |
 
-The [scripts](scripts) directory has a set of Bash scripts to setup
+The [scripts](scripts) directory has a set of Bash scripts to set up
 the environment and build both MXL and FFmpeg. These scripts are a
 canonical source for detailed FFmpeg/MXL environment configuration and
 build instructions.
@@ -189,30 +193,50 @@ Note that these scripts set up the *minimum* set of system
 dependencies and the *minimum* ffmpeg configuration that is necessary
 to build FFmpeg with MXL and the FFmpeg/MXL regression tests.
 
-The `setup-env-{mxl,ffmpeg}.sh` scripts install system dependencies
-for the MXL and FFmpeg builds. Both will ask for a `sudo` password for
-commands that require elevated permission. Avoid the `sudo` prompt by
-running the setup script as root and using the `--allow-root` option.
+The `get-src.sh` script installs all the MXL and FFmpeg source code at
+the correct revision.
 
 ```bash
-$ setup-env-mxl.sh [--allow-root]
-$ setup-env-ffmpeg.sh [--allow-root]
+$ get-src.sh <src-dir>
 ```
 
-The `build-{mxl,ffmpeg}.sh` scripts download, configure, build, and
-test MXL and FFmpeg. Both scripts build debug/release and
-static/shared variants.
+The `setup-env-all.sh` script installs system dependencies for both MXL
+and FFmpeg. It will ask for a `sudo` password to execute commands that
+require elevated permissions. To avoid repeated requests for a `sudo`
+password execute the script as root and use the `--allow-root`
+options.
+
+``` bash
+sudo setup-env-all.sh --allow-root
+```
+
+The `setup-env-{mxl,ffmpeg}.sh` scripts install system dependencies
+for the MXL and FFmpeg builds individually.
+
+The `build-{mxl,ffmpeg}.sh` scripts configure, build, and test MXL and
+FFmpeg. Both scripts build static/shared and debug/release. By default
+all variants are built: static+debug, static+release, shared+debug,
+shared+release. Use the "--prod" option to build only the
+static+release variant.  Use the "--dev" option to build only the
+static+debug variant.
 
 ```bash
-$ build-mxl.sh <build-dir>
-$ build-ffmpeg.sh <build-dir>
+$ build-mxl.sh <src-dir> <build-dir> [--prod|--dev]
+$ build-ffmpeg.sh <src-dir> <build-dir> [--prod|--dev]
 ```
 
 For example, to build FFmpeg with MXL support in the `~/build`
 directory:
 
 ```bash
-$ build-mxl.sh ~/build && build-ffmpeg.sh ~/build
+$ get-src.sh ~/src
+$ build-mxl.sh ~/src ~/build && build-ffmpeg.sh ~/src ~/build
+```
+
+Or, to build a single development variant:
+```bash
+$ get-src.sh ~/src
+$ build-mxl.sh ~/src ~/build --dev && build-ffmpeg.sh ~/src ~/build --dev
 ```
 
 Look in the `~/build` directory for the results:
@@ -256,29 +280,60 @@ $ tree -L 4 ~/build
         ├── mxl
 ```
 
-A full Docker container setup and build is possible with:
+### Host setup for development
+
+The `host-setup-and-build.sh` script sets up the host environment
+(`./setup-env-all.sh`) and builds both MXL (`build-mxl.sh`) and FFmpeg
+(`build-ffmpeg.sh`).
+
+```bash
+$ get-src.sh ~/src
+$ host-setup-and-build.sh ~/src ~/build
+```
+
+It will ask for a `sudo` password to execute commands that require
+elevated permissions. To avoid repeated requests for a `sudo`
+password, use the `--allow-root` option.
+
+```bash
+$ get-src.sh ~/src
+$ host-setup-and-build.sh ~/src ~/build --allow-root
+```
+
+### Docker development container
+
+Docker development container set up and build is possible with:
 
 ``` bash
-$ docker-setup-and-build.sh <build-dir> [--skip-setup]
+$ get-src.sh ~/src
+$ docker-setup-and-build.sh <src-dir> <build-dir> [--dev|--prod]
 ```
 
 For example:
 
 ```bash
-$ docker-setup-and-build.sh ~/build
+$ get-src.sh ~/src
+$ docker-setup-and-build.sh ~/src ~/build --dev
 ```
 
-Will create the Docker container, run the setup scripts, and build MXL
-and FFmpeg. The results will be in the host's `~/build` directory.
+The `docker-setup-and-build.sh` script uses `Dockerfile.dev` to create
+a reusable Docker image (named `mxl-dev`), mount the ~/src and ~/build
+directories, run the setup scripts, and build MXL and FFmpeg. The
+results will be in the host's `~/build` directory.
 
-To rebuild, but skip the setup, use:
+### Docker production container
+
+Use `Dockerfile.prod` to create a `Docker` container for production:
 
 ```bash
-$ docker-setup-and-build.sh ~/build --skip-setup
+docker build -f Dockerfile.prod -t mxl-prod .
 ```
 
-The `host-setup-and-build.sh` script works similarly but operates directly
-on the host.
+`Dockerfile.prod` stages an intermediate build environment
+(`setup-env-all.sh`), retrieves the source code (`get-src.sh`), builds
+MXL (`build-mxl.sh`), and builds FFmpeg (`build-ffmpeg.sh`). It then
+stages a smaller final image containing only the runtime dependencies
+and copies the FFmpeg build artifacts to `/opt`.
 
 ## Usage Examples
 
@@ -403,7 +458,7 @@ $ ~/build/mxl/install/Linux-GCC-Debug/static/bin/mxl-info --domain /dev/shm/mxl 
 
 * video/210a (v210+alpha) is not supported 
 * video/smpt201 (ancillary data) is not supported
-* MacOS FFmpeg/MXL build is not supported
+* macOS FFmpeg/MXL build is not supported
 
 ## Support & Contribution
 
@@ -412,4 +467,4 @@ For questions, code review, or comments, contact the development team:
 - Jim Trainor (james.p.trainor@cbc.ca)
 
 ---
-**Last Updated:** January 12, 2026  
+**Last Updated:** January 29, 2026  

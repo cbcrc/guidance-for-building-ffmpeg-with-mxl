@@ -15,53 +15,21 @@ source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh user_context.
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") <build-dir> [--clang]
+Usage: $(basename "$0") <src-dir> <build-dir> [-dev] [-prod] [-clang]
 
 Arguments:
-  <build-dir>   Directory to place build artifacts
+  <src-dir>     Directory to find src artifacts
+  <build-dir>   Directory to write build artifacts
 
 Options:
-  --clang       Build with Clang
+  --prod        Production build (GCC, static, release)
+  --dev         Development build (GCC, static, debug)
+  --clang       Add Clang build to all.
 
 Build MXL release/debug and static/shared variants.  GCC is always
-built, Clang is optional.
+built, Clang is optional. Use --prod or --dev to select build variant,
+or else all variants are built.
 EOF
-}
-
-setup_paths() {
-    : "${BUILD_DIR:?BUILD_DIR is not set}"
-
-    MXL_SANDBOX="${BUILD_DIR}/mxl"
-
-    # derived MXL dirs
-    MXL_SRC="${MXL_SANDBOX}/src"
-    MXL_BUILD="${MXL_SANDBOX}/build"
-    MXL_INSTALL="${MXL_SANDBOX}/install"
-
-    log "MXL_SANDBOX=${MXL_SANDBOX}"
-}
-
-fetch_vcpkg_repo() {
-    log "fetch vcpkg git repository..."
-
-    mkdir -p -- "${MXL_SRC}"
-    cd "${MXL_SRC}"
-    git clone https://github.com/microsoft/vcpkg
-    "${MXL_SRC}/vcpkg/bootstrap-vcpkg.sh" --disableMetrics
-}
-
-fetch_mxl_repo() {
-    log "fetch MXL git repository..."
-
-    mkdir -p -- "${MXL_SRC}"
-    cd "${MXL_SRC}"
-
-    # temporary pending merge of https://github.com/dmf-mxl/mxl/pull/335
-    git clone https://github.com/jptrainor/mxl.git
-    #git clone https://github.com/dmf-mxl/mxl.git
-
-    cd "${MXL_SRC}/mxl"
-    git switch release/v1.0
 }
 
 # Adds check for error conditions that are not reflected by the ctest
@@ -96,15 +64,22 @@ build_variant() {
             ;;
     esac
 
-    log "build MXL preset ${preset} with ${shared} linkage"
+    log "build MXL preset ${preset} with ${linkage} linkage"
+
+    : "${SRC_DIR:?SRC_DIR is not set}"
+    : "${BUILD_DIR:?BUILD_DIR is not set}"
+
+    MXL_SRC="${SRC_DIR}/mxl"
+    MXL_BUILD="${BUILD_DIR}/mxl/build"
+    MXL_INSTALL="${BUILD_DIR}/mxl/install"
+
+    export VCPKG_ROOT="${SRC_DIR}/vcpkg"
 
     local variant_build_dir="${MXL_BUILD}/${preset}/${linkage}"
     local variant_install_dir="${MXL_INSTALL}/${preset}/${linkage}"
 
-    mkdir -p -- "${MXL_BUILD}"
-
-    export VCPKG_ROOT="${MXL_SRC}/vcpkg"
-    cmake -S "${MXL_SRC}/mxl" -B "${variant_build_dir}" --preset "${preset}" \
+    mkdir -p "${MXL_BUILD}"
+    cmake -S "${MXL_SRC}" -B "${variant_build_dir}" --preset "${preset}" \
         -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
         -DVCPKG_INSTALLED_DIR="${variant_install_dir}" \
         -DBUILD_SHARED_LIBS="${shared}" \
@@ -123,28 +98,30 @@ build_variant() {
 
 main() {
     check_help "$@"
-    set_build_dir "$@"
 
-    setup_paths
+    local SRC_DIR BUILD_DIR
+    get_var SRC_DIR "$@" && shift
+    get_var BUILD_DIR "$@" && shift
 
     enforce_build_context
 
-    fetch_vcpkg_repo
-    fetch_mxl_repo
-
-    build_variant Linux-GCC-Release shared
-    build_variant Linux-GCC-Release static
-    build_variant Linux-GCC-Debug shared
-    build_variant Linux-GCC-Debug static
-
-    if has_opt "--clang" "$@"; then
-        build_variant Linux-Clang-Release shared
-        build_variant Linux-Clang-Release static
-        build_variant Linux-Clang-Debug shared
-        build_variant Linux-Clang-Debug static
+    if has_opt "--prod" "$@"; then
+        build_variant Linux-GCC-Release static
+    elif has_opt "--dev" "$@"; then
+        build_variant Linux-GCC-Debug static
+    else
+        build_variant Linux-GCC-Release shared
+        build_variant Linux-GCC-Release static
+        build_variant Linux-GCC-Debug shared
+        build_variant Linux-GCC-Debug static
+        
+        if has_opt "--clang" "$@"; then
+            build_variant Linux-Clang-Release shared
+            build_variant Linux-Clang-Release static
+            build_variant Linux-Clang-Debug shared
+            build_variant Linux-Clang-Debug static
+        fi
     fi
-    
-    log "MXL build dir: ${MXL_BUILD}"
 }
 
 main "$@"

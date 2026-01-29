@@ -13,7 +13,7 @@ readonly USER_CONTEXT_BASH_SOURCE_GUARD=1
 source "${SCRIPT_DIR}/module/logging.sh"
 
 is_container() {
-    [[ -f "/.dockerenv" ]]
+    [[ -f /run/ffmpeg-build-context ]] && [[ "$(</run/ffmpeg-build-context)" == "container" ]]
 }
 
 is_host() {

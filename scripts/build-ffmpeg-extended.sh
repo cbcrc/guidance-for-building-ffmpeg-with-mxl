@@ -47,18 +47,18 @@ EOF
 JOBS=$(nproc)
 
 setup_paths() {
+    : "${SRC_DIR:?SRC_DIR is not set}"
     : "${BUILD_DIR:?BUILD_DIR is not set}"
 
     MXL_PRESET=Linux-GCC-Release
-    MXL_SANDBOX="${BUILD_DIR}/mxl"
-    MXL_INSTALL="${MXL_SANDBOX}/install"
+    MXL_INSTALL="${BUILD_DIR}/mxl/install"
     MXL_VARIANT="${MXL_INSTALL}/${MXL_PRESET}/static"
     
-    FFMPEG_SANDBOX="${BUILD_DIR}/ffmpeg.extended"
-    FFMPEG_SRC="${FFMPEG_SANDBOX}/src"
-    FFMPEG_INSTALL="${FFMPEG_SANDBOX}/install"
+    FFMPEG_SRC="$SRC_DIR/FFmpeg"
+    FFMPEG_BUILD="${BUILD_DIR}/ffmpeg.extended/build"
+    FFMPEG_INSTALL="${BUILD_DIR}/ffmpeg.extended/install"
     FFMPEG_BIN="${FFMPEG_INSTALL}/bin"
-    FFMPEG_FATE_SUITE="${FFMPEG_SANDBOX}/fate-suite"
+    FFMPEG_FATE_SUITE="${BUILD_DIR}/ffmpeg.extended/fate-suite"
 
     # Paths used by shell
     export PATH="$FFMPEG_BIN:$PATH"
@@ -70,14 +70,15 @@ setup_paths() {
 
     # simplify long names (to make codec builds easier)
     PREFIX="${FFMPEG_INSTALL}"
-    SRC="${FFMPEG_SRC}"
+    SRC="${SRC_DIR}"
     BIN="${FFMPEG_BIN}"
 
-    log "   FFMPEG_SANDBOX = ${FFMPEG_SANDBOX}"
+    log "          SRC_DIR = ${SRC_DIR}"
+    log "        BUILD_DIR = ${BUILD_DIR}"
+    log "      MXL_INSTALL = ${MXL_INSTALL}"
     log "       FFMPEG_SRC = ${FFMPEG_SRC}"
     log "   FFMPEG_INSTALL = ${FFMPEG_INSTALL}"
     log "FFMPEG_FATE_SUITE = ${FFMPEG_FATE_SUITE}"
-    log "      MXL_INSTALL = ${MXL_INSTALL}"
 }
 
 # Build toggles (1=build, 0=skip), default is 1 if the toggle variable
@@ -234,22 +235,7 @@ build_vmaf() {
     ninja -j"$JOBS" install
 }
 
-clone_ffmpeg() {
-    log "clone FFmpeg repository"
-    mkdir -p "$FFMPEG_SRC"
-    cd "$FFMPEG_SRC"
-
-    if [[ ! -d FFmpeg ]]; then
-        git clone --single-branch --branch dmf-mxl/master --depth 1 https://github.com/cbcrc/FFmpeg.git
-    fi
-
-    cd FFmpeg
-    git checkout --detach a8441ff
-}
-
 build_ffmpeg() {
-    clone_ffmpeg
-
     log "build FFmpeg"
 
     conf=(
@@ -302,9 +288,6 @@ build_ffmpeg() {
     (( WITH_VMAF ))   && conf+=( --enable-libvmaf )
     (( WITH_FDKAAC )) && conf+=( --enable-libfdk-aac --enable-nonfree )
 
-    mkdir -p "$FFMPEG_SRC"
-    cd "$FFMPEG_SRC"/FFmpeg
-
     # pre-check libmxl resolution
     log_cmd "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
     if pkg-config --exists libmxl; then
@@ -313,7 +296,9 @@ build_ffmpeg() {
         log_error "libmxl not found by pkg-config"
     fi
 
-    ./configure "${conf[@]}"
+    mkdir -p "$FFMPEG_BUILD"
+    pushd "${FFMPEG_BUILD}"
+    "$FFMPEG_SRC"/configure "${conf[@]}"
     make -j"$JOBS"
     make install
 
@@ -324,7 +309,7 @@ build_ffmpeg() {
 }
 
 test_ffmpeg() {
-    cd "$FFMPEG_SRC"/FFmpeg
+    cd "$FFMPEG_BUILD"
     log "running $(make fate-list | wc -l) FATE tests."
 
     make fate-rsync
@@ -350,7 +335,10 @@ build_all() {
 
 main() {
     check_help "$@"
-    set_build_dir "$@"
+
+    local SRC_DIR BUILD_DIR
+    get_var SRC_DIR "$@" && shift
+    get_var BUILD_DIR "$@" && shift
     
     setup_paths
 

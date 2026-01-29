@@ -13,38 +13,19 @@ source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh user_context.
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") <build-dir>
+Usage: $(basename "$0") <src-dir> <build-dir> [--prod] [--dev]
 
 Arguments:
-  <build-dir>   Directory to place build artifacts
+  <src-dir>     Directory to find src artifacts
+  <build-dir>   Directory to write build artifacts
+
+Options:
+  --prod        Production build (GCC, static, release)
+  --dev         Development build (GCC, static, debug)
+
+Use --prod or --dev to select build variant, or else all variants are
+built.
 EOF
-}
-
-setup_paths() {
-    : "${BUILD_DIR:?BUILD_DIR is not set}"
-
-    MXL_SANDBOX="${BUILD_DIR}/mxl"
-    MXL_INSTALL="${MXL_SANDBOX}/install"
-
-    FFMPEG_SANDBOX="${BUILD_DIR}/ffmpeg"
-
-    # derived FFmpeg dirs
-    FFMPEG_SRC="${FFMPEG_SANDBOX}/src"
-    FFMPEG_BUILD="${FFMPEG_SANDBOX}/build"
-    FFMPEG_INSTALL="${FFMPEG_SANDBOX}/install"
-
-    log "FFMPEG_SANDBOX=${FFMPEG_SANDBOX}"
-}
-
-clone_ffmpeg() {
-    log "clone FFmpeg repository"
-    mkdir -p -- "$FFMPEG_SRC"
-    cd "$FFMPEG_SRC"
-
-    git clone --single-branch --branch dmf-mxl/master --depth 1 https://github.com/cbcrc/FFmpeg.git
-
-    cd FFmpeg
-    git checkout --detach a8441ff
 }
 
 ffmpeg_configure() {
@@ -59,7 +40,7 @@ ffmpeg_configure() {
     read_list config_options "$@"
     
     local -a cmd=(
-        "${FFMPEG_SRC}/FFmpeg/configure"
+        "${FFMPEG_SRC}/configure"
         --prefix="${install_dir}"
         "${config_options[@]}"
     )
@@ -69,24 +50,21 @@ ffmpeg_configure() {
     "${cmd[@]}"
 }
 
-ffmpeg_build_test_install() {
-    local variant_name="$1"
-    log "FFmpeg build and test ($variant_name in $PWD)"
-
-    make clean
-    make -j
-    make fate-mxl-json fate-mxl-video-encdec fate-mxl-audio-encdec
-    make install
-}
-
 build_variant() {
     local mxl_preset="$1"
     local linkage="$2"
-
-    local variant_name="${mxl_preset}_${linkage}"
-    log "configure variant: $variant_name"
     
-    local full_mxl_install_dir="${MXL_INSTALL}/${mxl_preset}/${linkage}"
+    log "build FFmpeg with preset ${mxl_preset} and ${linkage} linkage"
+
+    : "${SRC_DIR:?SRC_DIR is not set}"
+    : "${BUILD_DIR:?BUILD_DIR is not set}"
+
+    FFMPEG_SRC="${SRC_DIR}/FFmpeg"
+    FFMPEG_BUILD="${BUILD_DIR}/ffmpeg/build"
+    FFMPEG_INSTALL="${BUILD_DIR}/ffmpeg/install"
+    
+    local mxl_install="${BUILD_DIR}/mxl/install"
+    local full_mxl_install_dir="${mxl_install}/${mxl_preset}/${linkage}"
     export PKG_CONFIG_PATH="${full_mxl_install_dir}/lib/pkgconfig:${full_mxl_install_dir}/x64-linux/lib/pkgconfig"
 
     local -a config_opts_files=("deps/ffmpeg-configure-base-options.txt")
@@ -108,29 +86,37 @@ build_variant() {
     local build_dir="${FFMPEG_BUILD}/${mxl_preset}/${linkage}"
     local install_dir="${FFMPEG_INSTALL}/${mxl_preset}/${linkage}"
 
-    mkdir -p -- "${build_dir}"
+    mkdir -p "${build_dir}"
     pushd "${build_dir}"
 
     ffmpeg_configure "$install_dir" "${config_opts_files[@]}"
-    ffmpeg_build_test_install "${variant_name}"
+    make clean
+    make -j
+    make fate-mxl-json fate-mxl-video-encdec fate-mxl-audio-encdec
+    make install
 
     popd
 }
 
 main() {
     check_help "$@"
-    set_build_dir "$@"
 
-    setup_paths
+    local SRC_DIR BUILD_DIR
+    get_var SRC_DIR "$@" && shift
+    get_var BUILD_DIR "$@" && shift
 
     enforce_build_context
 
-    clone_ffmpeg
-
-    build_variant Linux-GCC-Release shared
-    build_variant Linux-GCC-Release static
-    build_variant Linux-GCC-Debug shared
-    build_variant Linux-GCC-Debug static
+    if has_opt "--prod" "$@"; then
+        build_variant Linux-GCC-Release static
+    elif has_opt "--dev" "$@"; then
+        build_variant Linux-GCC-Debug static
+    else
+        build_variant Linux-GCC-Release shared
+        build_variant Linux-GCC-Release static
+        build_variant Linux-GCC-Debug shared
+        build_variant Linux-GCC-Debug static
+    fi
 }
 
 main "$@"
