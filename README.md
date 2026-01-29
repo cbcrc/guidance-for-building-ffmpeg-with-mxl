@@ -204,7 +204,7 @@ The `setup-env-all.sh` script installs system dependencies for both MXL
 and FFmpeg. It will ask for a `sudo` password to execute commands that
 require elevated permissions. To avoid repeated requests for a `sudo`
 password execute the script as root and use the `--allow-root`
-options.
+option.
 
 ``` bash
 sudo setup-env-all.sh --allow-root
@@ -214,11 +214,11 @@ The `setup-env-{mxl,ffmpeg}.sh` scripts install system dependencies
 for the MXL and FFmpeg builds individually.
 
 The `build-{mxl,ffmpeg}.sh` scripts configure, build, and test MXL and
-FFmpeg. Both scripts build static/shared and debug/release. By default
-all variants are built: static+debug, static+release, shared+debug,
-shared+release. Use the "--prod" option to build only the
-static+release variant.  Use the "--dev" option to build only the
-static+debug variant.
+FFmpeg. Both scripts build static/shared and debug/release
+variants. By default all variants are built: static+debug,
+static+release, shared+debug, shared+release. Use the "--prod" option
+to build only the static+release variant.  Use the "--dev" option to
+build only the static+debug variant.
 
 ```bash
 $ build-mxl.sh <src-dir> <build-dir> [--prod|--dev]
@@ -284,7 +284,7 @@ $ tree -L 4 ~/build
 
 The `host-setup-and-build.sh` script sets up the host environment
 (`./setup-env-all.sh`) and builds both MXL (`build-mxl.sh`) and FFmpeg
-(`build-ffmpeg.sh`).
+(`build-ffmpeg.sh`) in one command.
 
 ```bash
 $ get-src.sh ~/src
@@ -293,7 +293,7 @@ $ host-setup-and-build.sh ~/src ~/build
 
 It will ask for a `sudo` password to execute commands that require
 elevated permissions. To avoid repeated requests for a `sudo`
-password, use the `--allow-root` option.
+password, use the `--allow-root` option:
 
 ```bash
 $ get-src.sh ~/src
@@ -326,7 +326,8 @@ results will be in the host's `~/build` directory.
 Use `Dockerfile.prod` to create a `Docker` container for production:
 
 ```bash
-docker build -f Dockerfile.prod -t mxl-prod .
+$ cd scripts
+$ docker build -f Dockerfile.prod -t mxl-prod .
 ```
 
 `Dockerfile.prod` stages an intermediate build environment
@@ -338,7 +339,8 @@ and copies the FFmpeg build artifacts to `/opt`.
 ## Usage Examples
 
 The following examples assume that MXL and FFmpeg were built using
-`host-setup-and-build.sh ~/build` or `docker-setup-and-build.sh ~/build`.
+`host-setup-and-build.sh ~/src ~/build` or
+`docker-setup-and-build.sh ~/src ~/build`.
 
 ### mxl-gst-videotestsrc mxl write → FFplay mxl read
 
