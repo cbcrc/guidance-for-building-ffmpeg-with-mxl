@@ -38,7 +38,7 @@ RUN if [ "$EXTENDED" = "1" ]; then WITH_X265=0 /scripts/build-ffmpeg-extended.sh
 FROM ubuntu:24.04
 
 # This is a first attempt at a minimal deployment environment for a
-# production build. It can be refined by, for example, by excluding
+# production build. It can be refined by, for example, excluding
 # ffplay and its dependencies from the build (e.g. X11).
 RUN apt-get update && apt-get install -y \
     ca-certificates \
