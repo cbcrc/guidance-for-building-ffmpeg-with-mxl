@@ -204,10 +204,10 @@ The `setup-env-all.sh` script installs system dependencies for both MXL
 and FFmpeg. It will ask for a `sudo` password to execute commands that
 require elevated permissions. To avoid repeated requests for a `sudo`
 password execute the script as root and use the `--allow-root`
-option.
+option:
 
 ``` bash
-sudo setup-env-all.sh --allow-root
+$ sudo setup-env-all.sh --allow-root
 ```
 
 The `setup-env-{mxl,ffmpeg}.sh` scripts install system dependencies
@@ -283,7 +283,7 @@ $ tree -L 4 ~/build
 ### Host setup for development
 
 The `host-setup-and-build.sh` script sets up the host environment
-(`./setup-env-all.sh`) and builds both MXL (`build-mxl.sh`) and FFmpeg
+(`setup-env-all.sh`) and builds both MXL (`build-mxl.sh`) and FFmpeg
 (`build-ffmpeg.sh`) in one command:
 
 ``` bash
@@ -322,9 +322,9 @@ $ docker-setup-and-build.sh ~/src ~/build --dev
 ```
 
 The `docker-setup-and-build.sh` script uses `Dockerfile.dev` to create
-a reusable Docker image (named `mxl-dev`), mount the ~/src and ~/build
-directories, run the setup scripts, and build MXL and FFmpeg. The
-results will be in the host's `~/build` directory.
+a reusable Docker image (named `mxl-dev`), mount the host `~/src` and
+`~/build` directories, run the setup scripts, and build MXL and
+FFmpeg. The results will be in the host `~/build` directory.
 
 ### Docker production container
 
