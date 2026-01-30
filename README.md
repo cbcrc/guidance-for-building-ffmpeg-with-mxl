@@ -284,11 +284,17 @@ $ tree -L 4 ~/build
 
 The `host-setup-and-build.sh` script sets up the host environment
 (`./setup-env-all.sh`) and builds both MXL (`build-mxl.sh`) and FFmpeg
-(`build-ffmpeg.sh`) in one command.
+(`build-ffmpeg.sh`) in one command:
+
+``` bash
+$ host-setup-and-build.sh <src-dir> <build-dir> [--dev|--prod]
+```
+
+For example:
 
 ```bash
 $ get-src.sh ~/src
-$ host-setup-and-build.sh ~/src ~/build
+$ host-setup-and-build.sh ~/src ~/build --dev
 ```
 
 It will ask for a `sudo` password to execute commands that require
@@ -297,7 +303,7 @@ password, use the `--allow-root` option:
 
 ```bash
 $ get-src.sh ~/src
-$ host-setup-and-build.sh ~/src ~/build --allow-root
+$ host-setup-and-build.sh ~/src ~/build --dev --allow-root
 ```
 
 ### Docker development container
@@ -305,7 +311,6 @@ $ host-setup-and-build.sh ~/src ~/build --allow-root
 Docker development container set up and build is possible with:
 
 ``` bash
-$ get-src.sh ~/src
 $ docker-setup-and-build.sh <src-dir> <build-dir> [--dev|--prod]
 ```
 
@@ -339,8 +344,8 @@ and copies the FFmpeg build artifacts to `/opt`.
 ## Usage Examples
 
 The following examples assume that MXL and FFmpeg were built using
-`host-setup-and-build.sh ~/src ~/build` or
-`docker-setup-and-build.sh ~/src ~/build`.
+`host-setup-and-build.sh ~/src ~/build --dev` or
+`docker-setup-and-build.sh ~/src ~/build --dev`.
 
 ### mxl-gst-videotestsrc mxl write → FFplay mxl read
 
