@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+#
+# Clone MXL, FFmpeg, and dependent repositories at known-good
+# revisions.
 
 set -e
 
