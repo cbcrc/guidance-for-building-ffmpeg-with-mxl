@@ -26,7 +26,6 @@ clone_vcpkg_repo() {
     cd "${src_dir}"
 
     git clone https://github.com/microsoft/vcpkg
-    "${src_dir}/vcpkg/bootstrap-vcpkg.sh" --disableMetrics
 }
 
 # Use a release/1.0 commit hash that includes
@@ -46,7 +45,7 @@ clone_mxl_repo() {
 }
 
 clone_ffmpeg_repo() {
-    log "clone FFmpeg repository"
+    log "fetch FFmpeg git repository..."
 
     local src_dir="$1"
     mkdir -p "$src_dir"

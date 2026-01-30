@@ -96,6 +96,11 @@ build_variant() {
     cmake --install "${variant_build_dir}"
 }
 
+vcpkg_bootstrap() {
+    local src_dir="$1"
+    "${src_dir}/vcpkg/bootstrap-vcpkg.sh" --disableMetrics
+}
+
 main() {
     check_help "$@"
 
@@ -105,6 +110,8 @@ main() {
 
     enforce_build_context
 
+    vcpkg_bootstrap "$SRC_DIR"
+    
     if has_opt "--prod" "$@"; then
         build_variant Linux-GCC-Release static
     elif has_opt "--dev" "$@"; then
