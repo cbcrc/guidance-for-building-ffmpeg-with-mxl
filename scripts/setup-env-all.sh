@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #
 # Setup both MXL and FFmpeg environment.
-#
 
 set -e
 
