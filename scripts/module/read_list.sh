@@ -1,5 +1,12 @@
 # shellcheck shell=bash
 # Usage: source "$SCRIPT_DIR"/module/read_list.sh
+#
+# Utilities for reading list files into Bash arrays.
+
+if [[ -n "${READ_LIST_BASH_SOURCE_GUARD:-}" ]]; then
+    return 0
+fi
+readonly READ_LIST_BASH_SOURCE_GUARD=1
 
 : "${SCRIPT_DIR:?SCRIPT_DIR not set}"
 # shellcheck source=./module/logging.sh
