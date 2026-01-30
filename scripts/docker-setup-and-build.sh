@@ -20,9 +20,9 @@ Arguments:
   <build-dir>   Directory to write build artifacts
 
 Prepare Dockerfile.dev container and build source located at
-<src-dir>. Populate <src-dir> with get-src.sh. The command-line
-arguments are passed through to build-mxl.sh and build-ffmpeg.sh
-(e.g. --dev, or --prod).
+<src-dir>. Populate <src-dir> with get-src.sh before invoking this
+script. The command-line arguments are passed through to build-mxl.sh
+and build-ffmpeg.sh (e.g. --dev or --prod).
 EOF
 }
 

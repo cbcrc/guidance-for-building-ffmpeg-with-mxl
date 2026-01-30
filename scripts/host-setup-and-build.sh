@@ -24,9 +24,10 @@ Options:
   --allow-root  Run all environment setup under a single sudo invocation
                 to avoid repeated password prompts.
 
-Setup host environment and build both MXL and FFmpeg. Populate
-<src-dir> with get-src.sh. All command-line arguments are passed
-through to build-mxl.sh and build-ffmpeg.sh (e.g. --dev, --prod).
+Prepare host environment and build both MXL and FFmpeg. Populate
+<src-dir> with get-src.sh before invoking this script. All
+command-line arguments are passed through to build-mxl.sh and
+build-ffmpeg.sh (e.g. --dev or --prod).
 EOF
 }
 
