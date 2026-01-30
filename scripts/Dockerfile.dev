@@ -2,7 +2,7 @@
 
 # Development image containing build tools and dependencies.
 
-FROM ubuntu:24.04 as dev
+FROM ubuntu:24.04
 
 ARG UID
 ARG GID
