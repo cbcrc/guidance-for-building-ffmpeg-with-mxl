@@ -308,7 +308,7 @@ $ host-setup-and-build.sh ~/src ~/build --dev --allow-root
 
 ### Docker development container
 
-Docker development container set up and build is possible with:
+Docker development container setup and build is possible with:
 
 ``` bash
 $ docker-setup-and-build.sh <src-dir> <build-dir> [--dev|--prod]
