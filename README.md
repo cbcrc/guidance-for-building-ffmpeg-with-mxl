@@ -174,15 +174,15 @@ $ make fate-mxl-json fate-mxl-video-encdec fate-mxl-audio-encdec
 | [`setup-env-mxl.sh`](scripts/setup-env-mxl.sh) | Install MXL build dependencies |
 | [`setup-env-ffmpeg.sh`](scripts/setup-env-ffmpeg.sh) | Install FFmpeg build dependencies |
 | [`setup-env-all.sh`](scripts/setup-env-all.sh) | Install MXL and FFmpeg build dependencies |
-| [`get-src.sh`](scripts/get-src.sh) | Get the MXL and FFmpeg source code, and configure version. |
-| [`build-mxl.sh`](scripts/build-mxl.sh) | Build MXL, test, and install. |
+| [`get-src.sh`](scripts/get-src.sh) | Get the MXL and FFmpeg source code, and configure version |
+| [`build-mxl.sh`](scripts/build-mxl.sh) | Build MXL, test, and install |
 | [`build-ffmpeg.sh`](scripts/build-ffmpeg.sh) | Build FFmpeg, test, and install |
-| [`mxl-update-alternatives.sh`](scripts/deps/mxl-update-alternatives.sh) | Update to build tools version. |
-| [`cmake-repo-upgrade.sh`](scripts/deps/cmake-repo-upgrade.sh) | Update to latest CMake repositories. |
+| [`mxl-update-alternatives.sh`](scripts/deps/mxl-update-alternatives.sh) | Update to build tools version |
+| [`cmake-repo-upgrade.sh`](scripts/deps/cmake-repo-upgrade.sh) | Update to latest CMake repositories |
 | [`host-setup-and-build.sh`](scripts/host-setup-and-build.sh) | Full environment setup and build on host |
 | [`docker-setup-and-build.sh`](scripts/docker-setup-and-build.sh) | Full environment setup and build in development container |
-| [`Dockerfile.dev`](scripts/Dockerfile.dev)  | Development container definition with build tools and dependencies. |
-| [`Dockerfile.prod`](scripts/Dockerfile.prod) | Production container definition with runtime dependencies and built artifacts. |
+| [`Dockerfile.dev`](scripts/Dockerfile.dev)  | Development container with build dependencies |
+| [`Dockerfile.prod`](scripts/Dockerfile.prod) | Production container with runtime dependencies and built artifacts |
 
 The [scripts](scripts) directory has a set of Bash scripts to set up
 the environment and build both MXL and FFmpeg. These scripts are a
