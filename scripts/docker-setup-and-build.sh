@@ -28,10 +28,8 @@ EOF
 
 main() {
     check_help "$@"
-    get_var SRC_DIR "$@"
-    shift
-    get_var BUILD_DIR "$@"
-    shift
+    get_var SRC_DIR "$@" && shift
+    get_var BUILD_DIR "$@" && shift
 
     local EXTENDED=0
     if has_opt --extended "$@"; then
