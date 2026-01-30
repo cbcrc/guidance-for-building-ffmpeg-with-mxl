@@ -1,7 +1,7 @@
 # shellcheck shell=bash
 # Usage: source "$SCRIPT_DIR"/module/bootstrap.sh file1.sh file2.sh ...
 #
-# Check the bash version requirment, set shell options, and source
+# Check the bash version requirement, set shell options, and source
 # modules "$SCRIPT_DIR"/module/file[1,2,...].sh
 #
 # Also provide a few utility functions.
@@ -53,7 +53,7 @@ has_opt() {
     return 1
 }
 
-# Check if --help is an option and print usage.
+# Check if "-h" or "--help" is an option and print usage.
 check_help() {
     if has_opt "-h" "$@" || has_opt "--help" "$@"; then
         if declare -F usage >/dev/null; then

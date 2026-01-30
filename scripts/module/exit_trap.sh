@@ -1,8 +1,8 @@
 # shellcheck shell=bash
 # Usage: source "$SCRIPT_DIR"/module/exit_trap.sh
 #
-# Setup exit trap that outputs a final PASS or FAIL message and then
-# exits with final exit status.
+# Set up an exit trap that outputs a final PASS/FAIL message and exits
+# with the final exit status.
 
 if [[ -n "${EXIT_TRAP_BASH_SOURCE_GUARD:-}" ]]; then
     return 0
