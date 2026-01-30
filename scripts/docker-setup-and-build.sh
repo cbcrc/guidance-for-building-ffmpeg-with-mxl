@@ -39,6 +39,7 @@ main() {
     # Prevent Docker-created root-owned bind mounts
     mkdir -p "$SRC_DIR" "$BUILD_DIR"
 
+    cd "$SCRIPT_DIR"
     docker build -f Dockerfile.dev \
            --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
            --build-arg EXTENDED="$EXTENDED" \
