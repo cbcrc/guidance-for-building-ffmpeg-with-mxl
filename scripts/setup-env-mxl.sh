@@ -27,7 +27,8 @@ privileges. Attempts to run the script as root are rejected unless
 --allow-root is specified. When run inside a container, the script
 expects to be executed as root.
 
-The --clang installs and configures the Clang compiler and linker.
+The --clang option installs and configures the Clang compiler and
+linker.
 EOF
 }
 
