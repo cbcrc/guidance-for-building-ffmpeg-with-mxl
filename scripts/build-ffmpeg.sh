@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 export SCRIPT_ARGS SCRIPT_DIR
 readonly SCRIPT_ARGS SCRIPT_DIR
 # shellcheck source=./module/bootstrap.sh
-source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh user_context.sh read_list.sh
+source "$SCRIPT_DIR"/module/bootstrap.sh exit_trap.sh logging.sh user_context.sh read_list.sh
 
 usage() {
     cat <<EOF
@@ -40,8 +40,8 @@ ffmpeg_configure() {
     read_list config_options "$@"
     
     local -a cmd=(
-        "${FFMPEG_SRC}/configure"
-        --prefix="${install_dir}"
+        "$FFMPEG_SRC"/configure
+        --prefix="$install_dir"
         "${config_options[@]}"
     )
     
@@ -54,18 +54,18 @@ build_variant() {
     local mxl_preset="$1"
     local linkage="$2"
     
-    log "build FFmpeg with preset ${mxl_preset} and ${linkage} linkage"
+    log "build FFmpeg with preset $mxl_preset and $linkage linkage"
 
     : "${SRC_DIR:?SRC_DIR is not set}"
     : "${BUILD_DIR:?BUILD_DIR is not set}"
 
-    FFMPEG_SRC="${SRC_DIR}/FFmpeg"
-    FFMPEG_BUILD="${BUILD_DIR}/ffmpeg/build"
-    FFMPEG_INSTALL="${BUILD_DIR}/ffmpeg/install"
+    FFMPEG_SRC="$SRC_DIR"/FFmpeg
+    FFMPEG_BUILD="$BUILD_DIR"/ffmpeg/build
+    FFMPEG_INSTALL="$BUILD_DIR"/ffmpeg/install
     
-    local mxl_install="${BUILD_DIR}/mxl/install"
-    local full_mxl_install_dir="${mxl_install}/${mxl_preset}/${linkage}"
-    export PKG_CONFIG_PATH="${full_mxl_install_dir}/lib/pkgconfig:${full_mxl_install_dir}/x64-linux/lib/pkgconfig"
+    local mxl_install="$BUILD_DIR"/mxl/install
+    local full_mxl_install_dir="$mxl_install/$mxl_preset/$linkage"
+    export PKG_CONFIG_PATH="$full_mxl_install_dir"/lib/pkgconfig:"$full_mxl_install_dir"/x64-linux/lib/pkgconfig
 
     local -a config_opts_files=("deps/ffmpeg-configure-base-options.txt")
 
@@ -77,17 +77,17 @@ build_variant() {
         unset LD_LIBRARY_PATH
         config_opts_files+=("deps/ffmpeg-configure-static-options.txt")
     else
-        export LD_LIBRARY_PATH="${full_mxl_install_dir}/lib:libswscale:libswresample:libavutil:libavformat:libavfilter:libavdevice:libavcodec"
+        export LD_LIBRARY_PATH="$full_mxl_install_dir"/lib:libswscale:libswresample:libavutil:libavformat:libavfilter:libavdevice:libavcodec
         log_cmd "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
         config_opts_files+=("deps/ffmpeg-configure-shared-options.txt")
     fi
 
     # Note: intentional use of "mxl_peset" to match mxl build convention
-    local build_dir="${FFMPEG_BUILD}/${mxl_preset}/${linkage}"
-    local install_dir="${FFMPEG_INSTALL}/${mxl_preset}/${linkage}"
+    local build_dir="$FFMPEG_BUILD/$mxl_preset/$linkage"
+    local install_dir="$FFMPEG_INSTALL/$mxl_preset/$linkage"
 
-    mkdir -p "${build_dir}"
-    pushd "${build_dir}"
+    mkdir -p "$build_dir"
+    pushd "$build_dir"
 
     ffmpeg_configure "$install_dir" "${config_opts_files[@]}"
     make clean

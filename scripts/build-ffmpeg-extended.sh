@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 export SCRIPT_ARGS SCRIPT_DIR
 readonly SCRIPT_ARGS SCRIPT_DIR
 # shellcheck source=./module/bootstrap.sh
-source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh user_context.sh read_list.sh
+source "$SCRIPT_DIR"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh user_context.sh read_list.sh
 
 usage() {
     cat <<EOF
@@ -51,34 +51,34 @@ setup_paths() {
     : "${BUILD_DIR:?BUILD_DIR is not set}"
 
     MXL_PRESET=Linux-GCC-Release
-    MXL_INSTALL="${BUILD_DIR}/mxl/install"
-    MXL_VARIANT="${MXL_INSTALL}/${MXL_PRESET}/static"
+    MXL_INSTALL="$BUILD_DIR"/mxl/install
+    MXL_VARIANT="$MXL_INSTALL/$MXL_PRESET"/static
     
     FFMPEG_SRC="$SRC_DIR/FFmpeg"
-    FFMPEG_BUILD="${BUILD_DIR}/ffmpeg.extended/build"
-    FFMPEG_INSTALL="${BUILD_DIR}/ffmpeg.extended/install"
-    FFMPEG_BIN="${FFMPEG_INSTALL}/bin"
-    FFMPEG_FATE_SUITE="${BUILD_DIR}/ffmpeg.extended/fate-suite"
+    FFMPEG_BUILD="$BUILD_DIR"/ffmpeg.extended/build
+    FFMPEG_INSTALL="$BUILD_DIR"/ffmpeg.extended/install
+    FFMPEG_BIN="$FFMPEG_INSTALL"/bin
+    FFMPEG_FATE_SUITE="$BUILD_DIR"/ffmpeg.extended/fate-suite
 
     # Paths used by shell
     export PATH="$FFMPEG_BIN:$PATH"
 
     # pkg-config for extended libs, mxl, and vcpkg (mxl dependency)
     PKG_CONFIG_PATH="$FFMPEG_INSTALL/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-    PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${MXL_VARIANT}/lib/pkgconfig:${MXL_VARIANT}/x64-linux/lib/pkgconfig"
+    PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$MXL_VARIANT/lib/pkgconfig:$MXL_VARIANT/x64-linux/lib/pkgconfig"
     export PKG_CONFIG_PATH
 
     # simplify long names (to make codec builds easier)
-    PREFIX="${FFMPEG_INSTALL}"
-    SRC="${SRC_DIR}"
-    BIN="${FFMPEG_BIN}"
+    PREFIX="$FFMPEG_INSTALL"
+    SRC="$SRC_DIR"
+    BIN="$FFMPEG_BIN"
 
-    log "          SRC_DIR = ${SRC_DIR}"
-    log "        BUILD_DIR = ${BUILD_DIR}"
-    log "      MXL_INSTALL = ${MXL_INSTALL}"
-    log "       FFMPEG_SRC = ${FFMPEG_SRC}"
-    log "   FFMPEG_INSTALL = ${FFMPEG_INSTALL}"
-    log "FFMPEG_FATE_SUITE = ${FFMPEG_FATE_SUITE}"
+    log "          SRC_DIR = $SRC_DIR"
+    log "        BUILD_DIR = $BUILD_DIR"
+    log "      MXL_INSTALL = $MXL_INSTALL"
+    log "       FFMPEG_SRC = $FFMPEG_SRC"
+    log "   FFMPEG_INSTALL = $FFMPEG_INSTALL"
+    log "FFMPEG_FATE_SUITE = $FFMPEG_FATE_SUITE"
 }
 
 # Build toggles (1=build, 0=skip), default is 1 if the toggle variable
@@ -275,7 +275,7 @@ build_ffmpeg() {
         --enable-libfribidi
         --enable-libmp3lame
         --enable-libvorbis
-        --samples="${FFMPEG_FATE_SUITE}"
+        --samples="$FFMPEG_FATE_SUITE"
         --ignore-tests=source
     )
 
@@ -297,15 +297,15 @@ build_ffmpeg() {
     fi
 
     mkdir -p "$FFMPEG_BUILD"
-    pushd "${FFMPEG_BUILD}"
+    pushd "$FFMPEG_BUILD"
     "$FFMPEG_SRC"/configure "${conf[@]}"
     make -j"$JOBS"
     make install
 
     # sanity check
-    "${FFMPEG_BIN}"/ffmpeg -version > /dev/null
-    "${FFMPEG_BIN}"/ffprobe -version > /dev/null
-    "${FFMPEG_BIN}"/ffplay -version > /dev/null
+    "$FFMPEG_BIN"/ffmpeg -version > /dev/null
+    "$FFMPEG_BIN"/ffprobe -version > /dev/null
+    "$FFMPEG_BIN"/ffplay -version > /dev/null
 }
 
 test_ffmpeg() {

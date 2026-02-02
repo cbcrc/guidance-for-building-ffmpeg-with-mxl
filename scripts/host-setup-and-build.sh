@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 export SCRIPT_ARGS SCRIPT_DIR
 readonly SCRIPT_ARGS SCRIPT_DIR
 # shellcheck source=./module/bootstrap.sh
-source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh safe_sudo.sh
+source "$SCRIPT_DIR"/module/bootstrap.sh exit_trap.sh safe_sudo.sh
 
 usage() {
     cat <<EOF
@@ -41,7 +41,7 @@ main() {
     if ! has_opt "--skip-setup" "$@"; then
         log "environment setup"
         if has_opt --allow-root "$@"; then
-            safe_sudo "setup all environment dependencies" "${SCRIPT_DIR}/setup-env-all.sh" "$@"
+            safe_sudo "setup all environment dependencies" "$SCRIPT_DIR/setup-env-all.sh" "$@"
         else
             ./setup-env-all.sh "$@"
         fi

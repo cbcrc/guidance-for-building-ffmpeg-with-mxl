@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 export SCRIPT_ARGS SCRIPT_DIR
 readonly SCRIPT_ARGS SCRIPT_DIR
 # shellcheck source=./module/bootstrap.sh
-source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh user_context.sh read_list.sh
+source "$SCRIPT_DIR"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh user_context.sh read_list.sh
 
 usage() {
     cat <<EOF
@@ -44,7 +44,7 @@ setup_environment() {
     local -a cmake_repo_apt_pkgs
     read_list cmake_repo_apt_pkgs "deps/cmake-repo-apt-pkgs.txt"
     safe_sudo "install cmake repo dependencies" apt-get install -y --no-install-recommends "${cmake_repo_apt_pkgs[@]}"
-    safe_sudo "update cmake repo" "${SCRIPT_DIR}/deps/cmake-repo-upgrade.sh"
+    safe_sudo "update cmake repo" "$SCRIPT_DIR/deps/cmake-repo-upgrade.sh"
     
     # MXL build environment dependencies
     local -a config_opts_files=("deps/mxl-apt-pkgs.txt")
@@ -56,7 +56,7 @@ setup_environment() {
     echo read_list mxl_apt_pkgs "${config_opts_files[@]}"
     read_list mxl_apt_pkgs "${config_opts_files[@]}"
     safe_sudo "install MXL dependencies" apt-get install -y --no-install-recommends "${mxl_apt_pkgs[@]}"
-    safe_sudo "update MXL alternatives" "${SCRIPT_DIR}/deps/mxl-update-alternatives.sh"
+    safe_sudo "update MXL alternatives" "$SCRIPT_DIR/deps/mxl-update-alternatives.sh"
         
     rustup default 1.88.0
 }

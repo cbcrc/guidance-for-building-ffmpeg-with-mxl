@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 export SCRIPT_ARGS SCRIPT_DIR
 readonly SCRIPT_ARGS SCRIPT_DIR
 # shellcheck source=./module/bootstrap.sh
-source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh user_context.sh
+source "$SCRIPT_DIR"/module/bootstrap.sh exit_trap.sh user_context.sh
 
 usage() {
     cat <<EOF
@@ -25,11 +25,11 @@ EOF
 main() {
     check_help "$@"
     enforce_setup_context "$@"
-    "${SCRIPT_DIR}/setup-env-mxl.sh" "$@"
-    "${SCRIPT_DIR}/setup-env-ffmpeg.sh" "$@"
+    "$SCRIPT_DIR"/setup-env-mxl.sh "$@"
+    "$SCRIPT_DIR"/setup-env-ffmpeg.sh "$@"
 
     if has_opt "--extended" "$@"; then
-        "${SCRIPT_DIR}/setup-env-ffmpeg-extended.sh" "$@"
+        "$SCRIPT_DIR"/setup-env-ffmpeg-extended.sh "$@"
     fi
 }
 

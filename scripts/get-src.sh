@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 export SCRIPT_ARGS SCRIPT_DIR
 readonly SCRIPT_ARGS SCRIPT_DIR
 # shellcheck source=./module/bootstrap.sh
-source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh
+source "$SCRIPT_DIR"/module/bootstrap.sh exit_trap.sh logging.sh
 
 usage() {
     cat <<EOF
@@ -26,7 +26,7 @@ clone_vcpkg_repo() {
 
     local src_dir="$1"
     mkdir -p "$src_dir"
-    cd "${src_dir}"
+    cd "$src_dir"
 
     git clone https://github.com/microsoft/vcpkg
 }
@@ -39,7 +39,7 @@ clone_mxl_repo() {
 
     local src_dir="$1"    
     mkdir -p "$src_dir"
-    cd "${src_dir}"
+    cd "$src_dir"
 
     git clone https://github.com/dmf-mxl/mxl.git
 
@@ -52,7 +52,7 @@ clone_ffmpeg_repo() {
 
     local src_dir="$1"
     mkdir -p "$src_dir"
-    cd "${src_dir}"
+    cd "$src_dir"
 
     git clone --single-branch --branch dmf-mxl/master --depth 1 https://github.com/cbcrc/FFmpeg.git
 

@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 export SCRIPT_ARGS SCRIPT_DIR
 readonly SCRIPT_ARGS SCRIPT_DIR
 # shellcheck source=./module/bootstrap.sh
-source "${SCRIPT_DIR}"/module/bootstrap.sh exit_trap.sh logging.sh user_context.sh
+source "$SCRIPT_DIR"/module/bootstrap.sh exit_trap.sh logging.sh user_context.sh
 
 usage() {
     cat <<EOF
@@ -38,13 +38,13 @@ safer_ctest() {
     local log_file="$1"
     shift
 
-    log "ctest output log: ${log_file}"
+    log "ctest output log: $log_file"
     log "ctest version: $(ctest --version | head -n 1)"
     log "ctest arguments: $*"
 
-    ctest "$@" 2>&1 | tee "${log_file}"
+    ctest "$@" 2>&1 | tee "$log_file"
 
-    if grep --quiet "No tests were found" "${log_file}"; then
+    if grep --quiet "No tests were found" "$log_file"; then
         log_error "ctest found no tests"
         exit 1
     fi
@@ -55,50 +55,50 @@ build_variant() {
     local linkage="$2"
 
     local shared
-    case "${linkage}" in
+    case "$linkage" in
         shared) shared="ON" ;;
         static) shared="OFF" ;;
         *)
-            log_error "invalid linkage value: \"${linkage}\" (expected shared|static)"
+            log_error "invalid linkage value: \"$linkage\" (expected shared|static)"
             exit 2
             ;;
     esac
 
-    log "build MXL preset ${preset} with ${linkage} linkage"
+    log "build MXL preset $preset with $linkage linkage"
 
     : "${SRC_DIR:?SRC_DIR is not set}"
     : "${BUILD_DIR:?BUILD_DIR is not set}"
 
-    MXL_SRC="${SRC_DIR}/mxl"
-    MXL_BUILD="${BUILD_DIR}/mxl/build"
-    MXL_INSTALL="${BUILD_DIR}/mxl/install"
+    MXL_SRC="$SRC_DIR"/mxl
+    MXL_BUILD="$BUILD_DIR"/mxl/build
+    MXL_INSTALL="$BUILD_DIR"/mxl/install
 
-    export VCPKG_ROOT="${SRC_DIR}/vcpkg"
+    export VCPKG_ROOT="$SRC_DIR"/vcpkg
 
-    local variant_build_dir="${MXL_BUILD}/${preset}/${linkage}"
-    local variant_install_dir="${MXL_INSTALL}/${preset}/${linkage}"
+    local variant_build_dir="$MXL_BUILD/$preset/$linkage"
+    local variant_install_dir="$MXL_INSTALL/$preset/$linkage"
 
-    mkdir -p "${MXL_BUILD}"
-    cmake -S "${MXL_SRC}" -B "${variant_build_dir}" --preset "${preset}" \
-        -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
-        -DVCPKG_INSTALLED_DIR="${variant_install_dir}" \
-        -DBUILD_SHARED_LIBS="${shared}" \
-        -DCMAKE_INSTALL_PREFIX="${variant_install_dir}"
+    mkdir -p "$MXL_BUILD"
+    cmake -S "$MXL_SRC" -B "$variant_build_dir" --preset "$preset" \
+        -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake \
+        -DVCPKG_INSTALLED_DIR="$variant_install_dir" \
+        -DBUILD_SHARED_LIBS="$shared" \
+        -DCMAKE_INSTALL_PREFIX="$variant_install_dir"
 
-    cmake --build "${variant_build_dir}" -j --target all
+    cmake --build "$variant_build_dir" -j --target all
 
-    log "testing MXL preset ${preset} with shared ${shared}..."
-    cd "${variant_build_dir}"
-    safer_ctest "${variant_build_dir}/ctest_output.log" \
-                --test-dir "${variant_build_dir}" --stop-on-failure --output-on-failure
+    log "testing MXL preset $preset with shared $shared..."
+    cd "$variant_build_dir"
+    safer_ctest "$variant_build_dir"/ctest_output.log \
+                --test-dir "$variant_build_dir" --stop-on-failure --output-on-failure
 
-    cmake --build "${variant_build_dir}" -j --target doc
-    cmake --install "${variant_build_dir}"
+    cmake --build "$variant_build_dir" -j --target doc
+    cmake --install "$variant_build_dir"
 }
 
 vcpkg_bootstrap() {
     local src_dir="$1"
-    "${src_dir}/vcpkg/bootstrap-vcpkg.sh" --disableMetrics
+    "$src_dir"/vcpkg/bootstrap-vcpkg.sh --disableMetrics
 }
 
 main() {
