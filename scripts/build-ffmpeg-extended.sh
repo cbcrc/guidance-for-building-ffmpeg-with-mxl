@@ -50,7 +50,13 @@ setup_paths() {
     : "${SRC_DIR:?SRC_DIR is not set}"
     : "${BUILD_DIR:?BUILD_DIR is not set}"
 
-    MXL_PRESET=Linux-GCC-Release
+    set -x
+    local gcc_preset="GCC"
+    if has_opt "--mxl-gcc-preset" "$@"; then
+      get_opt gcc_preset "--mxl-gcc-preset" "$@"
+    fi
+
+    MXL_PRESET="Linux-$gcc_preset-Release"
     MXL_INSTALL="$BUILD_DIR"/mxl/install
     MXL_VARIANT="$MXL_INSTALL/$MXL_PRESET"/static
     
@@ -340,7 +346,7 @@ main() {
     get_var SRC_DIR "$@" && shift
     get_var BUILD_DIR "$@" && shift
     
-    setup_paths
+    setup_paths "$@"
 
     enforce_build_context
 

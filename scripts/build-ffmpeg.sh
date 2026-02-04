@@ -81,7 +81,7 @@ build_variant() {
         log_cmd "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
         config_opts_files+=("deps/ffmpeg-configure-shared-options.txt")
     fi
-
+    
     # Note: intentional use of "mxl_peset" to match mxl build convention
     local build_dir="$FFMPEG_BUILD/$mxl_preset/$linkage"
     local install_dir="$FFMPEG_INSTALL/$mxl_preset/$linkage"
@@ -107,15 +107,20 @@ main() {
 
     enforce_build_context
 
+    local gcc_preset="GCC"
+    if has_opt "--mxl-gcc-preset" "$@"; then
+      get_opt gcc_preset "--mxl-gcc-preset" "$@"
+    fi
+
     if has_opt "--prod" "$@"; then
-        build_variant Linux-GCC-Release static
+        build_variant "Linux-$gcc_preset-Release" static
     elif has_opt "--dev" "$@"; then
-        build_variant Linux-GCC-Debug static
+        build_variant "Linux-$gcc_preset-Debug" static
     else
-        build_variant Linux-GCC-Release shared
-        build_variant Linux-GCC-Release static
-        build_variant Linux-GCC-Debug shared
-        build_variant Linux-GCC-Debug static
+        build_variant "Linux-$gcc_preset-Release" shared
+        build_variant "Linux-$gcc_preset-Release" static
+        build_variant "Linux-$gcc_preset-Debug" shared
+        build_variant "Linux-$gcc_preset-Debug" static
     fi
 }
 

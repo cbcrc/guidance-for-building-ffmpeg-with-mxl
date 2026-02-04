@@ -39,14 +39,22 @@ main() {
     # Prevent Docker-created root-owned bind mounts
     mkdir -p "$SRC_DIR" "$BUILD_DIR"
 
+    local dockerfile="Dockerfile.dev"
+    if has_opt "--dockerfile" "$@"; then
+      get_opt gcc_preset "--dockerfile" "$@"
+    fi
+
     cd "$SCRIPT_DIR"
-    docker build -f Dockerfile.dev \
+
+    docker build -f "$dockerfile" \
+           --build-context scripts=${SCRIPT_DIR} \
            --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
            --build-arg EXTENDED="$EXTENDED" \
            --tag mxl-dev .
-
+    
     docker run --rm \
            --user "$(id -u)":"$(id -g)" \
+           --volume "$SCRIPT_DIR":/scripts \
            --volume "$SRC_DIR":/src \
            --volume "$BUILD_DIR":/build \
            mxl-dev \
@@ -54,19 +62,21 @@ main() {
 
     docker run --rm \
            --user "$(id -u)":"$(id -g)" \
+           --volume "$SCRIPT_DIR":/scripts \
            --volume "$SRC_DIR":/src \
            --volume "$BUILD_DIR":/build \
            mxl-dev \
            /scripts/build-ffmpeg.sh /src /build "$@"
-
+       
     if has_opt "--extended" "$@"; then
         docker run --rm \
                --user "$(id -u)":"$(id -g)" \
+               --volume "$SCRIPT_DIR":/scripts \
                --volume "$SRC_DIR":/src \
                --volume "$BUILD_DIR":/build \
                -e WITH_X265=0 \
                mxl-dev \
-               /scripts/build-ffmpeg-extended.sh /src /build --build-all
+               /scripts/build-ffmpeg-extended.sh /src /build --build-all "$@"
     fi
 
     log "docker interactive shell command:"

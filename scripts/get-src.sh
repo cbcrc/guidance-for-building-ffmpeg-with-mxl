@@ -45,6 +45,14 @@ clone_mxl_repo() {
 
     cd mxl
     git switch --detach 0e38256 
+
+    # optional patch
+    if has_opt "--mxl-patch" "$@"; then
+      local patchfile;
+      get_opt patchfile "--mxl-patch" "$@"
+      log "MXL patch file: $patchfile"
+      git apply "$SCRIPT_DIR"/patches/"$patchfile"
+    fi
 }
 
 clone_ffmpeg_repo() {
@@ -66,9 +74,9 @@ main() {
     local SRC_DIR
     get_var SRC_DIR "$@" && shift
 
-    clone_vcpkg_repo "$SRC_DIR"
-    clone_mxl_repo "$SRC_DIR"
-    clone_ffmpeg_repo "$SRC_DIR"
+    clone_vcpkg_repo "$SRC_DIR" "$@"
+    clone_mxl_repo "$SRC_DIR" "$@"
+    clone_ffmpeg_repo "$SRC_DIR" "$@"
 }
 
 main "$@"

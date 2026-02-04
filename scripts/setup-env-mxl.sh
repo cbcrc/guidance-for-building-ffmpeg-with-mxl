@@ -45,6 +45,12 @@ setup_environment() {
     read_list cmake_repo_apt_pkgs "deps/cmake-repo-apt-pkgs.txt"
     safe_sudo "install cmake repo dependencies" apt-get install -y --no-install-recommends "${cmake_repo_apt_pkgs[@]}"
     safe_sudo "update cmake repo" "$SCRIPT_DIR/deps/cmake-repo-upgrade.sh"
+
+    # setup ppa repo (if necessary)
+    safe_sudo "setup ppa repository" "$SCRIPT_DIR/deps/ppa-repo-add.sh"
+    
+    # rustup installer
+    safe_sudo "install rustup" "$SCRIPT_DIR/deps/install-rustup.sh"
     
     # MXL build environment dependencies
     local -a config_opts_files=("deps/mxl-apt-pkgs.txt")
@@ -57,7 +63,8 @@ setup_environment() {
     read_list mxl_apt_pkgs "${config_opts_files[@]}"
     safe_sudo "install MXL dependencies" apt-get install -y --no-install-recommends "${mxl_apt_pkgs[@]}"
     safe_sudo "update MXL alternatives" "$SCRIPT_DIR/deps/mxl-update-alternatives.sh"
-        
+
+    export PATH="$HOME/.cargo/bin:$PATH"
     rustup default 1.88.0
 }
 

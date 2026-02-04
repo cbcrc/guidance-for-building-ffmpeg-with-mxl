@@ -11,11 +11,9 @@ ARG EXTENDED
 RUN test -n "$UID" && test -n "$GID" || \
     (echo "ERROR: UID and GID build args are required" && exit 1)
 
-COPY . /scripts
-
 RUN echo "container" > /run/ffmpeg-build-context
-RUN /scripts/setup-env-all.sh
-RUN if [ "$EXTENDED" = "1" ]; then /scripts/setup-env-ffmpeg-extended.sh; fi
+RUN --mount=type=bind,from=scripts,target=/scripts,ro /scripts/setup-env-all.sh
+RUN --mount=type=bind,from=scripts,target=/scripts,ro if [ "$EXTENDED" = "1" ]; then /scripts/setup-env-ffmpeg-extended.sh; fi
 
 RUN set -e; \
     if ! getent group "${GID}" >/dev/null; then \

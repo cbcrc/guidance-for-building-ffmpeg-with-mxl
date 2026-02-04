@@ -53,6 +53,31 @@ has_opt() {
     return 1
 }
 
+# Get the value following a command-line option.
+# Usage: get_opt <varname> <option> "$@"
+# Example: get_opt patchfile --mxl_patch "$@"
+get_opt() {
+    local -n out="$1"
+    local opt="$2"
+    shift 2
+
+    while (($#)); do
+        if [[ "$1" == "$opt" ]]; then
+            shift
+            [[ $# -gt 0 ]] || {
+                log_error "missing argument for \"$opt\"" >&2
+                exit 2
+            }
+            out="$1"
+            return 0
+        fi
+        shift
+    done
+
+    log_error "option not found \"$opt\""
+    exit 2
+}
+
 # Check if "-h" or "--help" is an option and print usage.
 check_help() {
     if has_opt "-h" "$@" || has_opt "--help" "$@"; then

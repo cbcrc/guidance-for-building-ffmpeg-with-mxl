@@ -28,6 +28,8 @@ readonly SAFE_SUDO_ALLOWED_LIST=(
     "${SCRIPT_DIR}/setup-env-all.sh"
     "${SCRIPT_DIR}/deps/cmake-repo-upgrade.sh"
     "${SCRIPT_DIR}/deps/mxl-update-alternatives.sh"
+    "${SCRIPT_DIR}/deps/install-rustup.sh"
+    "${SCRIPT_DIR}/deps/ppa-repo-add.sh"
 )
 
 _safe_sudo_is_allowed() {

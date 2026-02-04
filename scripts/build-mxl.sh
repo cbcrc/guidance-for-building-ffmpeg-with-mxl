@@ -79,11 +79,19 @@ build_variant() {
     local variant_install_dir="$MXL_INSTALL/$preset/$linkage"
 
     mkdir -p "$MXL_BUILD"
+
+    # optional config args
+    local cmake_config_args=""
+    if has_opt "--mxl-cmake-config-args" "$@"; then
+      get_opt cmake_config_args "--mxl-cmake-config-args" "$@"
+    fi
+
     cmake -S "$MXL_SRC" -B "$variant_build_dir" --preset "$preset" \
         -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT"/scripts/buildsystems/vcpkg.cmake \
         -DVCPKG_INSTALLED_DIR="$variant_install_dir" \
         -DBUILD_SHARED_LIBS="$shared" \
-        -DCMAKE_INSTALL_PREFIX="$variant_install_dir"
+        -DCMAKE_INSTALL_PREFIX="$variant_install_dir" \
+        "$cmake_config_args"
 
     cmake --build "$variant_build_dir" -j --target all
 
@@ -111,22 +119,27 @@ main() {
     enforce_build_context
 
     vcpkg_bootstrap "$SRC_DIR"
+
+    local gcc_preset="GCC"
+    if has_opt "--mxl-gcc-preset" "$@"; then
+      get_opt gcc_preset "--mxl-gcc-preset" "$@"
+    fi
     
     if has_opt "--prod" "$@"; then
-        build_variant Linux-GCC-Release static
+        build_variant "Linux-${gcc_preset}-Release" static "$@"
     elif has_opt "--dev" "$@"; then
-        build_variant Linux-GCC-Debug static
+        build_variant "Linux-${gcc_preset}-Debug" static "$@"
     else
-        build_variant Linux-GCC-Release shared
-        build_variant Linux-GCC-Release static
-        build_variant Linux-GCC-Debug shared
-        build_variant Linux-GCC-Debug static
+        build_variant "Linux-${gcc_preset}-Release" shared "$@"
+        build_variant "Linux-${gcc_preset}-Release" static "$@"
+        build_variant "Linux-${gcc_preset}-Debug" shared "$@"
+        build_variant "Linux-${gcc_preset}-Debug" static "$@"
         
         if has_opt "--clang" "$@"; then
-            build_variant Linux-Clang-Release shared
-            build_variant Linux-Clang-Release static
-            build_variant Linux-Clang-Debug shared
-            build_variant Linux-Clang-Debug static
+            build_variant Linux-Clang-Release shared "$@"
+            build_variant Linux-Clang-Release static "$@"
+            build_variant Linux-Clang-Debug shared "$@"
+            build_variant Linux-Clang-Debug static "$@"
         fi
     fi
 }

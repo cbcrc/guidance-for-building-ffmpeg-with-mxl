@@ -1,0 +1,65 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f845561..53c5ae6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -159,8 +159,8 @@ mxl_check_and_add_flag("-Wno-c++23-attribute-extensions")
+ 
+ 
+ add_subdirectory(lib)
+-add_subdirectory(utils)
+ if (BUILD_TOOLS)
++    add_subdirectory(utils)
+     add_subdirectory(tools)
+ endif()
+ 
+diff --git a/CMakePresets.json b/CMakePresets.json
+index 5e8b9f4..c84da30 100644
+--- a/CMakePresets.json
++++ b/CMakePresets.json
+@@ -89,8 +89,22 @@
+                 "CMAKE_MODULE_LINKER_FLAGS": "-Wl,--exclude-libs=ALL -Wl,-z,defs -Wl,--as-needed",
+                 "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--exclude-libs=ALL -Wl,-z,defs -Wl,--as-needed"
+             }
+-        },
++	},
+         {
++            "name": "gcc-13",
++            "hidden": true,
++            "cacheVariables": {
++                "CMAKE_C_COMPILER": "/usr/bin/gcc-13",
++                "CMAKE_CXX_COMPILER": "/usr/bin/g++-13",
++                "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic",
++                "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g",
++                "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
++                "CMAKE_EXE_LINKER_FLAGS": "-Wl,--exclude-libs=ALL -Wl,-z,defs -Wl,--as-needed",
++                "CMAKE_MODULE_LINKER_FLAGS": "-Wl,--exclude-libs=ALL -Wl,-z,defs -Wl,--as-needed",
++                "CMAKE_SHARED_LINKER_FLAGS": "-Wl,--exclude-libs=ALL -Wl,-z,defs -Wl,--as-needed"
++            }
++        },
++	{
+             "name": "clang",
+             "hidden": true,
+             "cacheVariables": {
+@@ -180,6 +194,22 @@
+                 "release"
+             ]
+         },
++        {
++            "name": "Linux-GCC13-Debug",
++            "inherits": [
++                "linux",
++                "gcc-13",
++                "debug"
++            ]
++        },
++        {
++            "name": "Linux-GCC13-Release",
++            "inherits": [
++                "linux",
++                "gcc-13",
++                "release"
++            ]
++        },
+         {
+             "name": "Linux-GCC-AddressSanitizer",
+             "inherits": [

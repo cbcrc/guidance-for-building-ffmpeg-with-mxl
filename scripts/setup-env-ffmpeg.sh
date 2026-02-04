@@ -33,6 +33,9 @@ EOF
 setup_environment() {
     log "install FFmpeg dependencies..."
 
+    export DEBIAN_FRONTEND=noninteractive
+    export TZ=Etc/UTC
+
     local -a ffmpeg_apt_pkgs
     read_list ffmpeg_apt_pkgs "deps/ffmpeg-apt-pkgs.txt" 
     safe_sudo "install FFmpeg dependencies" apt-get install -y --no-install-recommends "${ffmpeg_apt_pkgs[@]}"
