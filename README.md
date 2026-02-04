@@ -472,7 +472,7 @@ archive.
 
 ``` bash
 $ ./get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
-$ ./docker-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args="-DBUILD_TOOLS=OFF" --dockerfile Dockerfile.ubuntu20.04.dev --prod
+$ ./docker-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --dockerfile Dockerfile.ubuntu20.04.dev --prod
 ```
 
 ## Known Limitations & Future Work
