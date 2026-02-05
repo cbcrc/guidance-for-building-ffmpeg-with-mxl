@@ -470,6 +470,11 @@ PPA](https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test)
 and may install more slowly than packages from the Ubuntu release
 archive.
 
+```bash
+$ ./get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
+$ ./host-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --prod --allow-root
+```
+
 ``` bash
 $ ./get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
 $ ./docker-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --dockerfile Dockerfile.ubuntu20.04.dev --prod
