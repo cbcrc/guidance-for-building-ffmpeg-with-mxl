@@ -480,6 +480,11 @@ $ ./get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
 $ ./docker-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --dockerfile Dockerfile.ubuntu20.04.dev --prod
 ```
 
+Docker images built on Ubuntu 24.04 hosts are not guaranteed to be
+backward-compatible with Ubuntu 20.04 hosts. For reliable deployment
+on 20.04, images should be built using a 20.04 environment. See:
+[Docker Multi-platform builds](https://docs.docker.com/build/building/multi-platform/)
+
 ## Docker Setup Hints
 
 Ubuntu >= 20.04:
@@ -491,7 +496,6 @@ $ sudo usermod -aG docker "$USER"
 # start a new shell that refreshes group membership, or use `newgrp docker`
 $ ./docker-setup-and-build.sh ...
 ```
-
 
 ## Known Limitations & Future Work
 
