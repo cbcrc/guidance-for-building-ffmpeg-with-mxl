@@ -461,7 +461,7 @@ $ ~/build/mxl/install/Linux-GCC-Debug/static/bin/mxl-info --domain /dev/shm/mxl 
 	            Active: true
 ```
 
-## Ubunutu 20.04 Build
+## Ubuntu 20.04 Build
 
 Ubuntu 20.04 support is experimental. The MXL build requires
 GCC 13. The FFmpeg build uses the OS-provided GCC 9. GCC 13 for Ubuntu
