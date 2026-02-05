@@ -78,7 +78,7 @@ main() {
                --volume "$SRC_DIR":/src \
                --volume "$BUILD_DIR":/build \
                -e WITH_X265=0 \
-               -e WITH_VMAF=0
+               -e WITH_VMAF=0 \
                mxl-dev \
                /scripts/build-ffmpeg-extended.sh /src /build --build-all "$@"
     fi
