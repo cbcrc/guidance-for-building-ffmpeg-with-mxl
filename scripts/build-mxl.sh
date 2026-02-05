@@ -91,6 +91,9 @@ build_variant() {
         -DVCPKG_INSTALLED_DIR="$variant_install_dir" \
         -DBUILD_SHARED_LIBS="$shared" \
         -DCMAKE_INSTALL_PREFIX="$variant_install_dir" \
+        -DMXL_ENABLE_IPO=OFF \
+        -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
+        -DCMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE=OFF \
         "$cmake_config_args"
 
     cmake --build "$variant_build_dir" -j --target all
