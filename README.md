@@ -534,6 +534,3 @@ $ ./docker-setup-and-build.sh ...
 For questions, code review, or comments, contact the development team:
 
 - Jim Trainor (james.p.trainor@cbc.ca)
-
----
-**Last Updated:** January 29, 2026  
