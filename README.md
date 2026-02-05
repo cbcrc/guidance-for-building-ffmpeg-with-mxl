@@ -461,7 +461,7 @@ $ ~/build/mxl/install/Linux-GCC-Debug/static/bin/mxl-info --domain /dev/shm/mxl 
 	            Active: true
 ```
 
-## Ubunutu 20.04
+## Ubunutu 20.04 Build
 
 Ubuntu 20.04 support is experimental. The MXL build requires
 GCC 13. The FFmpeg build uses the OS-provided GCC 9. GCC 13 for Ubuntu
@@ -479,6 +479,19 @@ $ ./host-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-con
 $ ./get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
 $ ./docker-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --dockerfile Dockerfile.ubuntu20.04.dev --prod
 ```
+
+## Docker Setup Hints
+
+Ubuntu >= 20.04:
+
+```bash
+$ sudo apt install docker.io docker-buildx
+$ sudo usermod -aG docker "$USER"
+
+# start a new shell that refreshes group membership, or use `newgrp docker`
+$ ./docker-setup-and-build.sh ...
+```
+
 
 ## Known Limitations & Future Work
 
