@@ -497,6 +497,29 @@ $ sudo usermod -aG docker "$USER"
 $ ./docker-setup-and-build.sh ...
 ```
 
+## Extended FFmpeg Build (experimental)
+
+Build support for an *extended* configuration is implemented by
+`setup-env-ffmpeg-extended.sh` and `build-ffmpeg-extended.sh`.  This
+build includes additional codecs and activates additional FFmpeg
+features.
+
+The extended configuration is enabled in both host and Docker builds
+by adding the `--extended` option. Only the release build variant
+(`--prod`) is supported.
+
+``` bash
+$ get-src.sh ~/src
+$ ./host-setup-and-build.sh ~/src ~/build --prod --allow-root --extended
+```
+
+```bash
+$ get-src.sh ~/src
+$ docker-setup-and-build.sh ~/src ~/build --prod --extended
+```
+
+The extended build has been tested on Ubuntu 20.04 and Ubuntu 24.04.
+
 ## Known Limitations & Future Work
 
 * video/210a (v210+alpha) is not supported 
