@@ -65,7 +65,7 @@ clone_ffmpeg_repo() {
     git clone --single-branch --branch dmf-mxl/master --depth 1 https://github.com/cbcrc/FFmpeg.git
 
     cd FFmpeg
-    git switch --detach a8441ff
+    git switch --detach ea2cb90
 }
 
 main() {
