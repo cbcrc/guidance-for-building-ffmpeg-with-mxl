@@ -68,6 +68,7 @@ get_opt() {
                 log_error "missing argument for \"$opt\"" >&2
                 exit 2
             }
+            # shellcheck disable=SC2034
             out="$1"
             return 0
         fi
