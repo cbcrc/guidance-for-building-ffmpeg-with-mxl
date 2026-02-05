@@ -485,18 +485,6 @@ backward-compatible with Ubuntu 20.04 hosts. For reliable deployment
 on 20.04, images should be built using a 20.04 environment. See:
 [Docker Multi-platform builds](https://docs.docker.com/build/building/multi-platform/)
 
-## Docker Setup Hints
-
-Ubuntu >= 20.04:
-
-```bash
-$ sudo apt install docker.io docker-buildx
-$ sudo usermod -aG docker "$USER"
-
-# start a new shell that refreshes group membership, or use `newgrp docker`
-$ ./docker-setup-and-build.sh ...
-```
-
 ## Extended FFmpeg Build (experimental)
 
 Build support for an *extended* configuration is implemented by
@@ -519,6 +507,20 @@ $ docker-setup-and-build.sh ~/src ~/build --prod --extended
 ```
 
 The extended build has been tested on Ubuntu 20.04 and Ubuntu 24.04.
+
+## Addendum
+
+### Docker Setup Hints
+
+Ubuntu >= 20.04:
+
+```bash
+$ sudo apt install docker.io docker-buildx
+$ sudo usermod -aG docker "$USER"
+
+# start a new shell that refreshes group membership, or use `newgrp docker`
+$ ./docker-setup-and-build.sh ...
+```
 
 ## Known Limitations & Future Work
 
