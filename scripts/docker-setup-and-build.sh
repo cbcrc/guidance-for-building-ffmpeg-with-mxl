@@ -46,6 +46,9 @@ main() {
 
     cd "$SCRIPT_DIR"
 
+    # necessary for Ubunut20.04
+    export DOCKER_BUILDKIT=1
+
     docker build -f "$dockerfile" \
            --build-context scripts=${SCRIPT_DIR} \
            --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
