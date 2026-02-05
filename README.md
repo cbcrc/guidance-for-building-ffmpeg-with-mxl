@@ -488,8 +488,9 @@ on 20.04, images should be built using a 20.04 environment. See:
 ## Extended FFmpeg Build (experimental)
 
 Build support for an *extended* configuration is implemented by
-`setup-env-ffmpeg-extended.sh` and `build-ffmpeg-extended.sh`.  This
-build includes additional codecs and activates additional FFmpeg
+[`setup-env-ffmpeg-extended.sh`](scripts/setup-env-ffmpeg-extended.sh)
+and [`build-ffmpeg-extended.sh`](scripts/build-ffmpeg-extended.sh).
+This build includes additional codecs and activates additional FFmpeg
 features.
 
 The extended configuration is enabled in both host and Docker builds
