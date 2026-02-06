@@ -20,7 +20,7 @@ The MXL integration enables FFmpeg to use the Media eXchange Layer for
 audio and video muxing and demuxing. Development on Windows is
 supported via Docker containers.
 
-The FFmpeg/MXL integration currently supports only Linux.
+The FFmpeg/MXL integration currently supports Linux only.
 
 ## GitHub Repositories
 
@@ -103,7 +103,7 @@ The FFmpeg configure options that are required to enable MXL support
 are:
 
 ```bash
-$ ./configure --enable-demuxer=mxl --enable-muxer=mxl --enable-libmxl ...
+$ configure --enable-demuxer=mxl --enable-muxer=mxl --enable-libmxl ...
 ```
 
 The FFmpeg build requires MXL to be discoverable via
@@ -349,7 +349,6 @@ The following examples assume that MXL and FFmpeg were built using
 
 ### mxl-gst-videotestsrc mxl write → FFplay mxl read
 
-
 ```bash
 $ mkdir -p /dev/shm/mxl
 $ (cd ~/build/mxl/build/Linux-GCC-Debug/static && \
@@ -467,8 +466,8 @@ Ubuntu 20.04 support is experimental. The MXL build requires
 GCC 13. The FFmpeg build uses the OS-provided GCC 9. GCC 13 for Ubuntu
 20.04 is sourced from an [Ubuntu
 PPA](https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test)
-and may install more slowly than packages from the Ubuntu release
-archive.
+and may install more slowly than packages from the standard Ubuntu
+release archive.
 
 ```bash
 $ get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
@@ -521,7 +520,7 @@ $ sudo apt install docker.io docker-buildx
 $ sudo usermod -aG docker "$USER"
 
 # start a new shell that refreshes group membership, or use `newgrp docker`
-$ ./docker-setup-and-build.sh ...
+$ docker-setup-and-build.sh ...
 ```
 
 ## Known Limitations & Future Work
