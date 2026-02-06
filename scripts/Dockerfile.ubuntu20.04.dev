@@ -1,0 +1,34 @@
+# syntax=docker/dockerfile:1.6
+
+# Development image containing build tools and dependencies.
+
+FROM ubuntu:20.04
+
+ARG UID
+ARG GID
+ARG EXTENDED
+
+RUN test -n "$UID" && test -n "$GID" || \
+    (echo "ERROR: UID and GID build args are required" && exit 1)
+
+RUN echo "container" > /run/ffmpeg-build-context
+RUN --mount=type=bind,from=scripts,target=/scripts,ro /scripts/setup-env-all.sh
+RUN --mount=type=bind,from=scripts,target=/scripts,ro if [ "$EXTENDED" = "1" ]; then /scripts/setup-env-ffmpeg-extended.sh; fi
+
+RUN set -e; \
+    if ! getent group "${GID}" >/dev/null; then \
+        groupadd -g "${GID}" builder; \
+    fi; \
+    if ! id -u "${UID}" >/dev/null 2>&1; then \
+        useradd -m -u "${UID}" -g "${GID}" builder; \
+    fi
+
+ENV UID=${UID}
+ENV GID=${GID}
+
+RUN install -d -o ${UID} -g ${GID} /build
+RUN install -d -o ${UID} -g ${GID} /src
+
+USER ${UID}:${GID}
+WORKDIR /src
+CMD ["bash", "-li"]
