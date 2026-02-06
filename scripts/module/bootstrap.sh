@@ -57,9 +57,17 @@ has_opt() {
 # Usage: get_opt <varname> <option> "$@"
 # Example: get_opt patchfile --mxl_patch "$@"
 get_opt() {
-    local -n out="$1"
+    local varname="$1"
     local opt="$2"
     shift 2
+
+    # require pre-declared variable
+    [[ -v "$varname" ]] || {
+        log_error "get_opt variable \"$varname\" is not declared"
+        exit 2
+    }
+
+    local -n out="$varname"
 
     while (($#)); do
         if [[ "$1" == "$opt" ]]; then

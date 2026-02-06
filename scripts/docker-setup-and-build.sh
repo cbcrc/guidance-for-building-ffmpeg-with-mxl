@@ -41,7 +41,7 @@ main() {
 
     local dockerfile="Dockerfile.dev"
     if has_opt "--dockerfile" "$@"; then
-      get_opt gcc_preset "--dockerfile" "$@"
+        get_opt dockerfile "--dockerfile" "$@"
     fi
 
     cd "$SCRIPT_DIR"
