@@ -17,8 +17,7 @@ CPU architectures. MXL targets Linux systems and includes support for
 macOS. Other platforms are not currently supported.
 
 The MXL integration enables FFmpeg to use the Media eXchange Layer for
-audio and video muxing and demuxing. Development on Windows is
-supported via Docker containers.
+audio and video muxing and demuxing.
 
 The FFmpeg/MXL integration currently supports Linux only.
 
