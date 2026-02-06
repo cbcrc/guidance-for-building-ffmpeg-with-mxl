@@ -461,7 +461,7 @@ $ ~/build/mxl/install/Linux-GCC-Debug/static/bin/mxl-info --domain /dev/shm/mxl 
 	            Active: true
 ```
 
-## Ubuntu 20.04 Build
+## Ubuntu 20.04 Build (experimental)
 
 Ubuntu 20.04 support is experimental. The MXL build requires
 GCC 13. The FFmpeg build uses the OS-provided GCC 9. GCC 13 for Ubuntu
@@ -471,13 +471,13 @@ and may install more slowly than packages from the Ubuntu release
 archive.
 
 ```bash
-$ ./get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
-$ ./host-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --prod --allow-root
+$ get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
+$ host-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --prod --allow-root
 ```
 
 ``` bash
-$ ./get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
-$ ./docker-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --dockerfile Dockerfile.ubuntu20.04.dev --prod
+$ get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
+$ docker-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --dockerfile Dockerfile.ubuntu20.04.dev --prod
 ```
 
 Docker images built on Ubuntu 24.04 hosts are not guaranteed to be
@@ -487,7 +487,8 @@ on 20.04, images should be built using a 20.04 environment. See:
 
 ## Extended FFmpeg Build (experimental)
 
-Build support for an *extended* configuration is implemented by
+Build support for an experimental *extended* configuration is
+implemented by
 [`setup-env-ffmpeg-extended.sh`](scripts/setup-env-ffmpeg-extended.sh)
 and [`build-ffmpeg-extended.sh`](scripts/build-ffmpeg-extended.sh).
 This build includes additional codecs and activates additional FFmpeg
@@ -499,7 +500,7 @@ by adding the `--extended` option. Only the release build variant
 
 ``` bash
 $ get-src.sh ~/src
-$ ./host-setup-and-build.sh ~/src ~/build --prod --allow-root --extended
+$ host-setup-and-build.sh ~/src ~/build --prod --allow-root --extended
 ```
 
 ```bash
