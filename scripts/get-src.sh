@@ -48,7 +48,7 @@ clone_mxl_repo() {
 
     # optional patch
     if has_opt "--mxl-patch" "$@"; then
-      local patchfile;
+      local patchfile=""
       get_opt patchfile "--mxl-patch" "$@"
       log "MXL patch file: $patchfile"
       git apply "$SCRIPT_DIR"/patches/"$patchfile"
