@@ -64,7 +64,7 @@ setup_paths() {
     FFMPEG_BUILD="$BUILD_DIR"/ffmpeg.extended/build
     FFMPEG_INSTALL="$BUILD_DIR"/ffmpeg.extended/install
     FFMPEG_BIN="$FFMPEG_INSTALL"/bin
-    FFMPEG_FATE_SUITE="$BUILD_DIR"/ffmpeg.extended/fate-suite
+    FFMPEG_FATE_SUITE="$BUILD_DIR"/ffmpeg-fate-suite
 
     # Paths used by shell
     export PATH="$FFMPEG_BIN:$PATH"

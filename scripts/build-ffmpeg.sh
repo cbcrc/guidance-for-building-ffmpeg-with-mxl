@@ -30,7 +30,8 @@ EOF
 
 ffmpeg_configure() {
     local install_dir="$1"
-    shift
+    local include_samples="$2"
+    shift 2
 
     log "FFmpeg configure (in $PWD)"
 
@@ -44,6 +45,10 @@ ffmpeg_configure() {
         --prefix="$install_dir"
         "${config_options[@]}"
     )
+
+    if (( include_samples )); then
+        cmd+=("--samples=$FFMPEG_FATE_SUITE")
+    fi
     
     log_cmd "${cmd[@]}"
 
@@ -62,6 +67,7 @@ build_variant() {
     FFMPEG_SRC="$SRC_DIR"/FFmpeg
     FFMPEG_BUILD="$BUILD_DIR"/ffmpeg/build
     FFMPEG_INSTALL="$BUILD_DIR"/ffmpeg/install
+    FFMPEG_FATE_SUITE="$BUILD_DIR"/ffmpeg-fate-suite
     
     local mxl_install="$BUILD_DIR"/mxl/install
     local full_mxl_install_dir="$mxl_install/$mxl_preset/$linkage"
@@ -81,6 +87,12 @@ build_variant() {
         log_cmd "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
         config_opts_files+=("deps/ffmpeg-configure-shared-options.txt")
     fi
+
+    local streaming=0
+    if has_opt "--streaming" "$@"; then
+        streaming=1
+        config_opts_files+=("deps/ffmpeg-configure-streaming-options.txt")
+    fi
     
     # Note: intentional use of "mxl_peset" to match mxl build convention
     local build_dir="$FFMPEG_BUILD/$mxl_preset/$linkage"
@@ -89,10 +101,15 @@ build_variant() {
     mkdir -p "$build_dir"
     pushd "$build_dir"
 
-    ffmpeg_configure "$install_dir" "${config_opts_files[@]}"
+    ffmpeg_configure "$install_dir" "$streaming" "${config_opts_files[@]}"
     make clean
     make -j
-    make fate-mxl-json fate-mxl-video-encdec fate-mxl-audio-encdec
+    if (( streaming )); then
+        make fate-rsync
+        make fate
+    else
+        make fate-mxl-json fate-mxl-video-encdec fate-mxl-audio-encdec
+    fi
     make install
 
     popd
@@ -113,14 +130,14 @@ main() {
     fi
 
     if has_opt "--prod" "$@"; then
-        build_variant "Linux-$gcc_preset-Release" static
+        build_variant "Linux-$gcc_preset-Release" static "$@"
     elif has_opt "--dev" "$@"; then
-        build_variant "Linux-$gcc_preset-Debug" static
+        build_variant "Linux-$gcc_preset-Debug" static "$@"
     else
-        build_variant "Linux-$gcc_preset-Release" shared
-        build_variant "Linux-$gcc_preset-Release" static
-        build_variant "Linux-$gcc_preset-Debug" shared
-        build_variant "Linux-$gcc_preset-Debug" static
+        build_variant "Linux-$gcc_preset-Release" shared "$@"
+        build_variant "Linux-$gcc_preset-Release" static "$@"
+        build_variant "Linux-$gcc_preset-Debug" shared "$@"
+        build_variant "Linux-$gcc_preset-Debug" static "$@"
     fi
 }
 
