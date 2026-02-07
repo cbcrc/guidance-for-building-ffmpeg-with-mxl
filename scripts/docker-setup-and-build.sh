@@ -52,6 +52,7 @@ main() {
     docker build -f "$dockerfile" \
            --build-context scripts="$SCRIPT_DIR" \
            --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
+           --build-arg SETUP_OPTIONS="$*" \
            --build-arg EXTENDED="$EXTENDED" \
            --tag mxl-dev .
     

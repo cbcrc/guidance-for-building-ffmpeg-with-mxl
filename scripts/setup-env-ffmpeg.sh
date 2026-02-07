@@ -36,15 +36,22 @@ setup_environment() {
     export DEBIAN_FRONTEND=noninteractive
     export TZ=Etc/UTC
 
+    local -a ffmpeg_apt_pkg_files=("deps/ffmpeg-apt-pkgs.txt")
+
+    if has_opt "--streaming" "$@"; then
+        ffmpeg_apt_pkg_files+=("deps/ffmpeg-apt-streaming-pkgs.txt")
+    fi
+    
     local -a ffmpeg_apt_pkgs
-    read_list ffmpeg_apt_pkgs "deps/ffmpeg-apt-pkgs.txt" 
+    read_list ffmpeg_apt_pkgs "${ffmpeg_apt_pkg_files[@]}"
+
     safe_sudo "install FFmpeg dependencies" apt-get install -y --no-install-recommends "${ffmpeg_apt_pkgs[@]}"
 }
 
 main() {
     check_help "$@"
     enforce_setup_context "$@"
-    setup_environment
+    setup_environment "$@"
 }
 
 main "$@"
