@@ -1,6 +1,3 @@
 # FFmpeg streaming dependencies (apt packages)
-# codecs
-libopus-dev
-libx264-dev
-# testing
+# testing:
 rsync
