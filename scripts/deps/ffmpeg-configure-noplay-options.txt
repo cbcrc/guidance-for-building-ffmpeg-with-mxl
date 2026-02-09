@@ -1,0 +1,6 @@
+# FFmpeg disable ffplay configure options
+--disable-ffplay
+--disable-vaapi
+--disable-vdpau
+--disable-xlib
+--disable-libxcb

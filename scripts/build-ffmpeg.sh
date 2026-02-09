@@ -22,6 +22,8 @@ Arguments:
 Options:
   --prod        Production build (GCC, static, release)
   --dev         Development build (GCC, static, debug)
+  --no-ffplay   Do not build ffplay or link its dependent libraries.
+  --streaming   Build with RTSP, Opus, and H.264 support.
 
 Use --prod or --dev to select build variant, or else all variants are
 built.
@@ -30,7 +32,7 @@ EOF
 
 ffmpeg_configure() {
     local install_dir="$1"
-    local include_samples="$2"
+    local include_fate_samples="$2"
     shift 2
 
     log "FFmpeg configure (in $PWD)"
@@ -46,7 +48,7 @@ ffmpeg_configure() {
         "${config_options[@]}"
     )
 
-    if (( include_samples )); then
+    if (( include_fate_samples )); then
         cmd+=("--samples=$FFMPEG_FATE_SUITE")
     fi
     
@@ -92,6 +94,10 @@ build_variant() {
     if has_opt "--streaming" "$@"; then
         streaming=1
         config_opts_files+=("deps/ffmpeg-configure-streaming-options.txt")
+    fi
+
+    if has_opt "--no-ffplay" "$@"; then
+        config_opts_files+=("deps/ffmpeg-configure-noplay-options.txt")
     fi
     
     # Note: intentional use of "mxl_peset" to match mxl build convention
