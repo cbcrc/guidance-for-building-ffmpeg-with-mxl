@@ -113,13 +113,19 @@ containing the MXL `libmxl.pc` file. For example, test with:
 $ PKG_CONFIG_PATH=~/build/mxl/install/Linux-GCC-Debug/static/lib/pkgconfig pkg-config --modversion libmxl
 ```
 
-The FFmpeg `configure` options used to build and run the FFmpeg/MXL
+The FFmpeg `configure` option used to build and run the FFmpeg/MXL
 regression tests are listed in the following files:
 
 * [`ffmpeg-configure-base-options.txt`](scripts/deps/ffmpeg-configure-base-options.txt)
 * [`ffmpeg-configure-debug-options.txt`](scripts/deps/ffmpeg-configure-debug-options.txt)
 * [`ffmpeg-configure-static-options.txt`](scripts/deps/ffmpeg-configure-static-options.txt)
 * [`ffmpeg-configure-shared-options.txt`](scripts/deps/ffmpeg-configure-shared-options.txt)
+
+Additional build option files exist to disable the `ffplay` build and to
+enable a selected group of streaming-related protocols and codecs.
+
+* [`ffmpeg-configure-noplay-options.txt`](scripts/deps/ffmpeg-configure-noplay-options.txt)
+* [`ffmpeg-configure-streaming-options.txt`](scripts/deps/ffmpeg-configure-streaming-options.txt)
 
 See also: [FFmpeg Compilation Guide](https://trac.ffmpeg.org/wiki/CompilationGuide)
 
@@ -189,7 +195,7 @@ canonical source for detailed FFmpeg/MXL environment configuration and
 build instructions.
 
 Note that these scripts set up the *minimum* set of system
-dependencies and the *minimum* ffmpeg configuration that is necessary
+dependencies and the *minimum* FFmpeg configuration that is necessary
 to build FFmpeg with MXL and the FFmpeg/MXL regression tests.
 
 The `get-src.sh` script installs all the MXL and FFmpeg source code at
@@ -279,6 +285,18 @@ $ tree -L 4 ~/build
         ├── mxl
 ```
 
+### Streaming build options
+
+Use the `--streaming` and `--no-ffplay` options to build FFmpeg with:
+
+* `ffplay` and related dependencies disabled
+* RTSP, H.264, and Opus support enabled
+
+```bash
+$ get-src.sh ~/src
+$ build-ffmpeg.sh ~/src ~/bin --no-ffplay --streaming --prod
+```
+
 ### Host setup for development
 
 The `host-setup-and-build.sh` script sets up the host environment
@@ -288,7 +306,6 @@ The `host-setup-and-build.sh` script sets up the host environment
 ``` bash
 $ host-setup-and-build.sh <src-dir> <build-dir> [--dev|--prod]
 ```
-
 For example:
 
 ```bash
@@ -303,6 +320,17 @@ password, use the `--allow-root` option:
 ```bash
 $ get-src.sh ~/src
 $ host-setup-and-build.sh ~/src ~/build --dev --allow-root
+```
+
+#### Options pass-through
+
+Command-line options are passed through to the underlying MXL and
+FFmpeg setup and build scripts in order to control setup and build
+configuration.  For example:
+
+```bash
+$ get-src.sh ~/src
+$ host-setup-and-build.sh ~/src ~/build --prod --allow-root --no-ffplay --streaming
 ```
 
 ### Docker development container
@@ -327,7 +355,7 @@ FFmpeg. The results will be in the host `~/build` directory.
 
 ### Docker production container
 
-Use `Dockerfile.prod` to create a `Docker` container for production:
+Use `Dockerfile.prod` to create a `docker` container for production:
 
 ```bash
 $ cd scripts
@@ -524,7 +552,7 @@ $ docker-setup-and-build.sh ...
 
 ## Known Limitations & Future Work
 
-* video/210a (v210+alpha) is not supported 
+* video/v210a (v210+alpha) is not supported 
 * video/smpt201 (ancillary data) is not supported
 * macOS FFmpeg/MXL build is not supported
 
