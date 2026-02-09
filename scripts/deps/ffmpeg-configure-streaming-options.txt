@@ -1,5 +1,5 @@
 # FFmpeg streaming build configure options
-# rtsp
+# rtsp:
 --enable-network
 --enable-protocol=rtsp
 --enable-protocol=rtp
@@ -9,15 +9,15 @@
 --enable-muxer=rtp
 --enable-decoder=rtp
 --enable-demuxer=rtsp
-# audio
+# audio:
 --enable-libopus
 --enable-decoder=opus
 --enable-encoder=libopus
 --enable-filter=aresample
-# video
+# video:
 --enable-gpl
 --enable-libx264
 --enable-encoder=libx264
 --enable-filter=scale
-# extra
+# extra:
 --ignore-tests=source
