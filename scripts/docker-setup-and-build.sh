@@ -97,6 +97,7 @@ main() {
     log "docker interactive shell command:"
     log_cmd docker run -it \
             --rm \
+            --volume "$SCRIPT_DIR":/scripts \
             --volume "$SRC_DIR":/src \
             --volume "$BUILD_DIR":/build \
             mxl-dev
