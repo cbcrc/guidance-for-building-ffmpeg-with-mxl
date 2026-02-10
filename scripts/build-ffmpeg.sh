@@ -66,15 +66,25 @@ build_variant() {
     : "${SRC_DIR:?SRC_DIR is not set}"
     : "${BUILD_DIR:?BUILD_DIR is not set}"
 
+    local streaming=0
+    if has_opt "--streaming" "$@"; then
+        streaming=1
+    fi
+    
     FFMPEG_SRC="$SRC_DIR"/FFmpeg
     FFMPEG_BUILD="$BUILD_DIR"/ffmpeg/build
     FFMPEG_INSTALL="$BUILD_DIR"/ffmpeg/install
     FFMPEG_FATE_SUITE="$BUILD_DIR"/ffmpeg-fate-suite
-    
+
     local mxl_install="$BUILD_DIR"/mxl/install
     local full_mxl_install_dir="$mxl_install/$mxl_preset/$linkage"
     export PKG_CONFIG_PATH="$full_mxl_install_dir"/lib/pkgconfig:"$full_mxl_install_dir"/x64-linux/lib/pkgconfig
 
+    if (( streaming )); then
+        local codecs_install="$BUILD_DIR/codecs/install/$mxl_preset/$linkage"/lib/pkgconfig
+        export PKG_CONFIG_PATH="$PKG_CONFIG_PATH":"$codecs_install"
+    fi
+    
     local -a config_opts_files=("deps/ffmpeg-configure-base-options.txt")
 
     if [[ "$mxl_preset" == *-Debug ]]; then
@@ -90,9 +100,7 @@ build_variant() {
         config_opts_files+=("deps/ffmpeg-configure-shared-options.txt")
     fi
 
-    local streaming=0
-    if has_opt "--streaming" "$@"; then
-        streaming=1
+    if (( streaming )); then
         config_opts_files+=("deps/ffmpeg-configure-streaming-options.txt")
     fi
 
