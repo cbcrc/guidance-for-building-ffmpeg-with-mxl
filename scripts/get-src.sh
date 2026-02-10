@@ -25,7 +25,6 @@ clone_vcpkg_repo() {
     log "fetch vcpkg git repository..."
 
     local src_dir="$1"
-    mkdir -p "$src_dir"
     cd "$src_dir"
 
     git clone https://github.com/microsoft/vcpkg
@@ -38,7 +37,6 @@ clone_mxl_repo() {
     log "fetch MXL git repository..."
 
     local src_dir="$1"    
-    mkdir -p "$src_dir"
     cd "$src_dir"
 
     git clone https://github.com/dmf-mxl/mxl.git
@@ -59,7 +57,6 @@ clone_ffmpeg_repo() {
     log "fetch FFmpeg git repository..."
 
     local src_dir="$1"
-    mkdir -p "$src_dir"
     cd "$src_dir"
 
     git clone --single-branch --branch dmf-mxl/master --depth 1 https://github.com/cbcrc/FFmpeg.git
@@ -68,15 +65,43 @@ clone_ffmpeg_repo() {
     git switch --detach 914a712
 }
 
+clone_x264_repo() {
+    log "fetch x264 git repository..." 
+    local src_dir="$1"
+    cd "$src_dir"
+    git clone https://code.videolan.org/videolan/x264.git
+    cd x264
+
+    # x264 doesn't have release tags, instead use the commit hash as
+    # of 9 Feb 2026.
+    git switch --detach 0480cb05
+}
+
+clone_opus_repo() {
+    log "fetch Opus git repository..."
+    local src_dir="$1"
+    cd "$src_dir"
+    git clone https://github.com/xiph/opus.git
+    cd opus
+    git switch --detach v1.6.1
+}
+
 main() {
     check_help "$@"
 
     local SRC_DIR
     get_var SRC_DIR "$@" && shift
 
+    mkdir -p "$SRC_DIR"
+
     clone_vcpkg_repo "$SRC_DIR" "$@"
     clone_mxl_repo "$SRC_DIR" "$@"
     clone_ffmpeg_repo "$SRC_DIR" "$@"
+
+    if has_opt "--streaming" "$@"; then
+        clone_x264_repo "$SRC_DIR" "$@"
+        clone_opus_repo "$SRC_DIR" "$@"
+    fi
 }
 
 main "$@"
