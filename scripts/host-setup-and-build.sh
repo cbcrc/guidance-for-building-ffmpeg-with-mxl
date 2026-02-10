@@ -53,6 +53,10 @@ main() {
 
     ./build-mxl.sh "$SRC_DIR" "$BUILD_DIR" "$@"
 
+    if has_opt "--streaming" "$@"; then
+        ./build-codecs.sh "$SRC_DIR" "$BUILD_DIR" "$@"
+    fi
+    
     ./build-ffmpeg.sh "$SRC_DIR" "$BUILD_DIR" "$@"
     
     if has_opt "--extended" "$@"; then
