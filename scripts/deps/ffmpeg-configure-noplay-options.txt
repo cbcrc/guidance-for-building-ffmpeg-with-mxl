@@ -2,5 +2,7 @@
 --disable-ffplay
 --disable-vaapi
 --disable-vdpau
+--disable-sdl2
 --disable-xlib
 --disable-libxcb
+--disable-libdrm
