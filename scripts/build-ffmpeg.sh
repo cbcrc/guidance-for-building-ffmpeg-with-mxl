@@ -58,10 +58,11 @@ ffmpeg_configure() {
 }
 
 build_variant() {
-    local mxl_preset="$1"
-    local linkage="$2"
+    local preset="$1"
+    local mxl_preset="$2"
+    local linkage="$3"
     
-    log "build FFmpeg with preset $mxl_preset and $linkage linkage"
+    log "build FFmpeg with preset $1, mxl preset $mxl_preset, and $linkage linkage"
 
     : "${SRC_DIR:?SRC_DIR is not set}"
     : "${BUILD_DIR:?BUILD_DIR is not set}"
@@ -81,13 +82,13 @@ build_variant() {
     export PKG_CONFIG_PATH="$full_mxl_install_dir"/lib/pkgconfig:"$full_mxl_install_dir"/x64-linux/lib/pkgconfig
 
     if (( streaming )); then
-        local codecs_install="$BUILD_DIR/codecs/install/$mxl_preset/$linkage"/lib/pkgconfig
+        local codecs_install="$BUILD_DIR/codecs/install/$preset/$linkage"/lib/pkgconfig
         export PKG_CONFIG_PATH="$PKG_CONFIG_PATH":"$codecs_install"
     fi
     
     local -a config_opts_files=("deps/ffmpeg-configure-base-options.txt")
 
-    if [[ "$mxl_preset" == *-Debug ]]; then
+    if [[ "$preset" == *-Debug ]]; then
         config_opts_files+=("deps/ffmpeg-configure-debug-options.txt")
     fi
 
@@ -109,8 +110,8 @@ build_variant() {
     fi
     
     # Note: intentional use of "mxl_peset" to match mxl build convention
-    local build_dir="$FFMPEG_BUILD/$mxl_preset/$linkage"
-    local install_dir="$FFMPEG_INSTALL/$mxl_preset/$linkage"
+    local build_dir="$FFMPEG_BUILD/$preset/$linkage"
+    local install_dir="$FFMPEG_INSTALL/$preset/$linkage"
 
     mkdir -p "$build_dir"
     pushd "$build_dir"
@@ -138,20 +139,20 @@ main() {
 
     enforce_build_context
 
-    local gcc_preset="GCC"
+    local mxl_gcc_preset="GCC"
     if has_opt "--mxl-gcc-preset" "$@"; then
-      get_opt gcc_preset "--mxl-gcc-preset" "$@"
+      get_opt mxl_gcc_preset "--mxl-gcc-preset" "$@"
     fi
 
     if has_opt "--prod" "$@"; then
-        build_variant "Linux-$gcc_preset-Release" static "$@"
+        build_variant "Linux-GCC-Release" "Linux-$mxl_gcc_preset-Release" static "$@"
     elif has_opt "--dev" "$@"; then
-        build_variant "Linux-$gcc_preset-Debug" static "$@"
+        build_variant "Linux-GCC-Debug" "Linux-$mxl_gcc_preset-Debug" static "$@"
     else
-        build_variant "Linux-$gcc_preset-Release" shared "$@"
-        build_variant "Linux-$gcc_preset-Release" static "$@"
-        build_variant "Linux-$gcc_preset-Debug" shared "$@"
-        build_variant "Linux-$gcc_preset-Debug" static "$@"
+        build_variant "Linux-GCC-Release" "Linux-$mxl_gcc_preset-Release" shared "$@"
+        build_variant "Linux-GCC-Release" "Linux-$mxl_gcc_preset-Release" static "$@"
+        build_variant "Linux-GCC-Debug" "Linux-$mxl_gcc_preset-Debug" shared "$@"
+        build_variant "Linux-GCC-Debug" "Linux-$mxl_gcc_preset-Debug" static "$@"
     fi
 }
 
