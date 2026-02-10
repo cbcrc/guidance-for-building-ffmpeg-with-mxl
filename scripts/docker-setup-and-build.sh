@@ -63,7 +63,17 @@ main() {
            --volume "$BUILD_DIR":/build \
            mxl-dev \
            /scripts/build-mxl.sh /src /build "$@"
-
+    
+    if has_opt "--streaming" "$@"; then
+        docker run --rm \
+               --user "$(id -u)":"$(id -g)" \
+               --volume "$SCRIPT_DIR":/scripts \
+               --volume "$SRC_DIR":/src \
+               --volume "$BUILD_DIR":/build \
+               mxl-dev \
+               /scripts/build-codecs.sh /src /build "$@"
+    fi
+    
     docker run --rm \
            --user "$(id -u)":"$(id -g)" \
            --volume "$SCRIPT_DIR":/scripts \
