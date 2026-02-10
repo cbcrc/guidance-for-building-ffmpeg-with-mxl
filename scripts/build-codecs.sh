@@ -19,7 +19,8 @@ Arguments:
   <src-dir>     Directory to find src artifacts
   <build-dir>   Directory to write build artifacts
 
-Build Opus and x264 codecs.
+Build Opus and x264 codecs. Testing is performed via the FFmpeg FATE
+test suite rather than the codecs’ own test suites.
 EOF
 }
 
@@ -36,7 +37,7 @@ build_opus() {
 
     cd "$opus_build_dir"
 
-    CFLAGS="-O3 -DNDEBUG -march=haswell -mtune=icelake-server" \
+    CFLAGS="-O3 -DNDEBUG -march=core-avx2 -mtune=icelake-server" \
     "$SRC_DIR"/opus/configure \
         --prefix="$opus_install_dir" \
         --enable-static \
@@ -57,7 +58,7 @@ build_h264() {
     mkdir -p "$x264_build_dir" 
     cd "$x264_build_dir"
 
-    CFLAGS="-O3 -DNDEBUG -march=haswell -mtune=icelake-server" \
+    CFLAGS="-O3 -DNDEBUG -march=core-avx2 -mtune=icelake-server" \
     "$SRC_DIR/x264/configure" \
         --prefix="$x264_install_dir" \
         --enable-static \
