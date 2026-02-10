@@ -20,3 +20,4 @@
 --enable-filter=sine
 --enable-filter=aresample
 --enable-protocol=pipe
+--extra-cflags=-march=core-avx2 -mtune=icelake-server
