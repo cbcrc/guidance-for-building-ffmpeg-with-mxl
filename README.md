@@ -181,6 +181,7 @@ $ make fate-mxl-json fate-mxl-video-encdec fate-mxl-audio-encdec
 | [`setup-env-all.sh`](scripts/setup-env-all.sh) | Install MXL and FFmpeg build dependencies |
 | [`get-src.sh`](scripts/get-src.sh) | Clone the MXL and FFmpeg source repositories at known-good revisions |
 | [`build-mxl.sh`](scripts/build-mxl.sh) | Build MXL, test, and install |
+| [`build-codecs.sh`](scripts/build-codecs.sh) | Build H.264 and Opus codecs from source for streaming |
 | [`build-ffmpeg.sh`](scripts/build-ffmpeg.sh) | Build FFmpeg, test, and install |
 | [`mxl-update-alternatives.sh`](scripts/deps/mxl-update-alternatives.sh) | Configure tool versions required by MXL |
 | [`cmake-repo-upgrade.sh`](scripts/deps/cmake-repo-upgrade.sh) | Configure CMake repository to the version required by MXL |
@@ -285,19 +286,7 @@ $ tree -L 4 ~/build
         ├── mxl
 ```
 
-### Streaming build options
-
-Use the `--streaming` and `--no-ffplay` options to build FFmpeg with:
-
-* `ffplay` and related dependencies disabled
-* RTSP, H.264, and Opus support enabled
-
-```bash
-$ get-src.sh ~/src
-$ build-ffmpeg.sh ~/src ~/bin --no-ffplay --streaming --prod
-```
-
-### Host setup for development
+### Host setup and build
 
 The `host-setup-and-build.sh` script sets up the host environment
 (`setup-env-all.sh`) and builds both MXL (`build-mxl.sh`) and FFmpeg
@@ -326,12 +315,30 @@ $ host-setup-and-build.sh ~/src ~/build --dev --allow-root
 
 Command-line options are passed through to the underlying MXL and
 FFmpeg setup and build scripts in order to control setup and build
-configuration.  For example:
+configuration. For example, in the following command `--streaming` is
+passed through to the `build-ffmpeg.sh` script:
 
 ```bash
 $ get-src.sh ~/src
-$ host-setup-and-build.sh ~/src ~/build --prod --allow-root --no-ffplay --streaming
+$ host-setup-and-build.sh ~/src ~/build --prod --streaming
 ```
+
+### Streaming build
+
+Use the `--streaming` and `--no-ffplay` options to build FFmpeg with:
+
+* RTSP protocol support
+* H.264 and Opus encoder support
+* H.264 and Opus codecs built from source
+* `ffplay` and related dependencies disabled
+
+```bash
+$ get-src.sh ~/src --streaming
+$ host-setup-and-build.sh ~/src ~/bin --prod --streaming --no-ffplay --allow-root
+```
+
+Note: the streaming build only supports `--prod`, resulting in a
+static, optimized release build.
 
 ### Docker development container
 
@@ -346,6 +353,11 @@ For example:
 ```bash
 $ get-src.sh ~/src
 $ docker-setup-and-build.sh ~/src ~/build --dev
+```
+
+```bash
+$ get-src.sh ~/src --streaming
+$ docker-setup-and-build.sh ~/src ~/bin --prod --streaming --no-ffplay
 ```
 
 The `docker-setup-and-build.sh` script uses `Dockerfile.dev` to create
@@ -501,9 +513,21 @@ $ get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
 $ host-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --prod --allow-root
 ```
 
-``` bash
+```bash
 $ get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
 $ docker-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --dockerfile Dockerfile.ubuntu20.04.dev --prod
+```
+
+Streaming builds are supported:
+
+```bash
+$ get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
+$ host-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --skip-setup --prod --streaming --no-ffplay --allow-root
+```
+
+```bash
+$ get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
+$ docker-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --dockerfile Dockerfile.ubuntu20.04.dev --prod --streaming --no-ffplay
 ```
 
 Docker images built on Ubuntu 24.04 hosts are not guaranteed to be
