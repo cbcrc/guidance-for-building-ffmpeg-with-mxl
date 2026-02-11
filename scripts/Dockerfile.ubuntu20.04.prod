@@ -34,7 +34,7 @@ USER ${UID}:${GID}
 RUN /scripts/get-src.sh /src --mxl-patch mxl-ubuntu20.04-build.diff --streaming
 RUN /scripts/build-mxl.sh /src /build --prod --mxl-gcc-preset GCC13 --mxl-cmake-config-args -DBUILD_TOOLS=OFF
 RUN /scripts/build-codecs.sh /src/ /build
-RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay
+RUN /scripts/build-ffmpeg.sh /src /build --prod --mxl-gcc-preset GCC13 --streaming --no-ffplay
 RUN if [ "$EXTENDED" = "1" ]; then WITH_X265=0 /scripts/build-ffmpeg-extended.sh /src /build --build-all; fi
 
 FROM ubuntu:20.04
