@@ -1,0 +1,50 @@
+# syntax=docker/dockerfile:1.6
+
+# Production image containing only runtime dependencies and built
+# artifacts.
+
+FROM ubuntu:20.04 as builder
+
+ARG UID=1000
+ARG GID=1000
+ARG EXTENDED
+
+COPY . /scripts
+
+RUN echo "container" > /run/ffmpeg-build-context
+RUN /scripts/setup-env-all.sh --streaming
+RUN if [ "$EXTENDED" = "1" ]; then /scripts/setup-env-ffmpeg-extended.sh; fi
+
+RUN set -e; \
+    if ! getent group "${GID}" >/dev/null; then \
+        groupadd -g "${GID}" builder; \
+    fi; \
+    if ! id -u "${UID}" >/dev/null 2>&1; then \
+        useradd -m -u "${UID}" -g "${GID}" builder; \
+    fi
+
+ENV UID=${UID}
+ENV GID=${GID}
+
+RUN install -d -o ${UID} -g ${GID} /build
+RUN install -d -o ${UID} -g ${GID} /src
+
+USER ${UID}:${GID}
+RUN /scripts/get-src.sh /src --streaming
+RUN /scripts/build-mxl.sh /src /build --prod
+RUN /scripts/build-codecs.sh /src/ /build
+RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay
+RUN if [ "$EXTENDED" = "1" ]; then WITH_X265=0 /scripts/build-ffmpeg-extended.sh /src /build --build-all; fi
+
+FROM ubuntu:20.04
+
+# include binutils for dependency debug
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    zlib1g \
+    binutils
+ && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /build/ffmpeg/install/Linux-GCC-Release/static /opt
+
+ENV PATH=/opt/bin:$PATH
