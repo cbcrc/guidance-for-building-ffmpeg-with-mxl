@@ -13,11 +13,12 @@ source "$SCRIPT_DIR"/module/bootstrap.sh exit_trap.sh user_context.sh
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") [--allow-root] [--clang]
+Usage: $(basename "$0") [--allow-root] [--clang] [--streaming]
 
 Options:
   --allow-root    Allow execution as root for host builds (normally refused)
-  --clang         Install and configure Clang
+  --clang         Install and configure Clang for MXL build
+  --streaming     Install FFmpeg streaming build dependencies
 EOF
 }
 

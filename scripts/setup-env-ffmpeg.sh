@@ -13,10 +13,11 @@ source "$SCRIPT_DIR"/module/bootstrap.sh exit_trap.sh logging.sh safe_sudo.sh us
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") [--allow-root]
+Usage: $(basename "$0") [--allow-root] [--streaming]
 
 Options:
   --allow-root    Allow execution as root for host builds (normally refused)
+  --streaming     Install streaming build dependencies.
 
 Setup environment dependencies for ffmpeg build. The FFmpeg
 configuration includes just enough to run the FFmpeg/MXL FATE
