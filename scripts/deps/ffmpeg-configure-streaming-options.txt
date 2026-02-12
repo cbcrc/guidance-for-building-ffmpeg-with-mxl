@@ -7,8 +7,6 @@
 --enable-protocol=udp
 --enable-muxer=rtsp
 --enable-muxer=rtp
---enable-decoder=rtp
---enable-demuxer=rtsp
 # audio:
 --enable-libopus
 --enable-encoder=libopus
@@ -19,4 +17,7 @@
 --enable-encoder=libx264
 --enable-filter=scale
 # extra:
+--enable-muxer=mp4
+--enable-muxer=mov
+--enable-protocol=file
 --ignore-tests=source
