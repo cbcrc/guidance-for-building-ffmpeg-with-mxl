@@ -118,7 +118,7 @@ build_variant() {
         config_opts_files+=("deps/ffmpeg-configure-noplay-options.txt")
     fi
     
-    # Note: intentional use of "mxl_peset" to match mxl build convention
+    # Note: match MXL build path convention
     local build_dir="$FFMPEG_BUILD/$preset/$linkage"
     local install_dir="$FFMPEG_INSTALL/$preset/$linkage"
 
