@@ -33,7 +33,8 @@ EOF
 ffmpeg_configure() {
     local install_dir="$1"
     local include_fate_samples="$2"
-    shift 2
+    local linkage="$3"
+    shift 3
 
     log "FFmpeg configure (in $PWD)"
 
@@ -54,9 +55,12 @@ ffmpeg_configure() {
 
     # Statically link GCC-13 libstdc++ so the resulting binaries do
     # not depend on the target system's libstdc++ version (workaround
-    # for compatibility with stock Ubuntu 20.04 systems).
-    local libstdcpp="$(g++-13 -print-file-name=libstdc++.a)"
-    cmd+=("--extra-libs=$libstdcpp")
+    # for compatibility with stock Ubuntu 20.04 systems and MXL GCC-13
+    # dependency).
+    if [[ "$linkage" == static ]]; then
+        local libstdcpp="$(g++-13 -print-file-name=libstdc++.a)"
+        cmd+=("--extra-libs=$libstdcpp")
+    fi
     
     log_cmd "${cmd[@]}"
     "${cmd[@]}"
@@ -121,7 +125,7 @@ build_variant() {
     mkdir -p "$build_dir"
     pushd "$build_dir"
 
-    ffmpeg_configure "$install_dir" "$streaming" "${config_opts_files[@]}"
+    ffmpeg_configure "$install_dir" "$streaming" "$linkage" "${config_opts_files[@]}"
     make clean
     make -j$(nproc)
     if (( streaming )); then
