@@ -58,7 +58,8 @@ ffmpeg_configure() {
     # for compatibility with stock Ubuntu 20.04 systems and MXL GCC-13
     # dependency).
     if [[ "$linkage" == static ]]; then
-        local libstdcpp="$(g++-13 -print-file-name=libstdc++.a)"
+        local libstdcpp
+        libstdcpp="$(g++-13 -print-file-name=libstdc++.a)"
         cmd+=("--extra-libs=$libstdcpp")
     fi
     
@@ -127,7 +128,7 @@ build_variant() {
 
     ffmpeg_configure "$install_dir" "$streaming" "$linkage" "${config_opts_files[@]}"
     make clean
-    make -j$(nproc)
+    make -j"$(nproc)"
     if (( streaming )); then
         make fate-rsync
         make fate
