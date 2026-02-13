@@ -1,7 +1,6 @@
 # FFmpeg streaming build configure options
 # rtsp:
 --enable-network
---enable-protocol=rtsp
 --enable-protocol=rtp
 --enable-protocol=tcp
 --enable-protocol=udp
