@@ -92,7 +92,7 @@ build_variant() {
     export PKG_CONFIG_PATH="$full_mxl_install_dir"/lib/pkgconfig:"$full_mxl_install_dir"/x64-linux/lib/pkgconfig
 
     if (( streaming )); then
-        local codecs_install="$BUILD_DIR/codecs/install/$preset/$linkage"/lib/pkgconfig
+        local codecs_install="$BUILD_DIR/codecs/install/Linux-GCC-Release/static/lib/pkgconfig"
         export PKG_CONFIG_PATH="$PKG_CONFIG_PATH":"$codecs_install"
     fi
     
