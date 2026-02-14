@@ -19,4 +19,5 @@
 --enable-muxer=mp4
 --enable-muxer=mov
 --enable-protocol=file
+--enable-filter=showinfo
 --ignore-tests=source
