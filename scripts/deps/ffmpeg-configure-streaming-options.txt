@@ -16,6 +16,8 @@
 --enable-encoder=libx264
 --enable-filter=scale
 # extra:
+--enable-demuxer=mpegts
+--enable-muxer=mpegts
 --enable-muxer=mp4
 --enable-muxer=mov
 --enable-protocol=file
