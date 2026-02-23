@@ -35,6 +35,12 @@ main() {
     if has_opt --extended "$@"; then
         EXTENDED=1
     fi
+
+    # grab mxl version and stick it to image tag
+    cd "$SCRIPT_DIR/../src/mxl/"
+    MXL_TAG=$(git describe --tags)
+    cd -
+    IMAGE_TAG="ffmpeg-mxl-${MXL_TAG}-dev"
        
     # Prevent Docker-created root-owned bind mounts
     mkdir -p "$SRC_DIR" "$BUILD_DIR"
@@ -54,14 +60,14 @@ main() {
            --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
            --build-arg SETUP_OPTIONS="$*" \
            --build-arg EXTENDED="$EXTENDED" \
-           --tag mxl-dev .
+           --tag $IMAGE_TAG .
     
     docker run --rm \
            --user "$(id -u)":"$(id -g)" \
            --volume "$SCRIPT_DIR":/scripts \
            --volume "$SRC_DIR":/src \
            --volume "$BUILD_DIR":/build \
-           mxl-dev \
+           $IMAGE_TAG \
            /scripts/build-mxl.sh /src /build "$@"
     
     if has_opt "--streaming" "$@"; then
@@ -70,7 +76,7 @@ main() {
                --volume "$SCRIPT_DIR":/scripts \
                --volume "$SRC_DIR":/src \
                --volume "$BUILD_DIR":/build \
-               mxl-dev \
+               $IMAGE_TAG \
                /scripts/build-codecs.sh /src /build "$@"
     fi
     
@@ -79,7 +85,7 @@ main() {
            --volume "$SCRIPT_DIR":/scripts \
            --volume "$SRC_DIR":/src \
            --volume "$BUILD_DIR":/build \
-           mxl-dev \
+           $IMAGE_TAG \
            /scripts/build-ffmpeg.sh /src /build "$@"
        
     if has_opt "--extended" "$@"; then
@@ -90,7 +96,7 @@ main() {
                --volume "$BUILD_DIR":/build \
                -e WITH_X265=0 \
                -e WITH_VMAF=0 \
-               mxl-dev \
+               $IMAGE_TAG \
                /scripts/build-ffmpeg-extended.sh /src /build --build-all "$@"
     fi
 
@@ -100,7 +106,7 @@ main() {
             --volume "$SCRIPT_DIR":/scripts \
             --volume "$SRC_DIR":/src \
             --volume "$BUILD_DIR":/build \
-            mxl-dev
+           $IMAGE_TAG
 }
 
 main "$@"

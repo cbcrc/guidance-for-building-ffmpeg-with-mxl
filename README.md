@@ -361,7 +361,7 @@ $ docker-setup-and-build.sh ~/src ~/bin --prod --streaming --no-ffplay
 ```
 
 The `docker-setup-and-build.sh` script uses `Dockerfile.dev` to create
-a reusable Docker image (named `mxl-dev`), mount the host `~/src` and
+a reusable Docker image (named `ffmpeg-mxl-<mxl_version>-dev`), mount the host `~/src` and
 `~/build` directories, run the setup scripts, and build MXL and
 FFmpeg. The results will be in the host `~/build` directory.
 
@@ -371,7 +371,7 @@ Use `Dockerfile.prod` to build a production image:
 
 ```bash
 $ cd scripts
-$ docker build -f Dockerfile.prod -t mxl-prod .
+$ docker build -f Dockerfile.prod -t ffmpeg-mxl-v1.0_rc1-prod .
 ```
 
 `Dockerfile.prod` stages an intermediate build environment
