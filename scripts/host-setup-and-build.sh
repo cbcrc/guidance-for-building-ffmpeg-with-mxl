@@ -36,6 +36,8 @@ main() {
     get_var SRC_DIR "$@" && shift
     get_var BUILD_DIR "$@" && shift
 
+    cd "$SCRIPT_DIR"
+
     enforce_build_context
 
     if ! has_opt "--skip-setup" "$@"; then
