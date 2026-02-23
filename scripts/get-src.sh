@@ -30,9 +30,7 @@ clone_vcpkg_repo() {
     git clone https://github.com/microsoft/vcpkg
 }
 
-# Use a release/1.0 commit hash that includes
-# https://github.com/dmf-mxl/mxl/commit/0e3825685c3ca0bfd71145326ec398b341a9fdd2
-# pending final 1.0 release tag.
+# Clone from release tag
 clone_mxl_repo() {
     log "fetch MXL git repository..."
 
@@ -42,7 +40,7 @@ clone_mxl_repo() {
     git clone https://github.com/dmf-mxl/mxl.git
 
     cd mxl
-    git switch --detach 0e38256 
+    git switch --detach v1.0.0-rc2
 
     # optional patch
     if has_opt "--mxl-patch" "$@"; then
