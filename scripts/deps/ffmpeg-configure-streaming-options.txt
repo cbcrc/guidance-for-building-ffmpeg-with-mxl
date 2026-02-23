@@ -17,6 +17,8 @@
 --enable-filter=scale
 # extra:
 --enable-demuxer=mpegts
+--enable-parser=h264
+--enable-parser=aac
 --enable-decoder=aac
 --enable-muxer=mp4
 --enable-muxer=mov
