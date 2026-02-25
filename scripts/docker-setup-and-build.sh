@@ -37,7 +37,7 @@ main() {
     fi
 
     # grab mxl version and stick it to image tag
-    cd "$SCRIPT_DIR/../src/mxl/"
+    cd "$SRC_DIR/mxl/"
     MXL_TAG=$(git describe --tags)
     cd -
     IMAGE_TAG="ffmpeg-mxl-${MXL_TAG}-dev"
