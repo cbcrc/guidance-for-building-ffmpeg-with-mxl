@@ -4,6 +4,7 @@
 --enable-muxer=mxl
 --enable-libmxl
 --enable-muxer=framemd5
+--enable-muxer=null
 --enable-encoder=pcm_f32le
 --enable-decoder=pcm_f32le
 --enable-encoder=pcm_s16le
@@ -12,6 +13,7 @@
 --enable-decoder=rawvideo
 --enable-encoder=v210
 --enable-decoder=v210
+--enable-encoder=wrapped_avframe
 --enable-decoder=wrapped_avframe
 --enable-indev=lavfi
 --enable-filter=scale
