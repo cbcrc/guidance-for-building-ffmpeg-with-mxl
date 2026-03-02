@@ -85,7 +85,7 @@ build_variant() {
     FFMPEG_SRC="$SRC_DIR"/FFmpeg
     FFMPEG_BUILD="$BUILD_DIR"/ffmpeg/build
     FFMPEG_INSTALL="$BUILD_DIR"/ffmpeg/install
-    FFMPEG_FATE_SUITE="$BUILD_DIR"/ffmpeg-fate-suite
+    FFMPEG_FATE_SUITE="$SRC_DIR"/fate-suite
 
     local mxl_install="$BUILD_DIR"/mxl/install
     local full_mxl_install_dir="$mxl_install/$mxl_preset/$linkage"

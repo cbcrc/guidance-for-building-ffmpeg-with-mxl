@@ -86,6 +86,21 @@ clone_opus_repo() {
     git switch --detach v1.6.1
 }
 
+clone_nvcodec_repo() {
+    log "fetch Nvidia codec headers repository..."
+    local src_dir="$1"
+    cd "$src_dir"
+    git clone  https://git.ffmpeg.org/nv-codec-headers.git
+    cd nv-codec-headers
+    git switch --detach n12.1.14.0
+}
+
+rsync_fate_suite() {
+    log "fetch FFmpeg fate test suite ..."
+    local src_dir="$1"
+    rsync -av rsync://fate.ffmpeg.org/fate-suite/ "$src_dir"/fate-suite/
+}
+
 main() {
     check_help "$@"
 
@@ -101,6 +116,8 @@ main() {
     if has_opt "--streaming" "$@"; then
         clone_x264_repo "$SRC_DIR" "$@"
         clone_opus_repo "$SRC_DIR" "$@"
+        clone_nvcodec_repo "$SRC_DIR" "$@"
+        rsync_fate_suite "$SRC_DIR" "$@"
     fi
 }
 
