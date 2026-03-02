@@ -1,3 +1,5 @@
 # FFmpeg streaming dependencies (apt packages)
+# video:
+nvidia-cuda-toolkit
 # testing:
 rsync

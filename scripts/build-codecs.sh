@@ -28,7 +28,6 @@ build_opus() {
     log "Build Opus"
     
     local opus_build_dir="$BUILD_DIR"/opus/build/Linux-GCC-Release/static
-    local opus_install_dir="$BUILD_DIR"/codecs/install/Linux-GCC-Release/static
 
     mkdir -p "$opus_build_dir"
  
@@ -39,7 +38,7 @@ build_opus() {
 
     CFLAGS="-O3 -DNDEBUG -march=core-avx2 -mtune=icelake-server" \
     "$SRC_DIR"/opus/configure \
-        --prefix="$opus_install_dir" \
+        --prefix="$CODECS_INSTALL_DIR" \
         --enable-static \
         --disable-shared \
         --disable-doc \
@@ -53,14 +52,13 @@ build_h264() {
     log "Build x264"
 
     local x264_build_dir="$BUILD_DIR"/x264/build/Linux-GCC-Release/static
-    local x264_install_dir="$BUILD_DIR"/codecs/install/Linux-GCC-Release/static
 
     mkdir -p "$x264_build_dir" 
     cd "$x264_build_dir"
 
     CFLAGS="-O3 -DNDEBUG -march=core-avx2 -mtune=icelake-server" \
     "$SRC_DIR/x264/configure" \
-        --prefix="$x264_install_dir" \
+        --prefix="$CODECS_INSTALL_DIR" \
         --enable-static \
         --disable-shared \
         --disable-cli \
@@ -68,6 +66,11 @@ build_h264() {
     
     make -j"$(nproc)"
     make install
+}
+
+build_nvidia() {
+    cd "$SRC_DIR/nv-codec-headers"
+    make PREFIX="$CODECS_INSTALL_DIR" install
 }
 
 main() {
@@ -79,8 +82,11 @@ main() {
 
     enforce_build_context
 
+    CODECS_INSTALL_DIR="$BUILD_DIR"/codecs/install/Linux-GCC-Release/static
+
     build_opus
     build_h264
+    build_nvidia
 }
 
 main "$@"
