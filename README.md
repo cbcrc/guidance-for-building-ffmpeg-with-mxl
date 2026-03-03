@@ -330,6 +330,7 @@ Use the `--streaming` and `--no-ffplay` options to build FFmpeg with:
 * RTSP protocol support
 * H.264 and Opus encoder support
 * H.264 and Opus codecs built from source
+* Nvidia NVENC and CUDA support
 * `ffplay` and related dependencies disabled
 
 ```bash
@@ -339,6 +340,8 @@ $ host-setup-and-build.sh ~/src ~/bin --prod --streaming --no-ffplay --allow-roo
 
 Note: the streaming build only supports `--prod`, resulting in a
 static, optimized release build.
+
+Reading more about streaming: [streaming details](docs/streaming.md)
 
 ### Docker development container
 
