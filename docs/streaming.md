@@ -34,6 +34,14 @@ H.264/Opus stream to an RTSP server over TCP.
       rtsp://your.rtsp.server.lan:port/test_stream
 ```
 
+> [!IMPORTANT]
+> The `-threads 1` option before the video demuxer (`-f mxl ...`) is
+> important. By default FFmpeg will create one decode thread per
+> available CPU, up to a maximum of 16 threads, and will insert one
+> frame of delay for each decode stage thread. In the 16-thread case,
+> this will introduce 500 ms of delay. A single thread is sufficient for
+> the decode stage.
+
 ```mermaid
 flowchart LR
 
@@ -58,6 +66,22 @@ flowchart LR
     AIn --> ADemux --> AEnc --> Mux
     Mux --> Net
 ```
+
+| Option | Description | Effect |
+|--------|------------|--------|
+| `-c:v libx264` | Select x264 encoder | CPU-based H.264 encoding |
+| `-preset superfast` | Encoder speed/quality preset | Prioritizes speed over compression efficiency |
+| `-tune zerolatency` | Low-latency profile | Disables buffering that increases latency |
+| `-bf 0` | Disable B-frames | Eliminates frame reordering latency |
+| `-rc-lookahead 0` | Disable rate-control lookahead | Prevents future-frame analysis buffering and latency |
+| `-g 30` | GOP size (keyframe interval) | Inserts a keyframe every 30 frames |
+| `-sc_threshold 0` | Disable scene-change keyframes | Keeps GOP structure fixed and predictable |
+| `-crf 20` | Constant Rate Factor setting | Higher quality than default (x264 default is 23). |
+| `-x264-params "sliced-threads=1:sync-lookahead=0"` | Additional x264 parameters | Enables slice-based threading and disables frame synchronization lookahead to reduce encoder latency |
+| `-maxrate 12M` | Maximum bitrate | Caps peak bitrate at 12 Mbps |
+| `-bufsize 1M` | Encoder buffer size | Limits bitrate spikes and buffering |
+| `-threads 4` | Encoder thread count | Uses 4 CPU threads for encoding |
+
 
 ## GPU H.264 Encoding
 
@@ -90,7 +114,7 @@ resulting H.264/Opus stream to an RTSP server over TCP.
 	-maxrate 20M \
 	-bufsize 1M \
 	-rc-lookahead 0 \
-	-surfaces 8 \
+	-surfaces 2 \
 	-spatial-aq 1 \
 	-temporal-aq 0 \
 	-c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
@@ -124,12 +148,34 @@ flowchart LR
     Mux --> Net
 ```
 
-Note that the decode stage uses the CPU to convert from `v210` (10-bit
-4:2:2, packed) to `yuv422p10le` (10-bit 4:2:2 planar, unpacked). This
-decode stage is inserted by FFmpeg's pipeline builder as an
-intermediary stage to match the `v210` input to the requirements of
-the CUDA filter that generates `nv12` for the NVENC H.264 encoder.
+| Option | Description | Effect |
+|--------|------------|--------|
+| `-vf "hwupload_cuda,...` | CUDA filter chain | Uploads frames to GPU and converts to `nv12` |
+| `-c:v h264_nvenc` | Select NVENC encoder | GPU-based H.264 encoding |
+| `-pix_fmt cuda` | Use CUDA hardware frames | Keeps frames in GPU memory for encoding |
+| `-profile:v high` | H.264 High profile | Enables standard High profile coding tools |
+| `-preset p3` | NVENC preset | Performance/quality tradeoff preset |
+| `-tune ull` | Ultra-low-latency tuning | Minimizes internal encoder buffering |
+| `-zerolatency 1` | Zero-latency mode | Enabled; minimizes internal encoder buffering |
+| `-delay 0` | Output delay setting | Set to 0; prevents additional encoder frame buffering |
+| `-bf 0` | Disable B-frames | Eliminates frame reordering delay |
+| `-g 30` | GOP size | Sets keyframe interval to 30 frames |
+| `-rc cbr` | Constant bitrate mode | Maintains fixed output bitrate |
+| `-ldkfs 1` | Low-delay keyframe scaling | Enabled; reduces keyframe bitrate spikes in CBR mode |
+| `-b:v 20M` | Target bitrate | Sets average bitrate to 20 Mbps |
+| `-maxrate 20M` | Maximum bitrate | Caps peak bitrate at 20 Mbps |
+| `-bufsize 1M` | Encoder buffer size | Limits bitrate spikes |
+| `-rc-lookahead 0` | Rate-control lookahead | Disabled; removes future-frame analysis buffering |
+| `-surfaces 2` | Encoding surface count | Reduces encoder pipeline depth, limiting latency |
+| `-spatial-aq 1` | Spatial adaptive quantization | Enabled; improves per-frame quality under CBR without increasing latency |
+| `-temporal-aq 0` | Temporal adaptive quantization | Disabled; consistent with aggressively minimized buffering and cross-frame analysis |
 
-A CUDA v210 to nv12 conversion would eliminate the CPU decode stage
-and further reduce CPU utilization.
-
+> [!NOTE]
+> The decode stage uses the CPU to convert from `v210` (10-bit 4:2:2,
+> packed) to `yuv422p10le` (10-bit 4:2:2 planar, unpacked). This decode
+> stage is inserted by FFmpeg's pipeline builder as an intermediary
+> stage to match the `v210` input to the requirements of the CUDA filter
+> that generates `nv12` for the NVENC H.264 encoder.
+> 
+> A CUDA v210 to nv12 conversion would eliminate the CPU decode stage
+> and further reduce CPU utilization.
