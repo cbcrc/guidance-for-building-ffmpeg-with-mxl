@@ -34,6 +34,31 @@ H.264/Opus stream to an RTSP server over TCP.
       rtsp://your.rtsp.server.lan:port/test_stream
 ```
 
+```mermaid
+flowchart LR
+
+    subgraph Video_Path
+        VIn["MXL Input<br/>Video: v210<br/>10-bit 4:2:2 packed"]
+        VDemux["Demux (mxl)"]
+        VDec["Decode<br/>v210 → yuv422p10le"]
+        VFilter["Filter<br/>format=yuv420p"]
+        VEnc["Encode<br/>libx264<br/>H.264 (8-bit 4:2:0)"]
+    end
+
+    subgraph Audio_Path
+        AIn["MXL Input<br/>Audio: 32-bit float PCM"]
+        ADemux["Demux (mxl)"]
+        AEnc["Encode<br/>libopus<br/>Opus"]
+    end
+
+    Mux["RTSP Muxer"]
+    Net["TCP Transport"]
+
+    VIn --> VDemux --> VDec --> VFilter --> VEnc --> Mux
+    AIn --> ADemux --> AEnc --> Mux
+    Mux --> Net
+```
+
 ## GPU H.264 Encoding
 
 This command reads MXL video in `v210` (10-bit 4:2:2) format and MXL
@@ -73,3 +98,28 @@ resulting H.264/Opus stream to an RTSP server over TCP.
     rtsp://your.rtsp.server.lan:port/test_stream
 ```
 
+```mermaid
+flowchart LR
+
+    subgraph Video_Path
+        VIn["MXL Input<br/>Video: v210<br/>10-bit 4:2:2 packed"]
+        VDemux["Demux (mxl)"]
+        VDec["CPU Decode<br/>v210 → yuv422p10le"]
+        VUpload["GPU Upload<br/>CUDA<br/>hwupload_cuda"]
+        VScale["GPU Scale/Convert<br/>CUDA<br/>scale_cuda=format=nv12"]
+        VEnc["GPU Encode<br/>NVENC<br/>H.264 (8-bit 4:2:0)"]
+    end
+
+    subgraph Audio_Path
+        AIn["MXL Input<br/>Audio: 32-bit float PCM"]
+        ADemux["Demux (mxl)"]
+        AEnc["Encode<br/>libopus<br/>Opus"]
+    end
+
+    Mux["RTSP Muxer"]
+    Net["TCP Transport"]
+
+    VIn --> VDemux --> VDec --> VUpload --> VScale --> VEnc --> Mux
+    AIn --> ADemux --> AEnc --> Mux
+    Mux --> Net
+```
