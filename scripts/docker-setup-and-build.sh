@@ -60,14 +60,14 @@ main() {
            --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
            --build-arg SETUP_OPTIONS="$*" \
            --build-arg EXTENDED="$EXTENDED" \
-           --tag $IMAGE_TAG .
+           --tag "$IMAGE_TAG" .
     
     docker run --rm \
            --user "$(id -u)":"$(id -g)" \
            --volume "$SCRIPT_DIR":/scripts \
            --volume "$SRC_DIR":/src \
            --volume "$BUILD_DIR":/build \
-           $IMAGE_TAG \
+           "$IMAGE_TAG" \
            /scripts/build-mxl.sh /src /build "$@"
     
     if has_opt "--streaming" "$@"; then
@@ -76,7 +76,7 @@ main() {
                --volume "$SCRIPT_DIR":/scripts \
                --volume "$SRC_DIR":/src \
                --volume "$BUILD_DIR":/build \
-               $IMAGE_TAG \
+               "$IMAGE_TAG" \
                /scripts/build-codecs.sh /src /build "$@"
     fi
     
@@ -85,7 +85,7 @@ main() {
            --volume "$SCRIPT_DIR":/scripts \
            --volume "$SRC_DIR":/src \
            --volume "$BUILD_DIR":/build \
-           $IMAGE_TAG \
+           "$IMAGE_TAG" \
            /scripts/build-ffmpeg.sh /src /build "$@"
        
     if has_opt "--extended" "$@"; then
@@ -96,7 +96,7 @@ main() {
                --volume "$BUILD_DIR":/build \
                -e WITH_X265=0 \
                -e WITH_VMAF=0 \
-               $IMAGE_TAG \
+               "$IMAGE_TAG" \
                /scripts/build-ffmpeg-extended.sh /src /build --build-all "$@"
     fi
 
@@ -106,7 +106,7 @@ main() {
             --volume "$SCRIPT_DIR":/scripts \
             --volume "$SRC_DIR":/src \
             --volume "$BUILD_DIR":/build \
-           $IMAGE_TAG
+           "$IMAGE_TAG"
 }
 
 main "$@"
