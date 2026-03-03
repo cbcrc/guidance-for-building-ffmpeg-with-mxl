@@ -2,7 +2,7 @@
 
 This page describes using FFmpeg/MXL to implement low latency
 streaming using H.264 video, Opus audio, and RTSP transport. FFmpeg
-actions as the RTSP client.
+acts as the RTSP client.
 
 ## CPU H.264 Encoding
 
