@@ -46,7 +46,7 @@ flowchart LR
     end
 
     subgraph Audio_Path
-        AIn["MXL Input<br/>Audio: 32-bit float PCM"]
+        AIn["MXL Input<br/>32-bit float PCM"]
         ADemux["Demux (mxl)"]
         AEnc["Encode<br/>libopus<br/>Opus"]
     end
@@ -111,7 +111,7 @@ flowchart LR
     end
 
     subgraph Audio_Path
-        AIn["MXL Input<br/>Audio: 32-bit float PCM"]
+        AIn["MXL Input<br/>32-bit float PCM"]
         ADemux["Demux (mxl)"]
         AEnc["Encode<br/>libopus<br/>Opus"]
     end
