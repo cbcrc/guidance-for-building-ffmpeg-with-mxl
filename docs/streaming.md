@@ -178,4 +178,5 @@ flowchart LR
 > that generates `nv12` for the NVENC H.264 encoder.
 > 
 > A CUDA v210 to nv12 conversion would eliminate the CPU decode stage
-> and further reduce CPU utilization.
+> and further reduce CPU utilization. No such CUDA filter currently
+> exists.
