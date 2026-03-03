@@ -123,3 +123,13 @@ flowchart LR
     AIn --> ADemux --> AEnc --> Mux
     Mux --> Net
 ```
+
+Note that the decode stage uses the CPU to convert from `v210` (10-bit
+4:2:2, packed) to `yuv422p10le` (10-bit 4:2:2 planar, unpacked). This
+decode stage is inserted by FFmpeg's pipeline builder as an
+intermediary stage to match the `v210` input to the requirements of
+the CUDA filter that generates `nv12` for the NVENC H.264 encoder.
+
+A CUDA v210 to nv12 conversion would eliminate the CPU decode stage
+and further reduce CPU utilization.
+
