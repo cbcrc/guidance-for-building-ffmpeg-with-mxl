@@ -6,6 +6,8 @@
 # For example:
 #
 # $ ffmpeg -loglevel debug -debug_ts ... > debug_ts.log 2>&1
+#
+# $ extract_stages.sh debug_ts.log
 # ==== input side (demux->decode)
 # == demux
 # [vist#0:0/v210 @ 0x5da879b18c80] demuxer ->
@@ -77,7 +79,7 @@ for stage in demux decode filter encode mux; do
             if [[ "$stage" == "mux" ]]; then
                 tmp="${id#\[}"
                 outfile="${tmp%%#*}"
-                echo "$id ["$(./extract_stage_events.py "$stage" "$id" "$stage_log" 15 15 --summary --outfile "${outfile}.m")"]"
+                echo "$id [$(./extract_stage_events.py "$stage" "$id" "$stage_log" 15 15 --summary --outfile "${outfile}.m")]"
             else
                 echo "$id"
             fi
