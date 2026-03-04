@@ -1,87 +1,111 @@
 #!/usr/bin/env python3
 #
 # Extract ffmpeg stage events from an ffmpeg -debug_ts log file. Used by extract_stages.sh to
-# compute average and stdev of the muxer latency.
+# report latency statistics. Reports median, 99th percentile, and maximum latency.
 #
 # For example:
+#
 # $ ffmpeg -loglevel debug -debug_ts ... > debug_ts.log 2>&1
+#
 # $ ./extract_stage_events.py mux "[vost#0:0/h264_nvenc @ 0x5da879b2f440]" /dev/shm/mxl/test-rtsp-ffmpeg.log 15 15  --summary
-# latency=4.5 ± 0.25 ms
+# median=4.478 p99=5.162 max=7.089 ms
+#
 # $ ./extract_stage_events.py mux "[vost#0:0/h264_nvenc @ 0x5da879b2f440]" /dev/shm/mxl/test-rtsp-ffmpeg.log 15 15  
 # count: 289
-# mean_latency_ms: 4.5
-# stddev_latency_ms: 0.25
-# min_latency_ms: 3.93
-# max_latency_ms: 7.09
+# median: 4.478 ms
+# p99: 5.162 ms
+# max: 7.089 ms
+#
+# requires: sudo apt install python3-numpy
 
 import sys
 import re
-import statistics
+import argparse
+import pathlib
 
-if len(sys.argv) < 4:
-    print("Usage: extract_stage_events.py <stage> '<identifier>' <logfile> "
-          "[ignore_first_N] [ignore_last_N] [--summary]")
-    sys.exit(1)
+try:
+    import numpy as np
+except ImportError:
+    sys.exit("Error: numpy is required. Install with: sudo apt install python3-numpy")
 
-stage = sys.argv[1]
-identifier = sys.argv[2]
-logfile = sys.argv[3]
+parser = argparse.ArgumentParser(
+    prog="extract_stage_events.py",
+    usage="%(prog)s stage identifier logfile ignore_first ignore_last [--summary] [--outfile FILE]",
+    description="Analyze timing events extracted from log data."
+)
 
-ignore_first = 0
-ignore_last = 0
-summary_mode = False
+parser.add_argument("stage",
+    help="pipeline stage name (e.g. demux, decode, encode)")
 
-# Parse optional args
-for arg in sys.argv[4:]:
-    if arg == "--summary":
-        summary_mode = True
-    elif ignore_first == 0:
-        ignore_first = int(arg)
-    elif ignore_last == 0:
-        ignore_last = int(arg)
+parser.add_argument("identifier",
+    help="event name within the stage")
 
-re_latency_total = re.compile(r'latency\(total:([0-9.]+)ms')
+parser.add_argument("logfile",
+    help="the ffmpeg log file to read")
+
+parser.add_argument("ignore_first", type=int, nargs='?', default=0,
+                    help="number of initial samples to ignore (default: 0)")
+
+parser.add_argument("ignore_last", type=int, nargs='?', default=0,
+                    help="number of final samples to ignore (default: 0)")
+
+parser.add_argument("--summary",
+    action="store_true",
+    help="print summary statistics instead of raw values")
+
+parser.add_argument("--outfile",
+    metavar="FILE",
+    help="write latencies as MATLAB/Octave variable to FILE")
+
+args = parser.parse_args()
+
+re_latency_total = re.compile(r'latency\(total:([0-9]+(?:\.[0-9]+)?)ms')
 
 latencies = []
 
-with open(logfile, "r", errors="ignore") as f:
+if args.stage != "mux":
+    sys.exit("Error: only 'mux' stage currently supported")
+
+with open(args.logfile, "r", errors="ignore") as f:
     for line in f:
-        if identifier not in line:
+        if args.identifier not in line:
             continue
 
-        if stage == "mux":
+        if args.stage == "mux":
             m = re_latency_total.search(line)
             if m:
                 latencies.append(float(m.group(1)))
 
-if stage == "mux":
+if args.stage == "mux":
 
     total_samples = len(latencies)
 
     if total_samples == 0:
-        print("No samples found.")
-        sys.exit(0)
+        print("No samples found.", file=sys.stderr)
+        sys.exit(1)
 
-    if ignore_first + ignore_last >= total_samples:
-        print("Ignore window too large for sample size.")
-        sys.exit(0)
+    if args.ignore_first + args.ignore_last >= total_samples:
+        print("Ignore window too large for sample size.", file=sys.stderr)
+        sys.exit(1)
 
-    latencies = latencies[ignore_first: total_samples - ignore_last]
+    latencies = latencies[args.ignore_first: total_samples - args.ignore_last]
 
-    mean_val = statistics.mean(latencies)
-    std_val = statistics.stdev(latencies) if len(latencies) > 1 else 0.0
+    p50, p99 = np.percentile(latencies, [50,99])
+    mx = max(latencies)
 
-    mean_i = round(mean_val,2)
-    std_i = round(std_val, 2)
-
-
-
-    if summary_mode:
-        print(f"latency={mean_i} ± {std_i} ms")
+    if args.summary:        
+        print(f"median={p50:.3f} p99={p99:.3f} max={mx:.3f} ms")
     else:
         print("count:", len(latencies))
-        print("mean_latency_ms:", mean_i)
-        print("stddev_latency_ms:", std_i)
-        print("min_latency_ms:", round(min(latencies), 2))
-        print("max_latency_ms:", round(max(latencies), 2))
+        print(f"median: {p50:.3f} ms")
+        print(f"p99: {p99:.3f} ms")
+        print(f"max: {mx:.3f} ms")
         
+    if args.outfile:
+        varname = pathlib.Path(args.outfile).stem
+        with open(args.outfile, "w") as f:
+            f.write(f"% extracted from {args.logfile}\n")
+            f.write(f"{varname} = [\n")
+            for v in latencies:
+                f.write(f"{v}\n")
+            f.write("];\n")
