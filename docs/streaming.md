@@ -46,7 +46,7 @@ H.264/Opus stream to an RTSP server over TCP.
 flowchart LR
 
     subgraph Video_Path
-        VIn["MXL Input<br/>Video: v210<br/>10-bit 4:2:2 packed"]
+        VIn["MXL Input<br/>v210<br/>10-bit 4:2:2 packed"]
         VDemux["Demux (mxl)"]
         VDec["Decode<br/>v210 → yuv422p10le"]
         VFilter["Filter<br/>format=yuv420p"]
@@ -126,7 +126,7 @@ resulting H.264/Opus stream to an RTSP server over TCP.
 flowchart LR
 
     subgraph Video_Path
-        VIn["MXL Input<br/>Video: v210<br/>10-bit 4:2:2 packed"]
+        VIn["MXL Input<br/>v210<br/>10-bit 4:2:2 packed"]
         VDemux["Demux (mxl)"]
         VDec["CPU Decode<br/>v210 → yuv422p10le"]
         VUpload["GPU Upload<br/>CUDA<br/>hwupload_cuda"]
