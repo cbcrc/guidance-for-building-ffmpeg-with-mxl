@@ -36,11 +36,11 @@ H.264/Opus stream to an RTSP server over TCP.
 
 > [!IMPORTANT]
 > The `-threads 1` option before the video demuxer (`-f mxl ...`) is
-> important. By default FFmpeg will create one decode thread per
-> available CPU, up to a maximum of 16 threads, and will insert one
-> frame of delay for each decode stage thread. In the 16-thread case,
-> this will introduce 500 ms of delay. A single thread is sufficient for
-> the `v210` decode stage.
+> important. By default FFmpeg creates one decode thread per available
+> CPU, up to a maximum of 16 threads, and inserts one frame of delay
+> for each decode thread beyond the first. In the 16-thread case, this
+> introduces 500 ms of delay at 30 fps. A single thread is sufficient
+> for the `v210` decode stage.
 
 ```mermaid
 flowchart LR
