@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
-# Extract stage names produces by FFmpeg's -debug_ts option and report
-# muxer stage latency.
+# Extract stage names produced by FFmpeg's -debug_ts option and report
+# muxer stage latency. Uses ./extract_stage_events.py.
 #
 # For example:
 #
 # $ ffmpeg -loglevel debug -debug_ts ... > debug_ts.log 2>&1
-# $ extract_stages.sh debug_ts.log
 # ==== input side (demux->decode)
 # == demux
 # [vist#0:0/v210 @ 0x5da879b18c80] demuxer ->
@@ -29,12 +28,12 @@
 # [aost#0:1/libopus @ 0x5da879f83700] [enc:libopus @ 0x5da879b5f900] encoder ->
 # [aost#0:1/libopus @ 0x5da879f83700] [enc:libopus @ 0x5da879b5f900] encoder <-
 # == mux
-# [vost#0:0/h264_nvenc @ 0x5da879b2f440] muxer <- latency=4.5 ± 0.25 ms
-# [aost#0:1/libopus @ 0x5da879f83700] muxer <- latency=0.02 ± 0.13 ms
+# [vost#0:0/h264_nvenc @ 0x5da879b2f440] muxer <- [median=4.478 p99=5.162 max=7.089 ms]
+# [aost#0:1/libopus @ 0x5da879f83700] muxer <- [median=0.009 p99=0.095 max=4.052 ms]
 
 set -euo pipefail
 
-[[ -z "$1" ]] && { echo "Usage: $0 <logfile>"; exit 1; }
+[[ $# -lt 1 ]] && { echo "Usage: $0 <logfile>"; exit 1; }
 log="$1"
 
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
@@ -65,9 +64,9 @@ for stage in demux decode filter encode mux; do
     stage_log="$tmpdir/${stage}.log"
     grep -E "${stage_patterns[$stage]}" "$log" > "$stage_log"
     
-    streams="$(grep -oE '#[0-9]+:[0-9]+' $stage_log | sort -u)"
+    mapfile -t streams < <(grep -oE '#[0-9]+:[0-9]+' "$stage_log" | sort -u)
 
-    for s in $streams; do
+    for s in "${streams[@]}"; do
         readarray -t identifiers < <(
             grep -E "^\[[^]]*${s}[^]]*\].* (->|<-)" "$stage_log" |
                 grep -oE '^\[[^]]+\]( \[[^]]+\])? [^ ]+ (->|<-)' |
@@ -76,7 +75,9 @@ for stage in demux decode filter encode mux; do
 
         for id in "${identifiers[@]}"; do
             if [[ "$stage" == "mux" ]]; then
-                echo "$id" $(./extract_stage_events.py "$stage" "$id" "$stage_log" 15 15 --summary)
+                tmp="${id#\[}"
+                outfile="${tmp%%#*}"
+                echo "$id ["$(./extract_stage_events.py "$stage" "$id" "$stage_log" 15 15 --summary --outfile "${outfile}.m")"]"
             else
                 echo "$id"
             fi
