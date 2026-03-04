@@ -31,11 +31,11 @@ except ImportError:
 parser = argparse.ArgumentParser(
     prog="extract_stage_events.py",
     usage="%(prog)s stage identifier logfile ignore_first ignore_last [--summary] [--outfile FILE]",
-    description="Analyze timing events extracted from log data."
+    description="Analyze ffmpeg -debug_ts timing events extracted from log data."
 )
 
 parser.add_argument("stage",
-    help="pipeline stage name (e.g. demux, decode, encode)")
+    help="pipeline stage name (demux, decode, filter, encode, mux)")
 
 parser.add_argument("identifier",
     help="event name within the stage")
