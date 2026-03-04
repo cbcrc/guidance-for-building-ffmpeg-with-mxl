@@ -79,7 +79,7 @@ for stage in demux decode filter encode mux; do
             if [[ "$stage" == "mux" ]]; then
                 tmp="${id#\[}"
                 outfile="${tmp%%#*}"
-                echo "$id [$(./extract_stage_events.py "$stage" "$id" "$stage_log" 15 15 --summary --outfile "${outfile}.m")]"
+                echo "$id [$(./extract_stage_events.py "$stage" "$id" "$log" 15 15 --summary --outfile "${outfile}.m")]"
             else
                 echo "$id"
             fi
