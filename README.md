@@ -26,7 +26,7 @@ The FFmpeg/MXL integration currently supports Linux only.
 | component | repository | branch | tag/commit |
 |-----------|------------|--------|------------|
 | MXL | /dmf-mxl/mxl |  release/1.0 | v1.0.0 |
-| FFmpeg | /cbcrc/ffmpeg | dmf-mxl/master | 914a712 |
+| FFmpeg | /cbcrc/ffmpeg | dmf-mxl/master | 61d28a6 |
 
 The tag/commit is the last known good version.
 
@@ -135,14 +135,23 @@ The FFmpeg/MXL integration has three FFmpeg regression tests:
 
 |||
 |---|---|
+| `fate-mxl-uri` | URI parser test |
 | `fate-mxl-json` | JSON parser test |
-| `fate-mxl-video-encdec` | MXL video muxer to MXL video demuxer smoke test |
-| `fate-mxl-audio-encdec` | MXL audio muxer to MXL audio demuxer smoke test |
+| `fate-mxl-video-encdec` | MXL video muxer to MXL video demuxer test |
+| `fate-mxl-audio-encdec` | MXL audio muxer to MXL audio demuxer test |
+| `fate-mxl-video-probe` | MXL video probe test |
+| `fate-mxl-audio-probe` | MXL audio probe test |
 
 Run these in the FFmpeg build directory:
 
 ```bash
-$ make fate-mxl-json fate-mxl-video-encdec fate-mxl-audio-encdec
+$ make \
+    fate-mxl-uri \
+    fate-mxl-json \
+    fate-mxl-video-encdec \
+    fate-mxl-audio-encdec \
+    fate-mxl-video-probe \
+    fate-mxl-audio-probe
 ```
 
 ## FFmpeg/MXL Integration Code Structure
@@ -383,6 +392,25 @@ MXL (`build-mxl.sh`), and builds FFmpeg (`build-ffmpeg.sh`). It then
 stages a smaller final image containing only the runtime dependencies
 and copies the FFmpeg build artifacts to `/opt`. The build is
 configured for streaming and excludes `ffplay`.
+
+### MXL URI Support
+
+The MXL demuxer supports
+[URI addressability](https://github.com/dmf-mxl/mxl/blob/main/docs/Addressability.md).
+
+Currently the implementation supports only local MXL domain paths
+(i.e., no URI authority/host component) and is limited to a single
+flow ID.
+
+```bash
+./ffprobe mxl:///dev/shm/mxl?id=5fbec3b1-1b0f-417d-9059-8b94a47197ed
+```
+
+Direct file paths are also supported for single flows:
+
+```bash
+./ffprobe /dev/shm/mxl/5fbec3b1-1b0f-417d-9059-8b94a47197ed.mxl-flow
+```
 
 ## Usage Examples
 
