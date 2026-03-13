@@ -171,14 +171,17 @@ $ make \
 - `libavformat/allformats.c`
 - `libavformat/jsmn.c` / `libavformat/jsmn.h` - JSON tokenizer
 - `libavformat/mxl_common.h` - Common MXL definitions
+- `libavformat/mxl_status.h` - MXL status to string translation
 - `libavformat/mxl_flow_def.h` - Flow definition structures
-- `libavformat/mxl_json.c` / `libavformat/mxl_json.h` - JSON parser
 - `libavformat/mxl_uri.c` / `libavformat/mxl_uri.h` - URI parser
+- `libavformat/mxl_loc.c` / `libavformat/mxl_loc.h` - Locator parser
+- `libavformat/mxl_json.c` / `libavformat/mxl_json.h` - JSON parser
 
 **Tests:**
 
-- `libavformat/tests/mxl_json.c`
 - `libavformat/tests/mxl_uri.c`
+- `libavformat/tests/mxl_loc.c`
+- `libavformat/tests/mxl_json.c`
 - `tests/Makefile`
 - `tests/fate/mxl.mak` - Primary test integration makefile
 - `tests/ref/fate/mxl-video-probe`
