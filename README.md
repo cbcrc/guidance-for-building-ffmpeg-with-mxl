@@ -26,7 +26,7 @@ The FFmpeg/MXL integration currently supports Linux only.
 | component | repository | branch | tag/commit |
 |-----------|------------|--------|------------|
 | MXL | /dmf-mxl/mxl |  release/1.0 | v1.0.0 |
-| FFmpeg | /cbcrc/ffmpeg | dmf-mxl/master | 61d28a6 |
+| FFmpeg | /cbcrc/ffmpeg | dmf-mxl/master | 39736ed |
 
 The tag/commit is the last known good version.
 
@@ -136,6 +136,7 @@ The FFmpeg/MXL integration has three FFmpeg regression tests:
 |||
 |---|---|
 | `fate-mxl-uri` | URI parser test |
+| `fate-mxl-loc` | Locator parser test |
 | `fate-mxl-json` | JSON parser test |
 | `fate-mxl-video-encdec` | MXL video muxer to MXL video demuxer test |
 | `fate-mxl-audio-encdec` | MXL audio muxer to MXL audio demuxer test |
@@ -147,6 +148,7 @@ Run these in the FFmpeg build directory:
 ```bash
 $ make \
     fate-mxl-uri \
+    fate-mxl-loc \
     fate-mxl-json \
     fate-mxl-video-encdec \
     fate-mxl-audio-encdec \
@@ -184,6 +186,7 @@ $ make \
 - `tests/ref/fate/mxl-video-encdec`
 - `tests/ref/fate/mxl-audio-encdec`
 - `tests/ref/fate/mxl-uri`
+- `tests/ref/fate/mxl-loc`
 - `tests/ref/fate/mxl-json`
 
 ## Build scripts
