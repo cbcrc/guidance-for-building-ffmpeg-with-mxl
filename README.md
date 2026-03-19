@@ -26,7 +26,7 @@ The FFmpeg/MXL integration currently supports Linux only.
 | component | repository | branch | tag/commit |
 |-----------|------------|--------|------------|
 | MXL | /dmf-mxl/mxl |  release/1.0 | v1.0.0 |
-| FFmpeg | /cbcrc/ffmpeg | dmf-mxl/master | 39736ed |
+| FFmpeg | /cbcrc/ffmpeg | dmf-mxl/master | d8b1765 |
 
 The tag/commit is the last known good version.
 
@@ -133,15 +133,20 @@ See also: [FFmpeg Compilation Guide](https://trac.ffmpeg.org/wiki/CompilationGui
 
 The FFmpeg/MXL integration has three FFmpeg regression tests:
 
-|||
+| Test | Description |
 |---|---|
 | `fate-mxl-uri` | URI parser test |
 | `fate-mxl-loc` | Locator parser test |
 | `fate-mxl-json` | JSON parser test |
-| `fate-mxl-video-encdec` | MXL video muxer to MXL video demuxer test |
-| `fate-mxl-audio-encdec` | MXL audio muxer to MXL audio demuxer test |
+| `fate-mxl-video-encdec` | MXL video muxer-to-demuxer test |
+| `fate-mxl-audio-encdec` | MXL audio muxer-to-demuxer test |
+| `fate-mxl-av-encdec` | MXL multi-flow audio+video muxer-to-demuxer test |
 | `fate-mxl-video-probe` | MXL video probe test |
 | `fate-mxl-audio-probe` | MXL audio probe test |
+| `fate-mxl-av-probe` | MXL multi-flow audio+video probe test |
+| `fate-mxl-bad-domain` | MXL demuxer test with non-existent MXL domains |
+| `fate-mxl-bad-flow`   | MXL demuxer test with non-existent MXL flows |
+| `fate-mxl-bad-loc`    | MXL demuxer test with malformed MXL locators |
 
 Run these in the FFmpeg build directory:
 
@@ -152,8 +157,19 @@ $ make \
     fate-mxl-json \
     fate-mxl-video-encdec \
     fate-mxl-audio-encdec \
+    fate-mxl-av-encdec \
     fate-mxl-video-probe \
-    fate-mxl-audio-probe
+    fate-mxl-audio-probe \
+    fate-mxl-av-probe \
+    fate-mxl-bad-domain \
+    fate-mxl-bad-flow \
+    fate-mxl-bad-loc \
+```
+
+Or
+
+```bash
+$ make $(make fate-list | grep mxl)
 ```
 
 ## FFmpeg/MXL Integration Code Structure
@@ -171,26 +187,20 @@ $ make \
 - `libavformat/allformats.c`
 - `libavformat/jsmn.c` / `libavformat/jsmn.h` - JSON tokenizer
 - `libavformat/mxl_common.h` - Common MXL definitions
-- `libavformat/mxl_status.h` - MXL status to string translation
-- `libavformat/mxl_flow_def.h` - Flow definition structures
+- `libavformat/mxl_status.h` - MXL status to string helper
+- `libavformat/mxl_flow_def.h` - MXL JSON flow definition formatting
 - `libavformat/mxl_uri.c` / `libavformat/mxl_uri.h` - URI parser
 - `libavformat/mxl_loc.c` / `libavformat/mxl_loc.h` - Locator parser
 - `libavformat/mxl_json.c` / `libavformat/mxl_json.h` - JSON parser
 
 **Tests:**
 
-- `libavformat/tests/mxl_uri.c`
-- `libavformat/tests/mxl_loc.c`
-- `libavformat/tests/mxl_json.c`
-- `tests/Makefile`
-- `tests/fate/mxl.mak` - Primary test integration makefile
-- `tests/ref/fate/mxl-video-probe`
-- `tests/ref/fate/mxl-audio-probe`
-- `tests/ref/fate/mxl-video-encdec`
-- `tests/ref/fate/mxl-audio-encdec`
-- `tests/ref/fate/mxl-uri`
-- `tests/ref/fate/mxl-loc`
-- `tests/ref/fate/mxl-json`
+- `libavformat/tests/mxl_uri.c` - URI parser tests
+- `libavformat/tests/mxl_loc.c` - Locator parser tests
+- `libavformat/tests/mxl_json.c` - JSON parser tests
+- `tests/Makefile`- FATE test registration
+- `tests/fate/mxl.mak` - MXL FATE test definitions
+- `tests/ref/fate/mxl-*` - Reference outputs
 
 ## Build scripts
 
@@ -409,18 +419,32 @@ configured for streaming and excludes `ffplay`.
 The MXL demuxer supports
 [URI addressability](https://github.com/dmf-mxl/mxl/blob/main/docs/Addressability.md).
 
-Currently the implementation supports only local MXL domain paths
-(i.e., no URI authority/host component) and is limited to a single
-flow ID.
+Examples:
 
 ```bash
-./ffprobe mxl:///dev/shm/mxl?id=5fbec3b1-1b0f-417d-9059-8b94a47197ed
+$ ./ffprobe "mxl:///dev/shm/mxl?id=5fbec3b1-1b0f-417d-9059-8b94a47197ed"
+$ ./ffprobe "mxl:///dev/shm/mxl?id=5fbec3b1-1b0f-417d-9059-8b94a47197ed&id=c0685cd6-0b52-4508-9f99-4eedaf874540"
+```
+
+The MXL demuxer supports local filesystem paths only. URIs with an
+authority (host) are rejected. For example:
+
+```bash
+$ ./ffprobe -hide_banner -v verbose "mxl://rdma.host/dev/shm/mxl?id=5fbec3b1-1b0f-417d-9059-8b94a47197ed"
+mxl AVProbeData:
+  filename: mxl://rdma.host/dev/shm/mxl?id=5fbec3b1-1b0f-417d-9059-8b94a47197ed
+  buf_size: 0
+  mime_type: (null)
+MXL URI host not supported: "mxl://rdma.host/dev/shm/mxl?id=5fbec3b1-1b0f-417d-9059-8b94a47197ed"
+MXL failed to parse locator: "mxl://rdma.host/dev/shm/mxl?id=5fbec3b1-1b0f-417d-9059-8b94a47197ed"
+MXL probe score = 0
+mxl://rdma.host/dev/shm/mxl?id=5fbec3b1-1b0f-417d-9059-8b94a47197ed: Protocol not found
 ```
 
 Direct file paths are also supported for single flows:
 
 ```bash
-./ffprobe /dev/shm/mxl/5fbec3b1-1b0f-417d-9059-8b94a47197ed.mxl-flow
+$ ./ffprobe /dev/shm/mxl/5fbec3b1-1b0f-417d-9059-8b94a47197ed.mxl-flow
 ```
 
 ## Usage Examples
