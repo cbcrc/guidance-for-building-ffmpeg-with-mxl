@@ -133,7 +133,7 @@ build_variant() {
         make fate-rsync
         make fate
     else
-        make fate-mxl-json fate-mxl-video-encdec fate-mxl-audio-encdec
+        make $(make fate-list | grep mxl)
     fi
     make install
 
