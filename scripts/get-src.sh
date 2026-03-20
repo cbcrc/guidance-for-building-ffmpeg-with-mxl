@@ -70,7 +70,7 @@ clone_ffmpeg_repo() {
     git clone --single-branch --branch dmf-mxl/master --depth 1 https://github.com/cbcrc/FFmpeg.git
 
     cd FFmpeg
-    git switch --detach 4a3b22d
+    git switch --detach 4f5c893 
 }
 
 clone_x264_repo() {

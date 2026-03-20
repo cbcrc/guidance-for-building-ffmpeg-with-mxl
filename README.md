@@ -26,7 +26,7 @@ The FFmpeg/MXL integration currently supports Linux only.
 | component | repository | branch | tag/commit |
 |-----------|------------|--------|------------|
 | MXL | [/dmf-mxl/mxl](https://github.com/dmf-mxl/mxl/tree/release/v1.0) |  release/1.0 | v1.0.0 |
-| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/master) | dmf-mxl/master | 4a3b22d |
+| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/master) | dmf-mxl/master | 4f5c893 |
 
 The tag/commit is the last known good version.
 
