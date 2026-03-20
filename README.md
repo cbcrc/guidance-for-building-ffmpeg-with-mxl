@@ -131,7 +131,7 @@ See also: [FFmpeg Compilation Guide](https://trac.ffmpeg.org/wiki/CompilationGui
 
 ## Regression Tests
 
-The FFmpeg/MXL integration has three FFmpeg regression tests:
+The FFmpeg/MXL integration has the following FFmpeg regression tests:
 
 | Test | Description |
 |---|---|
