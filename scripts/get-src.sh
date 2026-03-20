@@ -18,6 +18,17 @@ Usage: $(basename "$0") <src-dir>
 
 Arguments:
   <src-dir>   Directory to place source artifacts
+
+Options:
+  --streaming Get x264, opus, nvcodec, and the FFmpeg FATE suite
+
+Environment:
+  FATE_SUITE_MIRROR
+    Optional rsync source for the FFmpeg FATE suite.
+    Default: "rsync://fate.ffmpeg.org/fate-suite/"
+    Example: "/mnt/archive/fate-suite/"
+    To set up a fate archive use:
+      rsync -av rsync://fate.ffmpeg.org/fate-suite /mnt/archive
 EOF
 }
 
@@ -95,7 +106,10 @@ clone_nvcodec_repo() {
 rsync_fate_suite() {
     log "fetch FFmpeg fate test suite ..."
     local src_dir="$1"
-    rsync -av rsync://fate.ffmpeg.org/fate-suite/ "$src_dir"/fate-suite/
+    local fate_source="${2:-rsync://fate.ffmpeg.org/fate-suite/}"
+
+    log "FFmpeg fate test suite source: $fate_source"
+    rsync -av "$fate_source" "$src_dir/fate-suite/"
 }
 
 main() {
@@ -114,7 +128,7 @@ main() {
         clone_x264_repo "$SRC_DIR" "$@"
         clone_opus_repo "$SRC_DIR" "$@"
         clone_nvcodec_repo "$SRC_DIR" "$@"
-        rsync_fate_suite "$SRC_DIR" "$@"
+        rsync_fate_suite "$SRC_DIR" "${FATE_SUITE_MIRROR:-}"
     fi
 }
 
