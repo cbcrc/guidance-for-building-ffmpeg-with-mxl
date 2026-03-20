@@ -130,7 +130,9 @@ build_variant() {
     make clean
     make -j"$(nproc)"
     if (( streaming )); then
-        make fate-rsync
+        if [[ ! -d "$FFMPEG_FATE_SUITE" ]]; then
+            make fate-rsync
+        fi
         make fate
     else
         make $(make fate-list | grep mxl)
