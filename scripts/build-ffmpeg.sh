@@ -133,8 +133,12 @@ build_variant() {
         if [[ ! -d "$FFMPEG_FATE_SUITE" ]]; then
             make fate-rsync
         fi
+        log Run full FATE test suite
+        log_cmd make fate
         make fate
     else
+        log Run only MXL FATE tests
+        log_cmd make $(make fate-list | grep mxl)
         make $(make fate-list | grep mxl)
     fi
     make install
