@@ -683,6 +683,8 @@ $ docker-setup-and-build.sh ...
 * video/v210a (v210+alpha) is not supported 
 * video/smpt201 (ancillary data) is not supported
 * macOS FFmpeg/MXL build is not supported
+* MXL test ""DomainWatcher thread start/stop behavior" is disabled
+  pending intermittent failure investigation
 
 ## Support & Contribution
 
