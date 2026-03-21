@@ -15,7 +15,9 @@
 #   MXL_DOMAIN
 #   VIDEO_ID
 #   AUDIO_ID
+#   RTSP_TRANSPORT
 #   RTSP_URL
+#   FFMPEG_MOD
 #   FFMPEG_LOGLEVEL
 #
 # See `mxl-to-rtsp.sh --help` for runtime configuration details.
