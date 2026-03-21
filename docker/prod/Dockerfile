@@ -80,7 +80,7 @@ RUN apt-get update && apt-get install -y \
     zlib1g \
  && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /build/ffmpeg/install/Linux-GCC-Release/static /opt
+COPY --from=builder /build/ffmpeg/install/Linux-GCC-Release/static/bin /opt/bin
 
 COPY docker/prod/mxl-to-rtsp.sh /usr/local/bin/mxl-to-rtsp.sh
 RUN chmod +x /usr/local/bin/mxl-to-rtsp.sh
