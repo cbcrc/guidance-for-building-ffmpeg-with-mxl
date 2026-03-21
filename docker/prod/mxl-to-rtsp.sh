@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 set -euo pipefail
 
 usage() {
@@ -31,6 +32,12 @@ Required environment:
         Example: rtsp://example.com:8554/live/stream
 
 Optional environment:
+  FFMPEG_MODE
+        use cpu or gpu h.264 encoding
+        Default: gpu
+  RTSP_TRANSPORT
+        use tcp or udp RTSP transport
+        Default: udp
   FFMPEG_LOGLEVEL
         ffmpeg log level
         Default: error
@@ -49,12 +56,12 @@ Examples:
       -e VIDEO_ID=11111111-1111-1111-1111-111111111111 \
       -e AUDIO_ID=22222222-2222-2222-2222-222222222222 \
       -e RTSP_URL=rtsp://127.0.0.1:8554/live/stream \
-      -v /host/mxl:/domain \
+      -v /dev/shm/mxl:/domain \
       ffmpeg-mxl
 EOF
 }
 
-if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+if [[ "${1:-}" = "--help" ]] || [[ "${1:-}" = "-h" ]]; then
     usage
     exit 0
 fi
@@ -63,7 +70,7 @@ fi
 FFMPEG="$1"
 shift
 
-if [ ! -x "$FFMPEG" ]; then
+if [[ ! -x "$FFMPEG" ]]; then
     echo "Error: ffmpeg not found or not executable: $FFMPEG" >&2
     exit 1
 fi
@@ -75,32 +82,116 @@ fi
 : "${RTSP_URL:?required}"
 
 # --- optional ---
+: "${FFMPEG_MODE:=gpu}"
+: "${RTSP_TRANSPORT:=udp}"
 : "${FFMPEG_LOGLEVEL:=error}"
+
+case "$FFMPEG_MODE" in
+    gpu|cpu)
+        ;;
+    *)
+        echo "Error: FFMPEG_MODE must be 'gpu' or 'cpu'" >&2
+        exit 1
+        ;;
+esac
+
+case "$RTSP_TRANSPORT" in
+    tcp|udp)
+        ;;
+    *)
+        echo "Error: RTSP_TRANSPORT must be 'tcp' or 'udp'" >&2
+        exit 1
+        ;;
+esac
 
 INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}&id=${AUDIO_ID}"
 
 echo "Starting mxl-to-rtsp pipeline"
 echo "Input:     $INPUT"
-echo "Output:    $RTSP_URL"
+echo "Mode:      $FFMPEG_MODE"
+echo "Output:    $RTSP_URL using $RTSP_TRANSPORT"
 echo "Loglevel:  $FFMPEG_LOGLEVEL"
 echo "FFmpeg:    $FFMPEG"
 
 TERMINATE=false
 FFMPEG_PID=""
 
-trap 'TERMINATE=true; [ -n "$FFMPEG_PID" ] && kill -TERM "$FFMPEG_PID" 2>/dev/null || true' SIGINT SIGTERM
+trap 'TERMINATE=true; [[ -n "$FFMPEG_PID" ]] && kill -TERM "$FFMPEG_PID" 2>/dev/null || true' SIGINT SIGTERM
 
-while true; do
+run_ffmpeg_cpu() {
+    set -x
     "$FFMPEG" \
-        -hide_banner \
-        -loglevel "$FFMPEG_LOGLEVEL" \
-        -i "$INPUT" \
-        -f rtsp "$RTSP_URL" &
+      -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
+      -threads 1 -f mxl -i "${INPUT}" \
+      -vf format=yuv420p \
+      -c:v libx264 \
+      -preset superfast \
+      -tune zerolatency \
+      -bf 0 \
+      -rc-lookahead 0 \
+      -g 30 \
+      -sc_threshold 0 \
+      -crf 20 \
+      -x264-params "sliced-threads=1:sync-lookahead=0" \
+      -maxrate 12M -bufsize 1M \
+      -threads 4 \
+      -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
+      -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}" &
+    set +x
 
     FFMPEG_PID=$!
+}
+
+run_ffmpeg_gpu() {
+    set -x
+    "$FFMPEG" \
+        -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
+        -threads 1 -f mxl -i "${INPUT}" \
+        -vf "hwupload_cuda,scale_cuda=format=nv12:interp_algo=nearest" \
+        -c:v h264_nvenc \
+        -pix_fmt cuda \
+        -profile:v high \
+        -preset p3 \
+        -tune ull \
+        -zerolatency 1 \
+        -delay 0 \
+        -bf 0 \
+        -g 30 \
+        -rc cbr \
+        -ldkfs 1 \
+        -b:v 20M \
+        -maxrate 20M \
+        -bufsize 1M \
+        -rc-lookahead 0 \
+        -surfaces 2 \
+        -spatial-aq 1 \
+        -temporal-aq 0 \
+        -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
+        -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}" &
+    set +x
+
+    FFMPEG_PID=$!
+}
+
+while true; do
+
+    
+    case "$FFMPEG_MODE" in
+        gpu)
+            run_ffmpeg_gpu
+            ;;
+        cpu)
+            run_ffmpeg_cpu
+            ;;
+        *)
+            echo "Error: FFMPEG_MODE must be 'gpu' or 'cpu', got: $FFMPEG_MODE" >&2
+            exit 1
+            ;;
+    esac
+
     wait "$FFMPEG_PID" || true
 
-    if "$TERMINATE"; then
+    if [[ "$TERMINATE" = "true" ]]; then
         echo "Received termination signal, exiting..." >&2
         exit 0
     fi
