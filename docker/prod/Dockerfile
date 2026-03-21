@@ -63,8 +63,6 @@ RUN install -d -o ${UID} -g ${GID} /src
 
 USER ${UID}:${GID}
 
-RUN rsync ${FATE_SUITE_MIRROR} /src
-
 ARG FATE_SUITE_MIRROR
 RUN if [ -n "${FATE_SUITE_MIRROR:-}" ]; then \
         export FATE_SUITE_MIRROR; \
