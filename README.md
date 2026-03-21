@@ -218,7 +218,7 @@ $ make $(make fate-list | grep mxl)
 | [`host-setup-and-build.sh`](scripts/host-setup-and-build.sh) | Full environment setup and build on host |
 | [`docker-setup-and-build.sh`](scripts/docker-setup-and-build.sh) | Full environment setup and build in development container |
 | [`Dockerfile.dev`](scripts/Dockerfile.dev)  | Development container with build dependencies |
-| [`Dockerfile.prod`](scripts/Dockerfile.prod) | Production container with runtime dependencies and built artifacts |
+| [`docker/prod/Dockerfile`](docker/prod/Dockerfile) | Production container with runtime dependencies and built artifacts |
 
 The [scripts](scripts) directory has a set of Bash scripts to set up
 the environment and build both MXL and FFmpeg. These scripts are a
@@ -353,6 +353,36 @@ $ get-src.sh ~/src
 $ host-setup-and-build.sh ~/src ~/build --prod --streaming
 ```
 
+#### FFmpeg FATE suite mirror
+
+The `--streaming` build option runs the FFmpeg FATE test suite. The
+tests access a local copy of the FATE test suite that is, by default,
+copied from `rsync://fate-suite.ffmpeg.org/fate-suite/`.
+
+The `ffmpeg.org` rsync copy can sometimes be quite slow. An optional
+improvement is to pre-populate the fate-suite from a local mirror and
+set the `FATE_SUITE_MIRROR` environment variable to make the mirror
+available to the build scripts. This prevents `build-ffmpeg.sh` from
+running `make fate-rsync`, which in turn avoids the potentially
+lengthy `ffmpeg.org` rsync.
+
+```bash
+# rsync the fate-suite one time
+$ rsync -av rsync://fate-suite.ffmpeg.org/fate-suite/ /mirror/fate-suite/
+
+# set environment variable for the build scripts
+$ export FATE_SUITE_MIRROR=/mirror/fate-suite/
+#
+# or configure an rsync server
+$ export FATE_SUITE_MIRROR=rsync://192.168.1.100/fate-suite/
+
+# get-src.sh will rsync the fate-suite from FATE_SUITE_MIRROR
+$ ./get-src.sh ~/src
+
+# build will not rsync the `ffmpeg.org` fate-suite
+$ ./build-ffmpeg.sh ~/src ~/build --streaming --prod
+```
+
 ### Streaming build
 
 Use the `--streaming` and `--no-ffplay` options to build FFmpeg with:
@@ -400,14 +430,21 @@ FFmpeg. The results will be in the host `~/build` directory.
 
 ### Docker production image
 
-Use `Dockerfile.prod` to build a production image:
+Use `docker/prod/Dockerfile` to build a production image:
 
 ```bash
-$ cd scripts
-$ docker build -f Dockerfile.prod -t ffmpeg-mxl-v1.0_rc1-prod .
+$ docker build -f docker/prod/Dockerfile -t ffmpeg-mxl .
 ```
 
-`Dockerfile.prod` stages an intermediate build environment
+If using `FATE_SUITE_MIRROR` with the Docker build, it must be an rsync
+server:
+
+```bash
+$ docker build --build-arg FATE_SUITE_MIRROR=rsync://192.168.1.100/fate-suite/ \
+    -f docker/prod/Dockerfile -t ffmpeg-mxl .
+```
+
+`docker/prod/Dockerfile` stages an intermediate build environment
 (`setup-env-all.sh`), retrieves the source code (`get-src.sh`), builds
 MXL (`build-mxl.sh`), and builds FFmpeg (`build-ffmpeg.sh`). It then
 stages a smaller final image containing only the runtime dependencies
