@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.6
 
-# Runtime image for the FFmpeg/MXL to RTSP pipeline.
+# Runtime image for the FFmpeg/MXL to RTSP transcoder.
 #
 # This is a multi-stage build:
 #   1. The builder stage compiles MXL, codec dependencies, and FFmpeg.
