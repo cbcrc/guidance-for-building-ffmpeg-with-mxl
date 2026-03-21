@@ -25,6 +25,21 @@
 # This image is intended to act as a parameterized appliance:
 # it provides a fixed FFmpeg+MXL runtime, while the source and
 # destination are supplied when the container is launched.
+#
+# Image build:
+#
+# Change to the root directory of this project:
+# $ cd <project_root>
+#
+# Both the 'scripts' and the 'docker/prod' directories should be visible:
+# $ ls -d scripts docker/prod 
+#
+# Build using the default FFmpeg.org FATE suite:
+# $ docker build -f docker/prod/Dockerfile -t ffmpeg-mxl-$(git rev-parse --short HEAD) .
+#
+# Build using an optional FATE suite mirror (usually faster):
+# $ docker build --build-arg FATE_SUITE_MIRROR=rsync://192.168.1.100/fate-suite/ \
+#         -f docker/prod/Dockerfile -t ffmpeg-mxl-$(git rev-parse --short HEAD) .
 
 FROM ubuntu:24.04 AS builder
 

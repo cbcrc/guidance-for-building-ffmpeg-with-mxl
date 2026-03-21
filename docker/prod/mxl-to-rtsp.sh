@@ -11,6 +11,15 @@ Description:
   Read one video flow and one audio flow from an MXL domain and publish
   them to an RTSP URL. If ffmpeg exits, it is restarted after 2 seconds.
 
+  To use GPU encoding in a Docker container, the
+  `nvidia-container-toolkit` must be installed on the host, and Docker
+  must be configured to use it. To verify that a Docker container can
+  see the GPU, run:
+
+  $ docker run --rm --gpus all ubuntu:24.04 nvidia-smi
+
+  See: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+
 Arguments:
   <ffmpeg-binary>
         Path to the ffmpeg executable to run.
@@ -33,14 +42,14 @@ Required environment:
 
 Optional environment:
   FFMPEG_MODE
-        use cpu or gpu h.264 encoding
-        Default: gpu
+        Select 'cpu' or 'gpu' H.264 encoding
+        Default: 'gpu'
   RTSP_TRANSPORT
-        use tcp or udp RTSP transport
-        Default: udp
+        Select 'tcp' or 'udp' RTSP transport
+        Default: 'udp'
   FFMPEG_LOGLEVEL
-        ffmpeg log level
-        Default: error
+        Select FFmpeg log level
+        Default: 'error'
 
 Examples:
   Host:
@@ -51,11 +60,11 @@ Examples:
     ./mxl-to-rtsp.sh /path/to/ffmpeg
 
   Container:
-    docker run --rm \
+    docker run --rm --gpus all \
       -e MXL_DOMAIN=/domain \
       -e VIDEO_ID=11111111-1111-1111-1111-111111111111 \
       -e AUDIO_ID=22222222-2222-2222-2222-222222222222 \
-      -e RTSP_URL=rtsp://127.0.0.1:8554/live/stream \
+      -e RTSP_URL=rtsp://192.168.1.100:8554/live/stream \
       -v /dev/shm/mxl:/domain \
       ffmpeg-mxl
 EOF
@@ -106,12 +115,12 @@ esac
 
 INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}&id=${AUDIO_ID}"
 
-echo "Starting mxl-to-rtsp pipeline"
+echo "Starting FFmpeg MXL to RTSP transcoder"
+echo "FFmpeg:    $FFMPEG"
+echo "Loglevel:  $FFMPEG_LOGLEVEL"
 echo "Input:     $INPUT"
 echo "Mode:      $FFMPEG_MODE"
 echo "Output:    $RTSP_URL using $RTSP_TRANSPORT"
-echo "Loglevel:  $FFMPEG_LOGLEVEL"
-echo "FFmpeg:    $FFMPEG"
 
 TERMINATE=false
 FFMPEG_PID=""
@@ -174,7 +183,6 @@ run_ffmpeg_gpu() {
 }
 
 while true; do
-
     
     case "$FFMPEG_MODE" in
         gpu)
