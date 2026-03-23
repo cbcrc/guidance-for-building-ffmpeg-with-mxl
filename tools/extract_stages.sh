@@ -3,9 +3,17 @@
 # Extract stage names produced by FFmpeg's -debug_ts option and report
 # muxer stage latency. Uses ./extract_stage_events.py.
 #
+# The first 200 and the last 20 -debug_ts events are ignored. The
+# initial 200 events are excluded to avoid startup transients,
+# particularly one-time GPU/container initialization effects that can
+# inflate early -debug_ts latency when FFmpeg runs with GPU encoding in
+# a Docker container.
+#
 # For example:
 #
 # $ ffmpeg -loglevel debug -debug_ts ... > debug_ts.log 2>&1
+#
+# The ffmpeg sample collection should run for at least ~15 seconds.
 #
 # $ extract_stages.sh debug_ts.log
 # ==== input side (demux->decode)
@@ -30,13 +38,13 @@
 # [aost#0:1/libopus @ 0x5da879f83700] [enc:libopus @ 0x5da879b5f900] encoder ->
 # [aost#0:1/libopus @ 0x5da879f83700] [enc:libopus @ 0x5da879b5f900] encoder <-
 # == mux
-# [vost#0:0/h264_nvenc @ 0x5da879b2f440] muxer <- [median=4.478 p99=5.162 max=7.089 ms]
-# [aost#0:1/libopus @ 0x5da879f83700] muxer <- [median=0.009 p99=0.095 max=4.052 ms]
+# [vost#0:0/h264_nvenc 0x5da879b2f440] muxer <- [count=465, median=5.060 p99=8.149 max=8.295 ms]
+# [aost#0:1/libopus @ 0x5da879f83700] muxer <- [count=1582, median=0.022 p99=0.387 max=0.607 ms]
 
 set -euo pipefail
 
 [[ $# -lt 1 ]] && { echo "Usage: $0 <logfile>"; exit 1; }
-log="$1"
+log=$(realpath -- "$1")
 
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
@@ -79,7 +87,7 @@ for stage in demux decode filter encode mux; do
             if [[ "$stage" == "mux" ]]; then
                 tmp="${id#\[}"
                 outfile="${tmp%%#*}"
-                echo "$id [$(./extract_stage_events.py "$stage" "$id" "$log" 15 15 --summary --outfile "${outfile}.m")]"
+                echo "$id [$(./extract_stage_events.py "$stage" "$id" "$log" 200 20 --summary --outfile "${outfile}.m")]"
             else
                 echo "$id"
             fi

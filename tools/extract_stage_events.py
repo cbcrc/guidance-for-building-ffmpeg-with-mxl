@@ -8,7 +8,7 @@
 # $ ffmpeg -loglevel debug -debug_ts ... > debug_ts.log 2>&1
 #
 # $ ./extract_stage_events.py mux "[vost#0:0/h264_nvenc @ 0x5da879b2f440]" debug_ts.log 15 15  --summary
-# median=4.478 p99=5.162 max=7.089 ms
+# count=289, median=4.478 p99=5.162 max=7.089 ms
 #
 # $ ./extract_stage_events.py mux "[vost#0:0/h264_nvenc @ 0x5da879b2f440]" debug_ts.log 15 15  
 # count: 289
@@ -92,11 +92,12 @@ if args.stage == "mux":
 
     p50, p99 = np.percentile(latencies, [50,99])
     mx = max(latencies)
+    count = len(latencies)
 
     if args.summary:        
-        print(f"median={p50:.3f} p99={p99:.3f} max={mx:.3f} ms")
+        print(f"count={count}, median={p50:.3f} p99={p99:.3f} max={mx:.3f} ms")
     else:
-        print("count:", len(latencies))
+        print("count:", count)
         print(f"median: {p50:.3f} ms")
         print(f"p99: {p99:.3f} ms")
         print(f"max: {mx:.3f} ms")
