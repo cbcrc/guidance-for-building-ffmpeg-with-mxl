@@ -125,7 +125,8 @@ Passthrough options (to underlying build scripts):
 - `--prod`	  produce an optimized release build
 - `--no-ffplay`   compile ffmpeg and ffprobe only
 - `--streaming`   [add streaming codecs](./streaming.md) for headless server. Must be applied with `--prod`. It also runs the FATE suite, see details below.
-- `--extended`    activate more FFmpeg features, detail below
+- `--fate`        get the FFmpeg FATE suite, details below
+- `--extended`    activate more FFmpeg features, details below
 - `--mxl-....`    gcc/cmake options
 
 Example:
@@ -223,7 +224,7 @@ The extended build has been tested on Ubuntu 20.04 and Ubuntu 24.04.
 
 ## FFmpeg FATE suite mirror
 
-The `--streaming` build option runs the FFmpeg FATE test suite. The
+The `--fate` build option runs the FFmpeg FATE test suite. The
 tests access a local copy of the FATE test suite that is, by default,
 copied from `rsync://fate-suite.ffmpeg.org/fate-suite/`.
 
@@ -245,7 +246,7 @@ $ export FATE_SUITE_MIRROR=/mirror/fate-suite/
 $ export FATE_SUITE_MIRROR=rsync://192.168.1.100/fate-suite/
 
 # build will not rsync the `ffmpeg.org` fate-suite
-$ ./build-ffmpeg.sh ~/src ~/build --streaming --prod
+$ ./build-ffmpeg.sh ~/src ~/build --fate --prod
 
 # for a docker build, 
 $ docker build --build-arg FATE_SUITE_MIRROR=${FATE_SUITE_MIRROR} \
