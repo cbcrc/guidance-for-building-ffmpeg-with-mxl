@@ -94,6 +94,8 @@ fi
 : "${FFMPEG_MODE:=gpu}"
 : "${RTSP_TRANSPORT:=udp}"
 : "${FFMPEG_LOGLEVEL:=error}"
+: "${ON_TOO_LATE:=1}"
+: "${GRAIN_INDEX_INIT:=0}"
 
 case "$FFMPEG_MODE" in
     gpu|cpu)
@@ -131,7 +133,8 @@ run_ffmpeg_cpu() {
     set -x
     "$FFMPEG" \
       -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
-      -threads 1 -f mxl -i "${INPUT}" \
+      -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" \
+      -i "${INPUT}" \
       -vf format=yuv420p \
       -c:v libx264 \
       -preset superfast \
@@ -155,7 +158,8 @@ run_ffmpeg_gpu() {
     set -x
     "$FFMPEG" \
         -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
-        -threads 1 -f mxl -i "${INPUT}" \
+        -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" \
+        -i "${INPUT}" \
         -vf "hwupload_cuda,scale_cuda=format=nv12:interp_algo=nearest" \
         -c:v h264_nvenc \
         -pix_fmt cuda \
@@ -183,6 +187,9 @@ run_ffmpeg_gpu() {
 }
 
 while true; do
+
+    echo "MXL Domain:"
+    find "${MXL_DOMAIN}"
     
     case "$FFMPEG_MODE" in
         gpu)
