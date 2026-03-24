@@ -5,7 +5,6 @@ the environment and build both MXL and FFmpeg. These scripts are a
 canonical source for detailed FFmpeg/MXL environment configuration and
 build instructions.
 
-|---|---|
 |||
 |---|---|
 | [`setup-env-mxl.sh`](scripts/setup-env-mxl.sh) | Install MXL build dependencies |
