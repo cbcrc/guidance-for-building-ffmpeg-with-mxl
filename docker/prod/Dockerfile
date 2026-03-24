@@ -74,6 +74,12 @@ RUN /scripts/build-mxl.sh /src /build --prod
 RUN /scripts/build-codecs.sh /src /build
 RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay "${FATE}"
 
+RUN cd /src/mxl; \
+    echo "=============================="; \
+    echo "MXL version:"; \
+    git describe --tags; \
+    echo "==============================";
+
 FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y \

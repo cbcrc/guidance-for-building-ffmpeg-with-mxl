@@ -170,6 +170,12 @@ configured for streaming and excludes `ffplay`.
 
 ```bash
 $ docker build -f docker/prod/Dockerfile -t ffmpeg-mxl .
+...
+==============================
+MXL version:
+v1.0.0
+...
+$ docker tag ffmpeg-mxl-prod:latest ffmpeg-mxl-prod:v1.0.0 
 ```
 
 ## Ubuntu 20.04 Build (experimental)
