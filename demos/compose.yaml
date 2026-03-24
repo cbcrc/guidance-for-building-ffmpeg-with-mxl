@@ -1,0 +1,72 @@
+services:
+  init:
+    image: alpine
+    command: ["sh", "-c", "mkdir -p /dev/shm/mxl"]
+    volumes:
+      - type: bind
+        source: /dev/shm
+        target: /dev/shm
+    restart: no
+
+  ffmpeg-source:
+    image: ffmpeg-mxl-prod:latest
+    depends_on:
+      - init
+    restart: unless-stopped
+    entrypoint: "/opt/bin/ffmpeg"
+    volumes:
+      - type: bind
+        source: /dev/shm/mxl
+        target: /domain
+    command: "-hide_banner \
+      -re -f lavfi -i testsrc2=size=1280x720:rate=30 \
+      -c:v v210 \
+      -f mxl -video_flow_id fe781cad-8a82-4b8e-a3c2-f833c70ac73e /domain"
+
+  ffmpeg-probe:
+    image: ffmpeg-mxl-prod:latest
+    depends_on:
+      - ffmpeg-source
+    entrypoint: "/opt/bin/ffprobe"
+    volumes:
+      - type: bind
+        source: /dev/shm/mxl
+        target: /domain
+    command: "-hide_banner \
+      /domain/fe781cad-8a82-4b8e-a3c2-f833c70ac73e.mxl-flow"
+    restart: no
+
+  ffmpeg-dest:
+    image: ffmpeg-mxl-prod:latest
+    depends_on:
+      - mediamtx
+      - ffmpeg-source
+    restart: unless-stopped
+    network_mode: "host"
+    entrypoint: "/opt/bin/ffmpeg"
+    volumes:
+      - type: bind
+        source: /dev/shm/mxl
+        target: /domain
+    command: "-hide_banner \
+      -i /domain/fe781cad-8a82-4b8e-a3c2-f833c70ac73e.mxl-flow \
+      -vcodec libx264 -preset fast -tune zerolatency \
+      -f rtsp rtsp://127.0.0.1:8554/mxlstream"
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    restart: unless-stopped
+    network_mode: "host"
+    environment:
+      - MTX_RTSPTRANSPORTS=tcp
+    ports:
+      - "8554:8554"
+      - "8322:8322"
+      - "1935:1935"
+      - "8888:8888"
+      - "8889:8889"
+      - "8890:8890/udp"
+      - "8189:8189/udp"
+      - "9997:9997"
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
