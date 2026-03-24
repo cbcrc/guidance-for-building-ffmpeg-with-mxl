@@ -42,7 +42,7 @@ Required environment:
 
 Optional environment:
   FFMPEG_DEMUX
-        Select 'single' or 'multi'
+        Select 'single' or 'multi' demux
         Default: 'multi'
   FFMPEG_MODE
         Select 'cpu' or 'gpu' H.264 encoding
@@ -59,8 +59,12 @@ Optional environment:
   GRAIN_INDEX_INIT, A_GRAIN_INDEX_INIT, V_GRAIN_INDEX_INIT
         Set the FFmpeg -grain_index_init option. A_ and V_ apply to the multi-demuxer case
         Default: 0 (current)
+  V_BLOCKING
+        Set the FFmpeg -blocking option. Only applies to the multi-demuxer video case.
+        Default: 1 (blocking)
 
 From: ./ffmpeg -h demuxer=mxl
+  -blocking          <int>   .D......... Use blocking video read: auto (default), 0=non-blocking, 1=blocking (from -1 to 1) (default -1)
  -grain_index_init  <int>    .D......... initial MXL grain index (from 0 to 2) (default current)
      current         0       .D......... current time
      head            1       .D......... ring buffer head
@@ -148,7 +152,7 @@ case "$RTSP_TRANSPORT" in
         ;;
 esac
 
-INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}&id=${AUDIO_ID}"
+AV_INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}&id=${AUDIO_ID}"
 A_INPUT="mxl://${MXL_DOMAIN}?id=${AUDIO_ID}"
 V_INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}"
 
@@ -170,7 +174,7 @@ trap 'TERMINATE=true; if [[ -n "$FFMPEG_PID" ]]; then kill -TERM "$FFMPEG_PID" 2
 run_ffmpeg_cpu_single_demux() {
     "$FFMPEG" \
       -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
-      -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" -i "${INPUT}" \
+      -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" -i "${AV_INPUT}" \
       -vf format=yuv420p \
       -c:v libx264 \
       -preset superfast \
@@ -216,7 +220,7 @@ run_ffmpeg_cpu_multi_demux() {
 run_ffmpeg_gpu_single_demux() {
     "$FFMPEG" \
         -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
-        -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" -i "${INPUT}" \
+        -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" -i "${AV_INPUT}" \
         -vf "hwupload_cuda,scale_cuda=format=nv12:interp_algo=nearest" \
         -c:v h264_nvenc \
         -pix_fmt cuda \
