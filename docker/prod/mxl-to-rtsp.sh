@@ -41,6 +41,9 @@ Required environment:
         Example: rtsp://example.com:8554/live/stream
 
 Optional environment:
+  FFMPEG_DEMUX
+        Select 'single' or 'multi'
+        Default: 'multi'
   FFMPEG_MODE
         Select 'cpu' or 'gpu' H.264 encoding
         Default: 'gpu'
@@ -50,6 +53,21 @@ Optional environment:
   FFMPEG_LOGLEVEL
         Select FFmpeg log level
         Default: 'error'
+  ON_TOO_LATE, V_ON_TOO_LATE, A_ON_TOO_LATE
+        Set the FFmpeg -on_too_late option. A_ and V_ apply to the multi-demux case
+        Default: 1 (reset)
+  GRAIN_INDEX_INIT, A_GRAIN_INDEX_INIT, V_GRAIN_INDEX_INIT
+        Set the FFmpeg -grain_index_init option. A_ and V_ apply to the multi-demuxer case
+        Default: 0 (current)
+
+From: ./ffmpeg -h demuxer=mxl
+ -grain_index_init  <int>    .D......... initial MXL grain index (from 0 to 2) (default current)
+     current         0       .D......... current time
+     head            1       .D......... ring buffer head
+     tail            2       .D......... ring buffer tail
+ -on_too_late       <int>    .D......... action when MXL reports grain index too late (from 0 to 1) (default increment)
+     increment       0       .D......... increment the grain index
+     reset           1       .D......... reset to position defined by grain_index_init
 
 Examples:
   Host:
@@ -91,17 +109,32 @@ fi
 : "${RTSP_URL:?required}"
 
 # --- optional ---
+: "${FFMPEG_DEMUX:=multi}"
 : "${FFMPEG_MODE:=gpu}"
 : "${RTSP_TRANSPORT:=udp}"
 : "${FFMPEG_LOGLEVEL:=error}"
 : "${ON_TOO_LATE:=1}"
+: "${A_ON_TOO_LATE:=1}"
+: "${V_ON_TOO_LATE:=1}"
 : "${GRAIN_INDEX_INIT:=0}"
+: "${A_GRAIN_INDEX_INIT:=0}"
+: "${V_GRAIN_INDEX_INIT:=0}"
+: "${V_BLOCKING:=1}"
 
 case "$FFMPEG_MODE" in
     gpu|cpu)
         ;;
     *)
         echo "Error: FFMPEG_MODE must be 'gpu' or 'cpu'" >&2
+        exit 1
+        ;;
+esac
+
+case "$FFMPEG_DEMUX" in
+    multi|single)
+    ;;
+    *)
+        echo "Error: FFMPEG_DEMUX must be 'multi' or 'single'" >&2
         exit 1
         ;;
 esac
@@ -116,25 +149,28 @@ case "$RTSP_TRANSPORT" in
 esac
 
 INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}&id=${AUDIO_ID}"
+A_INPUT="mxl://${MXL_DOMAIN}?id=${AUDIO_ID}"
+V_INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}"
 
 echo "Starting FFmpeg MXL to RTSP transcoder"
-echo "FFmpeg:    $FFMPEG"
-echo "Loglevel:  $FFMPEG_LOGLEVEL"
-echo "Input:     $INPUT"
-echo "Mode:      $FFMPEG_MODE"
-echo "Output:    $RTSP_URL using $RTSP_TRANSPORT"
+echo "FFmpeg:     $FFMPEG"
+echo "Loglevel:   $FFMPEG_LOGLEVEL"
+echo "MXL Domain: $MXL_DOMAIN"
+echo "Audio ID:   $AUDIO_ID"
+echo "Video ID:   $VIDEO_ID"
+echo "Demux:      $FFMPEG_DEMUX"
+echo "Mode:       $FFMPEG_MODE"
+echo "Output:     $RTSP_URL using $RTSP_TRANSPORT"
 
 TERMINATE=false
 FFMPEG_PID=""
 
-trap 'TERMINATE=true; [[ -n "$FFMPEG_PID" ]] && kill -TERM "$FFMPEG_PID" 2>/dev/null || true' SIGINT SIGTERM
+trap 'TERMINATE=true; if [[ -n "$FFMPEG_PID" ]]; then kill -TERM "$FFMPEG_PID" 2>/dev/null || true; fi' SIGINT SIGTERM
 
-run_ffmpeg_cpu() {
-    set -x
+run_ffmpeg_cpu_single_demux() {
     "$FFMPEG" \
       -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
-      -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" \
-      -i "${INPUT}" \
+      -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" -i "${INPUT}" \
       -vf format=yuv420p \
       -c:v libx264 \
       -preset superfast \
@@ -149,17 +185,38 @@ run_ffmpeg_cpu() {
       -threads 4 \
       -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
       -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}" &
-    set +x
 
     FFMPEG_PID=$!
 }
 
-run_ffmpeg_gpu() {
-    set -x
+run_ffmpeg_cpu_multi_demux() {
+    "$FFMPEG" \
+      -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
+      -threads 1 -f mxl -blocking "${V_BLOCKING}" -on_too_late "${V_ON_TOO_LATE}" -grain_index_init "${V_GRAIN_INDEX_INIT}" -i "${V_INPUT}" \
+      -f mxl -on_too_late "${A_ON_TOO_LATE}" -grain_index_init "${A_GRAIN_INDEX_INIT}" -i "${A_INPUT}" \
+      -map 0:v:0 -map 1:a:0 \
+      -vf format=yuv420p \
+      -c:v libx264 \
+      -preset superfast \
+      -tune zerolatency \
+      -bf 0 \
+      -rc-lookahead 0 \
+      -g 30 \
+      -sc_threshold 0 \
+      -crf 20 \
+      -x264-params "sliced-threads=1:sync-lookahead=0" \
+      -maxrate 12M -bufsize 1M \
+      -threads 4 \
+      -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
+      -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}" &
+
+    FFMPEG_PID=$!
+}
+
+run_ffmpeg_gpu_single_demux() {
     "$FFMPEG" \
         -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
-        -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" \
-        -i "${INPUT}" \
+        -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" -i "${INPUT}" \
         -vf "hwupload_cuda,scale_cuda=format=nv12:interp_algo=nearest" \
         -c:v h264_nvenc \
         -pix_fmt cuda \
@@ -181,29 +238,72 @@ run_ffmpeg_gpu() {
         -temporal-aq 0 \
         -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
         -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}" &
-    set +x
 
     FFMPEG_PID=$!
+}
+
+run_ffmpeg_gpu_multi_demux() {
+    "$FFMPEG" \
+        -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
+        -threads 1 -f mxl -blocking "${V_BLOCKING}" -on_too_late "${V_ON_TOO_LATE}" -grain_index_init "${V_GRAIN_INDEX_INIT}" -i "${V_INPUT}" \
+        -f mxl -on_too_late "${A_ON_TOO_LATE}" -grain_index_init "${A_GRAIN_INDEX_INIT}" -i "${A_INPUT}" \
+        -map 0:v:0 -map 1:a:0 \
+        -vf "hwupload_cuda,scale_cuda=format=nv12:interp_algo=nearest" \
+        -c:v h264_nvenc \
+        -pix_fmt cuda \
+        -profile:v high \
+        -preset p3 \
+        -tune ull \
+        -zerolatency 1 \
+        -delay 0 \
+        -bf 0 \
+        -g 30 \
+        -rc cbr \
+        -ldkfs 1 \
+        -b:v 20M \
+        -maxrate 20M \
+        -bufsize 1M \
+        -rc-lookahead 0 \
+        -surfaces 2 \
+        -spatial-aq 1 \
+        -temporal-aq 0 \
+        -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
+        -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}" &
+
+    FFMPEG_PID=$!
+}
+
+run_ffmpeg() {
+
+    case "$FFMPEG_MODE:$FFMPEG_DEMUX" in
+        gpu:multi)
+            run_ffmpeg_gpu_multi_demux
+            ;;
+        gpu:single)
+            run_ffmpeg_gpu_single_demux
+            ;;
+        cpu:multi)
+            run_ffmpeg_cpu_multi_demux
+            ;;
+        cpu:single)
+            run_ffmpeg_cpu_single_demux
+            ;;
+    esac
 }
 
 while true; do
 
     echo "MXL Domain:"
-    find "${MXL_DOMAIN}"
-    
-    case "$FFMPEG_MODE" in
-        gpu)
-            run_ffmpeg_gpu
-            ;;
-        cpu)
-            run_ffmpeg_cpu
-            ;;
-        *)
-            echo "Error: FFMPEG_MODE must be 'gpu' or 'cpu', got: $FFMPEG_MODE" >&2
-            exit 1
-            ;;
-    esac
+    if [[ -d "$MXL_DOMAIN" ]]; then
+        find "$MXL_DOMAIN"
+    else
+        echo "Warning: MXL domain not found: $MXL_DOMAIN" >&2
+    fi
 
+    set -x
+    run_ffmpeg
+    set +x
+    
     wait "$FFMPEG_PID" || true
 
     if [[ "$TERMINATE" = "true" ]]; then
