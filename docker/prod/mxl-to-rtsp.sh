@@ -258,7 +258,7 @@ run_ffmpeg_gpu_single_demux() {
         -rc cbr \
         -ldkfs 1 \
         -b:v 20M \
-        -maxrate 20M \
+        -maxrate 12M \
         -bufsize 1M \
         -rc-lookahead 0 \
         -surfaces 2 \
@@ -288,7 +288,7 @@ run_ffmpeg_gpu_multi_demux() {
         -rc cbr \
         -ldkfs 1 \
         -b:v 20M \
-        -maxrate 20M \
+        -maxrate 12M \
         -bufsize 1M \
         -rc-lookahead 0 \
         -surfaces 2 \
