@@ -37,14 +37,14 @@ can locate your MXL build.
 ```
 # Pull PKG_CONFIG_PATH from the script's FFmpeg build:
 $ grep PKG_CONFIG_PATH= ~/dev/build/ffmpeg/build/Linux-GCC-Debug/static/ffbuild/config.log 
-PKG_CONFIG_PATH='/home/jpt/dev/build/mxl/install/Linux-GCC-Debug/static/lib/pkgconfig:/home/jpt/dev/build/mxl/install/Linux-GCC-Debug/static/x64-linux/lib/pkgconfig'
+PKG_CONFIG_PATH='$HOME/dev/build/mxl/install/Linux-GCC-Debug/static/lib/pkgconfig:$HOME/dev/build/mxl/install/Linux-GCC-Debug/static/x64-linux/lib/pkgconfig'
 
 # For example, this will set PKG_CONFIG_PATH in your environment:
 $ eval "$(grep PKG_CONFIG_PATH= ~/dev/build/ffmpeg/build/Linux-GCC-Debug/static/ffbuild/config.log )"
 
 # Confirm:
 $ echo $PKG_CONFIG_PATH
-/home/jpt/dev/build/mxl/install/Linux-GCC-Debug/static/lib/pkgconfig:/home/jpt/dev/build/mxl/install/Linux-GCC-Debug/static/x64-linux/lib/pkgconfig
+$HOME/dev/build/mxl/install/Linux-GCC-Debug/static/lib/pkgconfig:$HOME/dev/build/mxl/install/Linux-GCC-Debug/static/x64-linux/lib/pkgconfig
 ```
 
 Configure your FFmpeg development repository to match the build
@@ -56,7 +56,7 @@ Run the build script's FFmpeg binary to see its configuration:
 $ ~/dev/build/ffmpeg/install/Linux-GCC-Debug/static/bin/ffmpeg -version
 ffmpeg version git-2026-03-24-b2ad5e2 Copyright (c) 2000-2025 the FFmpeg developers
 built with gcc 13 (Ubuntu 13.3.0-6ubuntu2~24.04.1)
-configuration: --prefix=/home/jpt/dev/build/ffmpeg/install/Linux-GCC-Debug/static --disable-everything --enable-demuxer=mxl --enable-muxer=mxl --enable-libmxl --enable-muxer=framemd5 --enable-muxer=null --enable-encoder=pcm_f32le --enable-decoder=pcm_f32le --enable-encoder=pcm_s16le --enable-decoder=pcm_s16le --enable-encoder=rawvideo --enable-decoder=rawvideo --enable-encoder=v210 --enable-decoder=v210 --enable-encoder=wrapped_avframe --enable-decoder=wrapped_avframe --enable-indev=lavfi --enable-filter=scale --enable-filter=testsrc2 --enable-filter=anoisesrc --enable-filter=sine --enable-filter=aresample --enable-filter=nullsrc --enable-protocol=pipe --extra-cflags='-march=core-avx2 -mtune=icelake-server' --enable-debug=2 --assert-level=2 --disable-optimizations --disable-stripping --pkg-config-flags=--static --enable-static --disable-shared --extra-libs=/usr/lib/gcc/x86_64-linux-gnu/13/libstdc++.a
+configuration: --prefix=$HOME/dev/build/ffmpeg/install/Linux-GCC-Debug/static --disable-everything --enable-demuxer=mxl --enable-muxer=mxl --enable-libmxl --enable-muxer=framemd5 --enable-muxer=null --enable-encoder=pcm_f32le --enable-decoder=pcm_f32le --enable-encoder=pcm_s16le --enable-decoder=pcm_s16le --enable-encoder=rawvideo --enable-decoder=rawvideo --enable-encoder=v210 --enable-decoder=v210 --enable-encoder=wrapped_avframe --enable-decoder=wrapped_avframe --enable-indev=lavfi --enable-filter=scale --enable-filter=testsrc2 --enable-filter=anoisesrc --enable-filter=sine --enable-filter=aresample --enable-filter=nullsrc --enable-protocol=pipe --extra-cflags='-march=core-avx2 -mtune=icelake-server' --enable-debug=2 --assert-level=2 --disable-optimizations --disable-stripping --pkg-config-flags=--static --enable-static --disable-shared --extra-libs=/usr/lib/gcc/x86_64-linux-gnu/13/libstdc++.a
 ```
 
 Configure your development FFmpeg to match the build script's
@@ -92,7 +92,7 @@ Check your local build:
 $ ./ffmpeg -version
 ffmpeg version N-121611-gb2ad5e20d2 Copyright (c) 2000-2025 the FFmpeg developers
 built with gcc 13 (Ubuntu 13.3.0-6ubuntu2~24.04.1)
-configuration: --prefix=/home/jpt/dev/build/ffmpeg/install/Linux-GCC-Debug/static --disable-everything --enable-demuxer=mxl --enable-muxer=mxl --enable-libmxl --enable-muxer=framemd5 --enable-muxer=null --enable-encoder=pcm_f32le --enable-decoder=pcm_f32le --enable-encoder=pcm_s16le --enable-decoder=pcm_s16le --enable-encoder=rawvideo --enable-decoder=rawvideo --enable-encoder=v210 --enable-decoder=v210 --enable-encoder=wrapped_avframe --enable-decoder=wrapped_avframe --enable-indev=lavfi --enable-filter=scale --enable-filter=testsrc2 --enable-filter=anoisesrc --enable-filter=sine --enable-filter=aresample --enable-filter=nullsrc --enable-protocol=pipe --extra-cflags='-march=core-avx2 -mtune=icelake-server' --enable-debug=2 --assert-level=2 --disable-optimizations --disable-stripping --pkg-config-flags=--static --enable-static --disable-shared --extra-libs=/usr/lib/gcc/x86_64-linux-gnu/13/libstdc++.a
+configuration: --prefix=$HOME/dev/build/ffmpeg/install/Linux-GCC-Debug/static --disable-everything --enable-demuxer=mxl --enable-muxer=mxl --enable-libmxl --enable-muxer=framemd5 --enable-muxer=null --enable-encoder=pcm_f32le --enable-decoder=pcm_f32le --enable-encoder=pcm_s16le --enable-decoder=pcm_s16le --enable-encoder=rawvideo --enable-decoder=rawvideo --enable-encoder=v210 --enable-decoder=v210 --enable-encoder=wrapped_avframe --enable-decoder=wrapped_avframe --enable-indev=lavfi --enable-filter=scale --enable-filter=testsrc2 --enable-filter=anoisesrc --enable-filter=sine --enable-filter=aresample --enable-filter=nullsrc --enable-protocol=pipe --extra-cflags='-march=core-avx2 -mtune=icelake-server' --enable-debug=2 --assert-level=2 --disable-optimizations --disable-stripping --pkg-config-flags=--static --enable-static --disable-shared --extra-libs=/usr/lib/gcc/x86_64-linux-gnu/13/libstdc++.a
 libavutil      60. 16.100 / 60. 16.100
 libavcodec     62. 17.100 / 62. 17.100
 libavformat    62.  6.101 / 62.  6.101
