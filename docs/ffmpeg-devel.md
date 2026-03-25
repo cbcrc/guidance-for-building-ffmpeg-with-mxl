@@ -1,5 +1,7 @@
 # FFmpeg/MXL Integration
 
+See [bootstrap-dev-env.md](bootstrap-dev-env.md) for a quick start on setting up a fresh development environment.
+
 ## Modified/added Files 
 
 Repo: [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/master)
