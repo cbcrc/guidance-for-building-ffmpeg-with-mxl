@@ -65,6 +65,7 @@ See the code structure, how to compile manually and test regressions [here](./do
 - macOS FFmpeg/MXL build is not supported
 - MXL test ""DomainWatcher thread start/stop behavior" is disabled
   pending intermittent failure investigation
+- [MXL Bug 445](https://github.com/dmf-mxl/mxl/issues/445) explains the huge [`mxl-info` latency value](https://github.com/cbcrc/guidance-for-building-ffmpeg-with-mxl/blob/main/docs/usage.md#ffmpeg-mxl-write--ffplay-mxl-read) in the examples. The example documentation will be updated when MXL Bug 445 is resolved.
 
 ## Support & Contribution
 
