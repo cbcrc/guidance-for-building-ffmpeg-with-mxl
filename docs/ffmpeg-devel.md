@@ -52,11 +52,11 @@ System dependencies are [`apt` packages](https://documentation.ubuntu.com/server
 The FFmpeg build shares most of its system dependencies with the MXL
 build. For reference, the MXL build dependencies are listed here:
 
-* [`mxl-apt-pkgs.txt`](scripts/deps/mxl-apt-pkgs.txt)
+* [`mxl-apt-pkgs.txt`](/scripts/deps/mxl-apt-pkgs.txt)
 
 The additional packages required to build FFmpeg with MXL support are listed here:
 
-* [`ffmpeg-apt-pkgs.txt`](scripts/deps/ffmpeg-apt-pkgs.txt)
+* [`ffmpeg-apt-pkgs.txt`](/scripts/deps/ffmpeg-apt-pkgs.txt)
 
 ### Configure Options
 
@@ -78,16 +78,16 @@ $ PKG_CONFIG_PATH=~/build/mxl/install/Linux-GCC-Debug/static/lib/pkgconfig pkg-c
 The FFmpeg `configure` option used to build and run the FFmpeg/MXL
 regression tests are listed in the following files:
 
-* [`ffmpeg-configure-base-options.txt`](scripts/deps/ffmpeg-configure-base-options.txt)
-* [`ffmpeg-configure-debug-options.txt`](scripts/deps/ffmpeg-configure-debug-options.txt)
-* [`ffmpeg-configure-static-options.txt`](scripts/deps/ffmpeg-configure-static-options.txt)
-* [`ffmpeg-configure-shared-options.txt`](scripts/deps/ffmpeg-configure-shared-options.txt)
+* [`ffmpeg-configure-base-options.txt`](/scripts/deps/ffmpeg-configure-base-options.txt)
+* [`ffmpeg-configure-debug-options.txt`](/scripts/deps/ffmpeg-configure-debug-options.txt)
+* [`ffmpeg-configure-static-options.txt`](/scripts/deps/ffmpeg-configure-static-options.txt)
+* [`ffmpeg-configure-shared-options.txt`](/scripts/deps/ffmpeg-configure-shared-options.txt)
 
 Additional build option files exist to disable the `ffplay` build and to
 enable a selected group of streaming-related protocols and codecs.
 
-* [`ffmpeg-configure-noplay-options.txt`](scripts/deps/ffmpeg-configure-noplay-options.txt)
-* [`ffmpeg-configure-streaming-options.txt`](scripts/deps/ffmpeg-configure-streaming-options.txt)
+* [`ffmpeg-configure-noplay-options.txt`](/scripts/deps/ffmpeg-configure-noplay-options.txt)
+* [`ffmpeg-configure-streaming-options.txt`](/scripts/deps/ffmpeg-configure-streaming-options.txt)
 
 See also: [FFmpeg Compilation Guide](https://trac.ffmpeg.org/wiki/CompilationGuide)
 
