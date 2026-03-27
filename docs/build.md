@@ -121,8 +121,8 @@ Options:
 - `--allow-root`  Run all environment setup under a single sudo invocation to avoid repeated password prompts
 
 Passthrough options (to underlying build scripts):
-- `--dev`	  p
-- `--prod`	  produce an optimized release build
+- `--dev`	      produce a development build
+- `--prod`	      produce an optimized release build
 - `--no-ffplay`   compile ffmpeg and ffprobe only
 - `--streaming`   [add streaming codecs](./streaming.md) for headless server. Must be applied with `--prod`. It also runs the FATE suite, see details below.
 - `--extended`    activate more FFmpeg features, detail below
