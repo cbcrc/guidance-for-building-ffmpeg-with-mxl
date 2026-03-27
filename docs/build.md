@@ -1,6 +1,6 @@
 # Build scripts
 
-The [scripts](scripts) directory has a set of Bash scripts to set up
+The [scripts](/scripts) directory has a set of Bash scripts to set up
 the environment and build both MXL and FFmpeg. These scripts are a
 canonical source for detailed FFmpeg/MXL environment configuration and
 build instructions.
