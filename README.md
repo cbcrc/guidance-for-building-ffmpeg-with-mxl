@@ -28,7 +28,7 @@ The FFmpeg/MXL integration currently supports Linux only.
 | MXL | [/dmf-mxl/mxl](https://github.com/dmf-mxl/mxl/tree/release/v1.0) |  release/1.0 | v1.0.0 |
 | FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/master) | dmf-mxl/master | 1ff9d87 |
 
-The tag/commit is the last known good version. These repos will cloned by build scripts.
+The tag/commit is the last known good version. These repos are cloned by build scripts.
 
 **Supported Operating System**
 - Ubuntu 24.04
