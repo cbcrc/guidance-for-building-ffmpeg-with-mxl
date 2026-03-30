@@ -29,9 +29,13 @@
 --enable-filter=scale_npp
 # extra:
 --enable-demuxer=mpegts
+--enable-muxer=mpegts
+--enable-muxer=hls
+--enable-muxer=segment
 --enable-parser=h264
 --enable-parser=aac
 --enable-decoder=aac
+--enable-encoder=aac
 --enable-muxer=mp4
 --enable-muxer=mov
 --enable-protocol=file

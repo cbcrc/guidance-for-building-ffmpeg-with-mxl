@@ -62,6 +62,9 @@ Optional environment:
   V_BLOCKING
         Set the FFmpeg -blocking option. Only applies to the multi-demuxer video case.
         Default: 1 (blocking)
+  FFMPEG_RT_PRIORITY
+        Set real time priority. If set then the process is started with `chrt`
+        Default: unset
 
 From: ./ffmpeg -h demuxer=mxl
   -blocking          <int>   .D......... Use blocking video read: auto (default), 0=non-blocking, 1=blocking (from -1 to 1) (default -1)
@@ -113,6 +116,7 @@ fi
 : "${RTSP_URL:?required}"
 
 # --- optional ---
+: "${FFMPEG_RT_PRIORITY:=}"
 : "${FFMPEG_DEMUX:=multi}"
 : "${FFMPEG_MODE:=gpu}"
 : "${RTSP_TRANSPORT:=udp}"
@@ -157,21 +161,43 @@ A_INPUT="mxl://${MXL_DOMAIN}?id=${AUDIO_ID}"
 V_INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}"
 
 echo "Starting FFmpeg MXL to RTSP transcoder"
-echo "FFmpeg:     $FFMPEG"
-echo "Loglevel:   $FFMPEG_LOGLEVEL"
-echo "MXL Domain: $MXL_DOMAIN"
-echo "Audio ID:   $AUDIO_ID"
-echo "Video ID:   $VIDEO_ID"
-echo "Demux:      $FFMPEG_DEMUX"
-echo "Mode:       $FFMPEG_MODE"
-echo "Output:     $RTSP_URL using $RTSP_TRANSPORT"
+echo "FFmpeg:      $FFMPEG"
+echo "Loglevel:    $FFMPEG_LOGLEVEL"
+echo "MXL Domain:  $MXL_DOMAIN"
+echo "Audio ID:    $AUDIO_ID"
+echo "Video ID:    $VIDEO_ID"
+echo "Demux:       $FFMPEG_DEMUX"
+echo "Mode:        $FFMPEG_MODE"
+echo "Output:      $RTSP_URL using $RTSP_TRANSPORT"
+echo "RT Priority: $FFMPEG_RT_PRIORITY"
 
 TERMINATE=false
 FFMPEG_PID=""
 
 trap 'TERMINATE=true; if [[ -n "$FFMPEG_PID" ]]; then kill -TERM "$FFMPEG_PID" 2>/dev/null || true; fi' SIGINT SIGTERM
 
+check_rt_permission() {
+    if [[ -n "${FFMPEG_RT_PRIORITY:-}" ]]; then
+        if ! chrt --fifo "${FFMPEG_RT_PRIORITY}" true >/dev/null 2>&1; then
+            echo "FFMPEG_RT_PRIORITY=${FFMPEG_RT_PRIORITY} requested, but could not set" >&2
+            exit 1
+        fi
+    fi
+}
+
+run_with_optional_rt() {
+    set -x
+    if [[ -n "${FFMPEG_RT_PRIORITY:-}" ]]; then
+        chrt --fifo "${FFMPEG_RT_PRIORITY}" "$@" &
+    else
+        "$@" &
+    fi
+    set +x
+    FFMPEG_PID=$!
+}
+
 run_ffmpeg_cpu_single_demux() {
+    run_with_optional_rt \
     "$FFMPEG" \
       -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
       -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" -i "${AV_INPUT}" \
@@ -188,12 +214,11 @@ run_ffmpeg_cpu_single_demux() {
       -maxrate 12M -bufsize 1M \
       -threads 4 \
       -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
-      -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}" &
-
-    FFMPEG_PID=$!
+      -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}"
 }
 
 run_ffmpeg_cpu_multi_demux() {
+    run_with_optional_rt \
     "$FFMPEG" \
       -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
       -threads 1 -f mxl -blocking "${V_BLOCKING}" -on_too_late "${V_ON_TOO_LATE}" -grain_index_init "${V_GRAIN_INDEX_INIT}" -i "${V_INPUT}" \
@@ -212,12 +237,11 @@ run_ffmpeg_cpu_multi_demux() {
       -maxrate 12M -bufsize 1M \
       -threads 4 \
       -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
-      -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}" &
-
-    FFMPEG_PID=$!
+      -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}"
 }
 
 run_ffmpeg_gpu_single_demux() {
+    run_with_optional_rt \
     "$FFMPEG" \
         -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
         -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" -i "${AV_INPUT}" \
@@ -234,19 +258,18 @@ run_ffmpeg_gpu_single_demux() {
         -rc cbr \
         -ldkfs 1 \
         -b:v 20M \
-        -maxrate 20M \
+        -maxrate 12M \
         -bufsize 1M \
         -rc-lookahead 0 \
         -surfaces 2 \
         -spatial-aq 1 \
         -temporal-aq 0 \
         -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
-        -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}" &
-
-    FFMPEG_PID=$!
+        -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}"
 }
 
 run_ffmpeg_gpu_multi_demux() {
+    run_with_optional_rt \
     "$FFMPEG" \
         -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
         -threads 1 -f mxl -blocking "${V_BLOCKING}" -on_too_late "${V_ON_TOO_LATE}" -grain_index_init "${V_GRAIN_INDEX_INIT}" -i "${V_INPUT}" \
@@ -265,16 +288,14 @@ run_ffmpeg_gpu_multi_demux() {
         -rc cbr \
         -ldkfs 1 \
         -b:v 20M \
-        -maxrate 20M \
+        -maxrate 12M \
         -bufsize 1M \
         -rc-lookahead 0 \
         -surfaces 2 \
         -spatial-aq 1 \
         -temporal-aq 0 \
         -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
-        -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}" &
-
-    FFMPEG_PID=$!
+        -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}"
 }
 
 run_ffmpeg() {
@@ -295,6 +316,8 @@ run_ffmpeg() {
     esac
 }
 
+check_rt_permission
+
 while true; do
 
     echo "MXL Domain:"
@@ -304,9 +327,7 @@ while true; do
         echo "Warning: MXL domain not found: $MXL_DOMAIN" >&2
     fi
 
-    set -x
     run_ffmpeg
-    set +x
     
     wait "$FFMPEG_PID" || true
 

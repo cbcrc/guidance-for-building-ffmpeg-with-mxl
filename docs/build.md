@@ -1,25 +1,25 @@
 # Build scripts
 
-The [scripts](scripts) directory has a set of Bash scripts to set up
+The [scripts](/scripts) directory has a set of Bash scripts to set up
 the environment and build both MXL and FFmpeg. These scripts are a
 canonical source for detailed FFmpeg/MXL environment configuration and
 build instructions.
 
 |||
 |---|---|
-| [`setup-env-mxl.sh`](scripts/setup-env-mxl.sh) | Install MXL build dependencies |
-| [`setup-env-ffmpeg.sh`](scripts/setup-env-ffmpeg.sh) | Install FFmpeg build dependencies |
-| [`setup-env-all.sh`](scripts/setup-env-all.sh) | Install MXL and FFmpeg build dependencies |
-| [`get-src.sh`](scripts/get-src.sh) | Clone the MXL and FFmpeg source repositories at known-good revisions |
-| [`build-mxl.sh`](scripts/build-mxl.sh) | Build MXL, test, and install |
-| [`build-codecs.sh`](scripts/build-codecs.sh) | Build H.264 and Opus codecs from source for streaming |
-| [`build-ffmpeg.sh`](scripts/build-ffmpeg.sh) | Build FFmpeg, test, and install |
-| [`mxl-update-alternatives.sh`](scripts/deps/mxl-update-alternatives.sh) | Configure tool versions required by MXL |
-| [`cmake-repo-upgrade.sh`](scripts/deps/cmake-repo-upgrade.sh) | Configure CMake repository to the version required by MXL |
-| [`host-setup-and-build.sh`](scripts/host-setup-and-build.sh) | Full environment setup and build on host |
-| [`docker-setup-and-build.sh`](scripts/docker-setup-and-build.sh) | Full environment setup and build in development container |
-| [`Dockerfile.dev`](scripts/Dockerfile.dev)  | Development container with build dependencies |
-| [`docker/prod/Dockerfile`](docker/prod/Dockerfile) | Production container with runtime dependencies and built artifacts |
+| [`setup-env-mxl.sh`](/scripts/setup-env-mxl.sh) | Install MXL build dependencies |
+| [`setup-env-ffmpeg.sh`](/scripts/setup-env-ffmpeg.sh) | Install FFmpeg build dependencies |
+| [`setup-env-all.sh`](/scripts/setup-env-all.sh) | Install MXL and FFmpeg build dependencies |
+| [`get-src.sh`](/scripts/get-src.sh) | Clone the MXL and FFmpeg source repositories at known-good revisions |
+| [`build-mxl.sh`](/scripts/build-mxl.sh) | Build MXL, test, and install |
+| [`build-codecs.sh`](/scripts/build-codecs.sh) | Build H.264 and Opus codecs from source for streaming |
+| [`build-ffmpeg.sh`](/scripts/build-ffmpeg.sh) | Build FFmpeg, test, and install |
+| [`mxl-update-alternatives.sh`](/scripts/deps/mxl-update-alternatives.sh) | Configure tool versions required by MXL |
+| [`cmake-repo-upgrade.sh`](/scripts/deps/cmake-repo-upgrade.sh) | Configure CMake repository to the version required by MXL |
+| [`host-setup-and-build.sh`](/scripts/host-setup-and-build.sh) | Full environment setup and build on host |
+| [`docker-setup-and-build.sh`](/scripts/docker-setup-and-build.sh) | Full environment setup and build in development container |
+| [`Dockerfile.dev`](/scripts/Dockerfile.dev)  | Development container with build dependencies |
+| [`docker/prod/Dockerfile`](/docker/prod/Dockerfile) | Production container with runtime dependencies and built artifacts |
 
 Note that these scripts set up the *minimum* set of system
 dependencies and the *minimum* FFmpeg configuration that is necessary
@@ -121,8 +121,8 @@ Options:
 - `--allow-root`  Run all environment setup under a single sudo invocation to avoid repeated password prompts
 
 Passthrough options (to underlying build scripts):
-- `--dev`	  p
-- `--prod`	  produce an optimized release build
+- `--dev`	      produce a development build
+- `--prod`	      produce an optimized release build
 - `--no-ffplay`   compile ffmpeg and ffprobe only
 - `--streaming`   [add streaming codecs](./streaming.md) for headless server. Must be applied with `--prod`. It also runs the FATE suite, see details below.
 - `--fate`        get the FFmpeg FATE suite, details below
@@ -214,8 +214,8 @@ on 20.04, images should be built using a 20.04 environment. See:
 
 Build support for an experimental *extended* configuration is
 implemented by
-[`setup-env-ffmpeg-extended.sh`](scripts/setup-env-ffmpeg-extended.sh)
-and [`build-ffmpeg-extended.sh`](scripts/build-ffmpeg-extended.sh).
+[`setup-env-ffmpeg-extended.sh`](/scripts/setup-env-ffmpeg-extended.sh)
+and [`build-ffmpeg-extended.sh`](/scripts/build-ffmpeg-extended.sh).
 This build includes additional codecs and activates additional FFmpeg
 features.
 

@@ -5,7 +5,7 @@
 # This is a multi-stage build:
 #   1. The builder stage compiles MXL, codec dependencies, and FFmpeg.
 #   2. The runtime stage contains only the runtime packages, the built
-#      FFmpeg install tree under /opt, and the mxl-to-rtsp.sh launcher.
+#      FFmpeg binaries in /opt/bin, and the mxl-to-rtsp.sh launcher.
 #
 # The container starts by running:
 #   /usr/local/bin/mxl-to-rtsp.sh /opt/bin/ffmpeg
