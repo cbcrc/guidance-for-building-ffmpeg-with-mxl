@@ -12,11 +12,14 @@ services:
     restart: unless-stopped
     entrypoint: "/opt/bin/ffmpeg"
     volumes:
+      - type: bind
+        source: ./
+        target: /tmp/
       - type: volume
         source: mxl-domain
         target: /domain
     command: "-hide_banner \
-      -re -f lavfi -i testsrc2=size=1280x720:rate=30 \
+      -re -stream_loop -1 -i /tmp/demo_reel.ts \
       -c:v v210 \
       -f mxl -video_flow_id fe781cad-8a82-4b8e-a3c2-f833c70ac73e /domain"
 

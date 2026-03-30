@@ -18,7 +18,7 @@ Video only.
 ## Startup
 
 ```bash
-docker compose up -d
+docker compose up
 ```
 
 Open browser @ `http://<servirIP>:8889/mxlstream`
