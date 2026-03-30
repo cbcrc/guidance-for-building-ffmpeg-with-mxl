@@ -176,6 +176,10 @@ MXL version:
 v1.0.0
 ...
 $ docker tag ffmpeg-mxl-prod:latest ffmpeg-mxl-prod:v1.0.0 
+$ # maintainers only: push images to Github organization
+$ docker login ghcr.io -u ....
+$ docker tag ffmpeg-mxl-prod:v1.0.0  ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
+$ docker push ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
 ```
 
 ## Ubuntu 20.04 Build (experimental)

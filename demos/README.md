@@ -17,8 +17,6 @@ Video only.
 
 ## Startup
 
-Assuming the `prod` image is [already built locally](../docs/build.md#docker-production-image).
-
 ```bash
 docker compose up -d
 ```

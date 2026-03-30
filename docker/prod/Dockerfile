@@ -41,6 +41,8 @@
 # $ docker build --build-arg FATE_SUITE_MIRROR=rsync://192.168.1.100/fate-suite/ \
 #         -f docker/prod/Dockerfile -t ffmpeg-mxl-$(git rev-parse --short HEAD) .
 
+LABEL org.opencontainers.image.source https://github.com/cbcrc/guidance-for-building-ffmpeg-with-mxl
+
 FROM ubuntu:24.04 AS builder
 
 ARG UID=1000

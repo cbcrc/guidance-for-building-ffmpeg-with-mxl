@@ -8,7 +8,7 @@ volumes:
 
 services:
   ffmpeg-source:
-    image: ffmpeg-mxl-prod:latest
+    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
     restart: unless-stopped
     entrypoint: "/opt/bin/ffmpeg"
     volumes:
@@ -21,7 +21,7 @@ services:
       -f mxl -video_flow_id fe781cad-8a82-4b8e-a3c2-f833c70ac73e /domain"
 
   ffmpeg-probe:
-    image: ffmpeg-mxl-prod:latest
+    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
     depends_on:
       - ffmpeg-source
     entrypoint: "/opt/bin/ffprobe"
@@ -34,7 +34,7 @@ services:
     restart: no
 
   ffmpeg-dest:
-    image: ffmpeg-mxl-prod:latest
+    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
     depends_on:
       - mediamtx
       - ffmpeg-source
