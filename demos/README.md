@@ -3,7 +3,7 @@
 ```mermaid
 graph LR
     subgraph "FFmpeg-MXL pipeline"
-    A[FFmpeg Source] -- "Uncompressed (v210)<br/> MXL" --> B[FFmpeg Destination]
+    A0((fa:fa-file-video)) --> A[FFmpeg Source] -- "Uncompressed (v210)<br/> MXL" --> B[FFmpeg Destination]
     end
 
     subgraph "Distribution"
@@ -15,13 +15,22 @@ graph LR
 
 Video only.
 
-## Startup
+## Startup the services
 
 ```bash
-docker compose up
+docker compose up -d 
 ```
 
 Open browser @ `http://<servirIP>:8889/mxlstream`
+
+## Inspect the domain
+
+```bash
+docker volume inspect demos_mxl-domain | grep Mountpoint                                                              ✔  17:06:54 
+        "Mountpoint": "/var/lib/docker/volumes/demos_mxl-domain/_data",
+sudo find /var/lib/docker/volumes/demos_mxl-domain/_data
+...
+```
 
 ## Close
 

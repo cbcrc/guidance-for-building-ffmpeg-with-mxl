@@ -169,11 +169,13 @@ and copies the FFmpeg build artifacts to `/opt`. The build is
 configured for streaming and excludes `ffplay`.
 
 ```bash
-$ docker build -f docker/prod/Dockerfile -t ffmpeg-mxl .
+$ docker build -f docker/prod/Dockerfile -t ffmpeg-mxl-prod .
 ...
 ==============================
 MXL version:
 v1.0.0
+==============================
+FFmpeg version:
 ...
 $ docker tag ffmpeg-mxl-prod:latest ffmpeg-mxl-prod:v1.0.0 
 $ # maintainers only: push images to Github organization

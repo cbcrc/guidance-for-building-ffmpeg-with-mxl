@@ -41,8 +41,6 @@
 # $ docker build --build-arg FATE_SUITE_MIRROR=rsync://192.168.1.100/fate-suite/ \
 #         -f docker/prod/Dockerfile -t ffmpeg-mxl-$(git rev-parse --short HEAD) .
 
-LABEL org.opencontainers.image.source https://github.com/cbcrc/guidance-for-building-ffmpeg-with-mxl
-
 FROM ubuntu:24.04 AS builder
 
 ARG UID=1000
@@ -82,6 +80,12 @@ RUN cd /src/mxl; \
     git describe --tags; \
     echo "==============================";
 
+RUN cd /src/FFmpeg; \
+    echo "=============================="; \
+    echo "FFmpeg version:"; \
+    git describe --tags; #FIXME \
+    echo "==============================";
+
 FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y \
@@ -95,3 +99,6 @@ COPY docker/prod/mxl-to-rtsp.sh /usr/local/bin/mxl-to-rtsp.sh
 RUN chmod +x /usr/local/bin/mxl-to-rtsp.sh
 
 ENTRYPOINT ["/usr/local/bin/mxl-to-rtsp.sh", "/opt/bin/ffmpeg"]
+
+LABEL org.opencontainers.image.source https://github.com/cbcrc/guidance-for-building-ffmpeg-with-mxl
+
