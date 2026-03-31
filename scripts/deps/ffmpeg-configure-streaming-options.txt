@@ -46,4 +46,3 @@
 --enable-filter=drawtext
 --enable-libfreetype
 --enable-libharfbuzz
---enable-libfribidi
