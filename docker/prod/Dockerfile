@@ -83,7 +83,7 @@ RUN cd /src/mxl; \
 RUN cd /src/FFmpeg; \
     echo "=============================="; \
     echo "FFmpeg version:"; \
-    git describe --tags; #FIXME \
+    #git describe --tags; #FIXME \
     echo "==============================";
 
 FROM ubuntu:24.04

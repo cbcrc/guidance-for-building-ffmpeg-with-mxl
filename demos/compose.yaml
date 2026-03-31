@@ -62,7 +62,9 @@ services:
         target: /domain
     command: "-hide_banner \
       -i /domain/fe781cad-8a82-4b8e-a3c2-f833c70ac73e.mxl-flow \
-      -vcodec libx264 -preset fast -tune zerolatency \
+      -vf 'scale=1280:720,format=yuv420p' \
+      -vcodec libx264 -preset fast -tune zerolatency -b:v 5M \
+      -x264-params 'sliced-threads=1:sync-lookahead=0' \
       -f rtsp rtsp://127.0.0.1:8554/mxlstream"
 
   mediamtx:
