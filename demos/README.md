@@ -3,7 +3,8 @@
 ```mermaid
 graph LR
     subgraph "FFmpeg-MXL pipeline"
-    A0((fa:fa-film)) --> A[FFmpeg Source] -- "Uncompressed (v210)<br/> MXL" --> B[FFmpeg Destination]
+    A0((fa:fa-film demo_reel.ts)) --> A[FFmpeg Source] -- "Uncompressed (v210)<br/> MXL" --> B[FFmpeg Destination]
+    A1((Branding message)) --> A
     end
 
     subgraph "Distribution"
@@ -21,7 +22,7 @@ Video only.
 docker compose up -d 
 ```
 
-Open browser @ `http://<servirIP>:8889/mxlstream`
+Open browser @ `http://<serverIP>:8889/mxlstream`
 
 ## Inspect the domain
 
