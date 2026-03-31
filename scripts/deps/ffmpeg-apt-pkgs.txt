@@ -1,3 +1,10 @@
 # FFmpeg system dependencies (apt packages)
 libsdl2-dev
+libfreetype6-dev
+libharfbuzz-dev
+libfribidi-dev
+libfreetype6
+libharfbuzz0b
+libfribidi0
+fonts-freefont-ttf
 nasm

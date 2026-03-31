@@ -18,10 +18,22 @@ services:
       - type: volume
         source: mxl-domain
         target: /domain
-    command: "-hide_banner \
-      -re -stream_loop -1 -i /tmp/demo_reel.ts \
-      -c:v v210 \
-      -f mxl -video_flow_id fe781cad-8a82-4b8e-a3c2-f833c70ac73e /domain"
+    command:
+      - "-hide_banner"
+      - "-re"
+      - "-stream_loop"
+      - "-1"
+      - "-i"
+      - "/tmp/demo_reel.ts"
+      - "-vf"
+      - "drawtext=text='BREAKING NEWS - CBC/RC demo reel with FFmpeg':x='mod(w-t*200, w+tw)-tw':y=h-th-50:fontfile=/usr/share/fonts/truetype/freefont/FreeSansBold.ttf:fontcolor=white:fontsize=100:shadowcolor=red:shadowx=5:shadowy=5"
+      - "-c:v"
+      - "v210"
+      - "-f"
+      - "mxl"
+      - "-video_flow_id"
+      - "fe781cad-8a82-4b8e-a3c2-f833c70ac73e"
+      - "/domain"
 
   ffmpeg-probe:
     image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0

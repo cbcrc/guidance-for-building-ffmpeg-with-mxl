@@ -42,3 +42,8 @@
 --enable-protocol=file
 --enable-filter=showinfo
 --ignore-tests=source
+# text overlay
+--enable-filter=drawtext
+--enable-libfreetype
+--enable-libharfbuzz
+--enable-libfribidi
