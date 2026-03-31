@@ -3,7 +3,7 @@
 ```mermaid
 graph LR
     subgraph "FFmpeg-MXL pipeline"
-    A0((fa:fa-film)) --> A[FFmpeg Source] -- "Uncompressed (v210)<br/> MXL" --> B[FFmpeg Destination]
+    A0((fa:fa-film demo_reel.ts)) --> A[FFmpeg Source] -- "Uncompressed (v210)<br/> MXL" --> B[FFmpeg Destination]
     end
 
     subgraph "Distribution"
