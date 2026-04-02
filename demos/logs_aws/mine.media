@@ -1,0 +1,22 @@
+mediamtx-1  | 2026/04/02 20:11:13 WAR parameter 'apiAllowOrigin' is deprecated and has been replaced with 'apiAllowOrigins'
+mediamtx-1  | 2026/04/02 20:11:13 WAR parameter 'metricsAllowOrigin' is deprecated and has been replaced with 'metricsAllowOrigins'
+mediamtx-1  | 2026/04/02 20:11:13 WAR parameter 'pprofAllowOrigin' is deprecated and has been replaced with 'pprofAllowOrigins'
+mediamtx-1  | 2026/04/02 20:11:13 WAR parameter 'playbackAllowOrigin' is deprecated and has been replaced with 'playbackAllowOrigins'
+mediamtx-1  | 2026/04/02 20:11:13 WAR parameter 'hlsAllowOrigin' is deprecated and has been replaced with 'hlsAllowOrigins'
+mediamtx-1  | 2026/04/02 20:11:13 WAR parameter 'webrtcAllowOrigin' is deprecated and has been replaced with 'webrtcAllowOrigins'
+mediamtx-1  | 2026/04/02 20:11:13 INF MediaMTX v1.17.0, linux, amd64
+mediamtx-1  | 2026/04/02 20:11:13 INF configuration loaded from /mediamtx.yml
+mediamtx-1  | 2026/04/02 20:11:13 INF [RTSP] listener opened on :8554 (TCP/RTSP)
+mediamtx-1  | 2026/04/02 20:11:13 INF [RTMP] listener opened on :1935
+mediamtx-1  | 2026/04/02 20:11:13 INF [HLS] listener opened on :8888
+mediamtx-1  | 2026/04/02 20:11:13 INF [WebRTC] listener opened on :8889 (HTTP), :8189 (ICE/UDP)
+mediamtx-1  | 2026/04/02 20:11:13 INF [SRT] listener opened on :8890 (UDP)
+mediamtx-1  | 2026/04/02 20:11:13 INF [API] listener opened on :9997
+mediamtx-1       | 2026/04/02 20:11:14 INF [RTSP] [conn 127.0.0.1:46618] opened
+mediamtx-1       | 2026/04/02 20:11:14 INF [RTSP] [session 24b813e8] created by 127.0.0.1:46618
+mediamtx-1       | 2026/04/02 20:11:14 INF [path mxlstream] stream is available and online, 1 track (H264)
+mediamtx-1       | 2026/04/02 20:11:14 INF [RTSP] [session 24b813e8] is publishing to path 'mxlstream'
+mediamtx-1       | 2026/04/02 20:11:22 INF [WebRTC] [session bb3c75dd] created by 10.161.131.15:64135
+mediamtx-1       | 2026/04/02 20:11:23 INF [WebRTC] [session bb3c75dd] peer connection established, local candidate: host/udp/127.0.0.1/8189, remote candidate: prflx/udp/10.161.131.15/58897
+mediamtx-1       | 2026/04/02 20:11:23 INF [WebRTC] [session bb3c75dd] is reading from path 'mxlstream', 1 track (H264)
+mediamtx-1       | 2026/04/02 20:11:51 INF [WebRTC] [session bb3c75dd] closed: peer connection closed

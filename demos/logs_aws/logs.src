@@ -1,0 +1,30 @@
+ffmpeg-source-1  | Input #0, mpegts, from '/tmp/demo_reel.ts':
+ffmpeg-source-1  |   Duration: 00:02:12.08, start: 1.416689, bitrate: 4216 kb/s
+ffmpeg-source-1  |   Program 1 
+ffmpeg-source-1  |     Metadata:
+ffmpeg-source-1  |       service_name    : Service01
+ffmpeg-source-1  |       service_provider: FFmpeg
+ffmpeg-source-1  |   Stream #0:0[0x100]: Video: h264 (High 4:2:2) ([27][0][0][0] / 0x001B), yuv422p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 59.94 fps, 59.94 tbr, 90k tbn, start 1.433378
+ffmpeg-source-1  |   Stream #0:1[0x101]: Audio: aac (LC) ([15][0][0][0] / 0x000F), 48000 Hz, mono, fltp, 72 kb/s, start 1.416689
+ffmpeg-source-1  | Stream mapping:
+ffmpeg-source-1  |   Stream #0:0 -> #0:0 (h264 (native) -> v210 (native))
+ffmpeg-source-1  | Press [q] to stop, [?] for help
+ffmpeg-source-1  | [vist#0:0/h264 @ 0x5b675f1b6b00] Resumed reading at pts -0.033 with rate 1.050 after a lag of 0.534s
+ffmpeg-source-1  | Output #0, mxl, to '/domain':
+ffmpeg-source-1  |   Metadata:
+ffmpeg-source-1  |     encoder         : Lavf62.6.101
+ffmpeg-source-1  |   Stream #0:0: Video: v210, yuv422p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], q=2-31, 2651556 kb/s, 59.94 fps, 59.94 tbn
+ffmpeg-source-1  |     Metadata:
+ffmpeg-source-1  |       encoder         : Lavc62.17.100 v210
+ffmpeg-source-1  |     Last message repeated 3 times
+ffmpeg-source-1  |     Last message repeated 29 times
+ffmpeg-source-1  |     Last message repeated 28 times
+ffmpeg-source-1  |     Last message repeated 1 times
+ffmpeg-source-1  |     Last message repeated 27 times
+ffmpeg-source-1  |     Last message repeated 2 times
+ffmpeg-source-1  |     Last message repeated 26 times
+ffmpeg-source-1  |     Last message repeated 3 times
+ffmpeg-source-1  |     Last message repeated 24 times
+ffmpeg-source-1  |     Last message repeated 5 times
+ffmpeg-source-1  |     Last message repeated 23 times
+ffmpeg-source-1  |     Last message repeated 6 times

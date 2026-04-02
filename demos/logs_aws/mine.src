@@ -1,0 +1,70 @@
+ffmpeg-source-1  | Input #0, mpegts, from '/tmp/demo_reel.ts':
+ffmpeg-source-1  |   Duration: 00:02:12.08, start: 1.416689, bitrate: 4216 kb/s
+ffmpeg-source-1  |   Program 1 
+ffmpeg-source-1  |     Metadata:
+ffmpeg-source-1  |       service_name    : Service01
+ffmpeg-source-1  |       service_provider: FFmpeg
+ffmpeg-source-1  |   Stream #0:0[0x100]: Video: h264 (High 4:2:2) ([27][0][0][0] / 0x001B), yuv422p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 59.94 fps, 59.94 tbr, 90k tbn, start 1.433378
+ffmpeg-source-1  |   Stream #0:1[0x101]: Audio: aac (LC) ([15][0][0][0] / 0x000F), 48000 Hz, mono, fltp, 72 kb/s, start 1.416689
+ffmpeg-source-1  | Stream mapping:
+ffmpeg-source-1  |   Stream #0:0 -> #0:0 (h264 (native) -> v210 (native))
+ffmpeg-source-1  | Press [q] to stop, [?] for help
+ffmpeg-source-1  | [vist#0:0/h264 @ 0x58a4f91f8b00] Resumed reading at pts -0.033 with rate 1.050 after a lag of 0.534s
+ffmpeg-source-1  | Output #0, mxl, to '/domain':
+ffmpeg-source-1  |   Metadata:
+ffmpeg-source-1  |     encoder         : Lavf62.6.101
+ffmpeg-source-1  |   Stream #0:0: Video: v210, yuv422p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], q=2-31, 2651556 kb/s, 59.94 fps, 59.94 tbn
+ffmpeg-source-1  |     Metadata:
+ffmpeg-source-1  |       encoder         : Lavc62.17.100 v210
+ffmpeg-source-1  |     Last message repeated 3 times
+ffmpeg-source-1  |     Last message repeated 28 times
+ffmpeg-source-1  | frame= 7926 fps= 60 q=-0.0 size=N/A time=00:02:12.23 bitrate=N/A dup=32 drop=0 speed=0.998x elapsed=0:02[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referencedbitrate=N/A dup=32 drop=0 speed=0.999x elapsed=0:04:23.55    
+ffmpeg-source-1  |     Last message repeated 27 times
+ffmpeg-source-1  | frame=15799 fps= 60 q=-0.0 size=N/A time=00:04:23.57 bitrate=N/A dup=32 drop=0 speed=0.998x elapsed=0:04[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 2 times
+ffmpeg-source-1  | frame=15840 fps= 60 q=-0.0 size=N/A time=00:04:24.26 bitrate=N/A dup=64 drop=0 speed=0.999x elapsed=0:04[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referencedbitrate=N/A dup=64 drop=0 speed=0.999x elapsed=0:06:35.58    
+ffmpeg-source-1  |     Last message repeated 25 times
+ffmpeg-source-1  | frame=23715 fps= 60 q=-0.0 size=N/A time=00:06:35.64 bitrate=N/A dup=64 drop=0 speed=0.999x elapsed=0:06[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 4 times
+ffmpeg-source-1  | frame=23754 fps= 60 q=-0.0 size=N/A time=00:06:36.29 bitrate=N/A dup=96 drop=0 speed=0.999x elapsed=0:06[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referencedbitrate=N/A dup=96 drop=0 speed=0.999x elapsed=0:08:47.62    
+ffmpeg-source-1  |     Last message repeated 23 times
+ffmpeg-source-1  | frame=31631 fps= 60 q=-0.0 size=N/A time=00:08:47.71 bitrate=N/A dup=96 drop=0 speed=0.999x elapsed=0:08[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 6 times
+ffmpeg-source-1  | frame=31668 fps= 60 q=-0.0 size=N/A time=00:08:48.32 bitrate=N/A dup=128 drop=0 speed=0.999x elapsed=0:0[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referencedbitrate=N/A dup=128 drop=0 speed=   1x elapsed=0:10:59.66     
+ffmpeg-source-1  |     Last message repeated 22 times
+ffmpeg-source-1  | frame=39547 fps= 60 q=-0.0 size=N/A time=00:10:59.77 bitrate=N/A dup=128 drop=0 speed=0.999x elapsed=0:1[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 7 times
+ffmpeg-source-1  | frame=39582 fps= 60 q=-0.0 size=N/A time=00:11:00.35 bitrate=N/A dup=160 drop=0 speed=   1x elapsed=0:11[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referencedbitrate=N/A dup=160 drop=0 speed=   1x elapsed=0:13:11.69    
+ffmpeg-source-1  |     Last message repeated 20 times
+ffmpeg-source-1  | frame=47463 fps= 60 q=-0.0 size=N/A time=00:13:11.84 bitrate=N/A dup=160 drop=0 speed=   1x elapsed=0:13[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 9 times
+ffmpeg-source-1  | frame=47478 fps= 60 q=-0.0 size=N/A time=00:13:12.22 bitrate=N/A dup=192 drop=0 speed=0.999x elapsed=0:1[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referencedbitrate=N/A dup=192 drop=0 speed=   1x elapsed=0:15:23.73    
+ffmpeg-source-1  |     Last message repeated 18 times
+ffmpeg-source-1  | frame=55379 fps= 60 q=-0.0 size=N/A time=00:15:23.90 bitrate=N/A dup=192 drop=0 speed=   1x elapsed=0:15[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 11 times
+ffmpeg-source-1  | frame=55379 fps= 60 q=-0.0 size=N/A time=00:15:23.90 bitrate=N/A dup=192 drop=0 speed=0.999x elapsed=0:1[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referencedbitrate=N/A dup=224 drop=0 speed=   1x elapsed=0:17:35.77    
+ffmpeg-source-1  |     Last message repeated 16 times
+ffmpeg-source-1  | frame=63295 fps= 60 q=-0.0 size=N/A time=00:17:35.97 bitrate=N/A dup=224 drop=0 speed=   1x elapsed=0:17[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 13 times
+ffmpeg-source-1  | frame=63295 fps= 60 q=-0.0 size=N/A time=00:17:35.97 bitrate=N/A dup=224 drop=0 speed=0.999x elapsed=0:1[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referencedbitrate=N/A dup=256 drop=0 speed=   1x elapsed=0:19:47.80    
+ffmpeg-source-1  |     Last message repeated 15 times
+ffmpeg-source-1  | frame=71211 fps= 60 q=-0.0 size=N/A time=00:19:48.03 bitrate=N/A dup=256 drop=0 speed=   1x elapsed=0:19[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 14 times
+ffmpeg-source-1  | frame=71211 fps= 60 q=-0.0 size=N/A time=00:19:48.03 bitrate=N/A dup=256 drop=0 speed=0.999x elapsed=0:1[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referencedbitrate=N/A dup=288 drop=0 speed=   1x elapsed=0:21:59.84    
+ffmpeg-source-1  |     Last message repeated 13 times
+ffmpeg-source-1  | frame=79127 fps= 60 q=-0.0 size=N/A time=00:22:00.10 bitrate=N/A dup=288 drop=0 speed=   1x elapsed=0:22[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 16 times
+ffmpeg-source-1  | frame=79127 fps= 60 q=-0.0 size=N/A time=00:22:00.10 bitrate=N/A dup=288 drop=0 speed=0.999x elapsed=0:2[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referencedbitrate=N/A dup=320 drop=0 speed=   1x elapsed=0:24:11.87    
+ffmpeg-source-1  |     Last message repeated 11 times
+ffmpeg-source-1  | frame=87043 fps= 60 q=-0.0 size=N/A time=00:24:12.16 bitrate=N/A dup=320 drop=0 speed=   1x elapsed=0:24[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 18 times
+ffmpeg-source-1  | frame=87043 fps= 60 q=-0.0 size=N/A time=00:24:12.16 bitrate=N/A dup=320 drop=0 speed=   1x elapsed=0:24[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referencedbitrate=N/A dup=352 drop=0 speed=   1x elapsed=0:26:23.91    
+ffmpeg-source-1  |     Last message repeated 9 times
+ffmpeg-source-1  | frame=94959 fps= 60 q=-0.0 size=N/A time=00:26:24.23 bitrate=N/A dup=352 drop=0 speed=   1x elapsed=0:26[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 20 times
+ffmpeg-source-1  | frame=94959 fps= 60 q=-0.0 size=N/A time=00:26:24.23 bitrate=N/A dup=352 drop=0 speed=   1x elapsed=0:26[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced bitrate=N/A dup=384 drop=0 speed=   1x elapsed=0:28:35.94    
+ffmpeg-source-1  |     Last message repeated 7 times
+ffmpeg-source-1  | frame=102875 fps= 60 q=-0.0 size=N/A time=00:28:36.29 bitrate=N/A dup=384 drop=0 speed=   1x elapsed=0:2[h264 @ 0x58a4f91a35c0] non-existing PPS 0 referenced
+ffmpeg-source-1  |     Last message repeated 22 times
+ffmpeg-source-1  |     Last message repeated 6 times
+ffmpeg-source-1  |     Last message repeated 23 times

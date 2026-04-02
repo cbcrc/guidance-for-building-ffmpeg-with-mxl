@@ -1,0 +1,182 @@
+ffmpeg-probe-1   | Input #0, mxl, from '/domain/fe781cad-8a82-4b8e-a3c2-f833c70ac73e.mxl-flow':
+ffmpeg-probe-1   |   Duration: N/A, start: 0.000000, bitrate: N/A
+ffmpeg-dest-1    | Input #0, mxl, from '/domain/fe781cad-8a82-4b8e-a3c2-f833c70ac73e.mxl-flow':
+ffmpeg-dest-1    |   Duration: N/A, start: 0.000000, bitrate: N/A
+mediamtx-1       | 2026/04/02 20:12:10 WAR parameter 'apiAllowOrigin' is deprecated and has been replaced with 'apiAllowOrigins'
+mediamtx-1       | 2026/04/02 20:12:10 WAR parameter 'metricsAllowOrigin' is deprecated and has been replaced with 'metricsAllowOrigins'
+mediamtx-1       | 2026/04/02 20:12:10 WAR parameter 'pprofAllowOrigin' is deprecated and has been replaced with 'pprofAllowOrigins'
+mediamtx-1       | 2026/04/02 20:12:10 WAR parameter 'playbackAllowOrigin' is deprecated and has been replaced with 'playbackAllowOrigins'
+mediamtx-1       | 2026/04/02 20:12:10 WAR parameter 'hlsAllowOrigin' is deprecated and has been replaced with 'hlsAllowOrigins'
+mediamtx-1       | 2026/04/02 20:12:10 WAR parameter 'webrtcAllowOrigin' is deprecated and has been replaced with 'webrtcAllowOrigins'
+mediamtx-1       | 2026/04/02 20:12:10 INF MediaMTX v1.17.1, linux, amd64
+mediamtx-1       | 2026/04/02 20:12:10 INF configuration loaded from /mediamtx.yml
+mediamtx-1       | 2026/04/02 20:12:10 INF [RTSP] listener opened on :8554 (TCP/RTSP)
+mediamtx-1       | 2026/04/02 20:12:10 INF [RTMP] listener opened on :1935
+mediamtx-1       | 2026/04/02 20:12:10 INF [HLS] listener opened on :8888
+mediamtx-1       | 2026/04/02 20:12:10 INF [WebRTC] listener opened on :8889 (HTTP), :8189 (ICE/UDP)
+mediamtx-1       | 2026/04/02 20:12:10 INF [SRT] listener opened on :8890 (UDP)
+mediamtx-1       | 2026/04/02 20:12:10 INF [API] listener opened on :9997
+mediamtx-1       | 2026/04/02 20:12:11 INF [RTSP] [conn 127.0.0.1:54354] opened
+mediamtx-1       | 2026/04/02 20:12:11 INF [RTSP] [session 5655edaf] created by 127.0.0.1:54354
+mediamtx-1       | 2026/04/02 20:12:11 INF [path mxlstream] stream is available and online, 1 track (H264)
+mediamtx-1       | 2026/04/02 20:12:11 INF [RTSP] [session 5655edaf] is publishing to path 'mxlstream'
+mediamtx-1       | 2026/04/02 20:17:51 INF [WebRTC] [session b9248a48] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:18:01 INF [WebRTC] [session b9248a48] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:18:04 INF [WebRTC] [session 75816082] created by 99.209.117.194:34237
+ffmpeg-probe-1   |   Stream #0:0: Video: v210 (v210 / 0x30313276), yuv422p10le(progressive), 1920x1080 [SAR 1:1 DAR 16:9], 59.94 fps, 59.94 tbr, 59.94 tbn
+ffmpeg-probe-1   |     Metadata:
+ffmpeg-probe-1   |       mxl_id          : fe781cad-8a82-4b8e-a3c2-f833c70ac73e
+ffmpeg-probe-1   |       mxl_description : FFmpeg video stream
+ffmpeg-dest-1    |   Stream #0:0: Video: v210 (v210 / 0x30313276), yuv422p10le(progressive), 1920x1080 [SAR 1:1 DAR 16:9], 59.94 fps, 59.94 tbr, 59.94 tbn
+ffmpeg-dest-1    |     Metadata:
+ffmpeg-dest-1    |       mxl_id          : fe781cad-8a82-4b8e-a3c2-f833c70ac73e
+ffmpeg-dest-1    |       mxl_description : FFmpeg video stream
+ffmpeg-dest-1    |       mxl_label       : FFmpeg video stream
+ffmpeg-dest-1    |       mxl_format      : urn:x-nmos:format:video
+ffmpeg-dest-1    |       mxl_media_type  : video/v210
+ffmpeg-dest-1    |       mxl_colorspace  : BT709
+ffmpeg-dest-1    | Stream mapping:
+ffmpeg-dest-1    |   Stream #0:0 -> #0:0 (v210 (native) -> h264 (libx264))
+ffmpeg-dest-1    | Press [q] to stop, [?] for help
+ffmpeg-dest-1    | [libx264 @ 0x5cbae40d3e00] using SAR=1/1
+ffmpeg-dest-1    | [libx264 @ 0x5cbae40d3e00] using cpu capabilities: MMX2 SSE2Fast SSSE3 SSE4.2 AVX FMA3 BMI2 AVX2 AVX512
+ffmpeg-dest-1    | [libx264 @ 0x5cbae40d3e00] profile High, level 3.2, 4:2:0, 8-bit
+ffmpeg-probe-1   |       mxl_label       : FFmpeg video stream
+ffmpeg-dest-1    | [libx264 @ 0x5cbae40d3e00] 264 - core 165 r3223 0480cb0 - H.264/MPEG-4 AVC codec - Copyleft 2003-2025 - http://www.videolan.org/x264.html - options: cabac=1 ref=2 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=6 psy=1 psy_rd=1.00:0.00 mixed_ref=1 me_range=16 chroma_me=1 trellis=1 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=-2 threads=11 lookahead_threads=11 sliced_threads=1 slices=11 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=0 weightp=1 keyint=250 keyint_min=25 scenecut=40 intra_refresh=0 rc=abr mbtree=0 bitrate=5000 ratetol=1.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00
+ffmpeg-dest-1    | [rtp @ 0x7958fcafbe80] The "localport" option is deprecated: Local rtp port
+ffmpeg-dest-1    | [rtsp @ 0x5cbae40d1280] method SETUP failed: 461Unsupported Transport
+mediamtx-1       | 2026/04/02 20:18:14 INF [WebRTC] [session 75816082] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:18:18 INF [WebRTC] [session 037bfca4] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:18:28 INF [WebRTC] [session 037bfca4] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:18:31 INF [WebRTC] [session d55474a5] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:18:41 INF [WebRTC] [session d55474a5] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:18:44 INF [WebRTC] [session fb37b770] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:18:54 INF [WebRTC] [session fb37b770] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:18:58 INF [WebRTC] [session d841478d] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:19:08 INF [WebRTC] [session d841478d] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:19:11 INF [WebRTC] [session 13c13990] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:19:21 INF [WebRTC] [session 13c13990] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:19:24 INF [WebRTC] [session 3a3d620d] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:19:34 INF [WebRTC] [session 3a3d620d] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:19:38 INF [WebRTC] [session c1511c61] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:19:48 INF [WebRTC] [session c1511c61] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:19:51 INF [WebRTC] [session 818edd69] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:20:01 INF [WebRTC] [session 818edd69] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:20:05 INF [WebRTC] [session 1bfdb454] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:20:15 INF [WebRTC] [session 1bfdb454] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:20:18 INF [WebRTC] [session 423f46b2] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:20:28 INF [WebRTC] [session 423f46b2] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:20:32 INF [WebRTC] [session 9fac0b5b] created by 99.209.117.194:34237
+ffmpeg-probe-1   |       mxl_format      : urn:x-nmos:format:video
+ffmpeg-probe-1   |       mxl_media_type  : video/v210
+ffmpeg-probe-1   |       mxl_colorspace  : BT709
+ffmpeg-source-1  | Input #0, mpegts, from '/tmp/demo_reel.ts':
+ffmpeg-dest-1    | Output #0, rtsp, to 'rtsp://127.0.0.1:8554/mxlstream':
+ffmpeg-dest-1    |   Metadata:
+ffmpeg-dest-1    |     encoder         : Lavf62.6.101
+ffmpeg-dest-1    |   Stream #0:0: Video: h264, yuv420p(tv, progressive), 1280x720 [SAR 1:1 DAR 16:9], q=2-31, 5000 kb/s, 59.94 fps, 90k tbn
+ffmpeg-dest-1    |     Metadata:
+ffmpeg-dest-1    |       encoder         : Lavc62.17.100 libx264
+ffmpeg-dest-1    |       mxl_id          : fe781cad-8a82-4b8e-a3c2-f833c70ac73e
+ffmpeg-dest-1    |       mxl_description : FFmpeg video stream
+ffmpeg-dest-1    |       mxl_label       : FFmpeg video stream
+ffmpeg-dest-1    |       mxl_format      : urn:x-nmos:format:video
+ffmpeg-dest-1    |       mxl_media_type  : video/v210
+ffmpeg-dest-1    |       mxl_colorspace  : BT709
+ffmpeg-dest-1    |     Side data:
+ffmpeg-dest-1    |       CPB properties: bitrate max/min/avg: 0/0/5000000 buffer size: 0 vbv_delay: N/A
+ffmpeg-source-1  |   Duration: 00:02:12.08, start: 1.416689, bitrate: 4216 kb/s
+ffmpeg-source-1  |   Program 1 
+mediamtx-1       | 2026/04/02 20:20:42 INF [WebRTC] [session 9fac0b5b] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:20:45 INF [WebRTC] [session d908e174] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:20:55 INF [WebRTC] [session d908e174] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:20:58 INF [WebRTC] [session 2905ed83] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:21:08 INF [WebRTC] [session 2905ed83] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:21:12 INF [WebRTC] [session 6e397a06] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:21:22 INF [WebRTC] [session 6e397a06] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:21:25 INF [WebRTC] [session 047bf94f] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:21:35 INF [WebRTC] [session 047bf94f] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:21:38 INF [WebRTC] [session 0526147c] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:21:48 INF [WebRTC] [session 0526147c] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:21:52 INF [WebRTC] [session 55c6883a] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:22:02 INF [WebRTC] [session 55c6883a] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:22:05 INF [WebRTC] [session 1e21bc3e] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:22:15 INF [WebRTC] [session 1e21bc3e] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:22:19 INF [WebRTC] [session fbb0ae63] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:22:29 INF [WebRTC] [session fbb0ae63] closed: deadline exceeded while waiting connection
+ffmpeg-source-1  |     Metadata:
+ffmpeg-source-1  |       service_name    : Service01
+ffmpeg-source-1  |       service_provider: FFmpeg
+ffmpeg-source-1  |   Stream #0:0[0x100]: Video: h264 (High 4:2:2) ([27][0][0][0] / 0x001B), yuv422p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 59.94 fps, 59.94 tbr, 90k tbn, start 1.433378
+ffmpeg-source-1  |   Stream #0:1[0x101]: Audio: aac (LC) ([15][0][0][0] / 0x000F), 48000 Hz, mono, fltp, 72 kb/s, start 1.416689
+ffmpeg-source-1  | Stream mapping:
+ffmpeg-source-1  |   Stream #0:0 -> #0:0 (h264 (native) -> v210 (native))
+ffmpeg-source-1  | Press [q] to stop, [?] for help
+ffmpeg-source-1  | [vist#0:0/h264 @ 0x5b675f1b6b00] Resumed reading at pts -0.033 with rate 1.050 after a lag of 0.534s
+ffmpeg-source-1  | Output #0, mxl, to '/domain':
+ffmpeg-source-1  |   Metadata:
+ffmpeg-source-1  |     encoder         : Lavf62.6.101
+ffmpeg-source-1  |   Stream #0:0: Video: v210, yuv422p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], q=2-31, 2651556 kb/s, 59.94 fps, 59.94 tbn
+ffmpeg-source-1  |     Metadata:
+ffmpeg-source-1  |       encoder         : Lavc62.17.100 v210
+mediamtx-1       | 2026/04/02 20:22:32 INF [WebRTC] [session 6fe09051] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:22:42 INF [WebRTC] [session 6fe09051] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:22:45 INF [WebRTC] [session 14d4b4cf] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:22:55 INF [WebRTC] [session 14d4b4cf] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:22:59 INF [WebRTC] [session 8468f9c2] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:23:09 INF [WebRTC] [session 8468f9c2] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:23:12 INF [WebRTC] [session d3394ff6] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:23:22 INF [WebRTC] [session d3394ff6] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:23:25 INF [WebRTC] [session 5d641741] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:23:35 INF [WebRTC] [session 5d641741] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:23:39 INF [WebRTC] [session f1698f5b] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:23:49 INF [WebRTC] [session f1698f5b] closed: deadline exceeded while waiting connection
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedbitrate=N/A speed=   1x elapsed=0:02:11.04     psed=0:00:00.50    
+mediamtx-1       | 2026/04/02 20:23:52 INF [WebRTC] [session a389a5f7] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:24:02 INF [WebRTC] [session a389a5f7] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:24:06 INF [WebRTC] [session 33375ca0] created by 99.209.117.194:34237
+ffmpeg-source-1  |     Last message repeated 3 times
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedA time=00:02:11.99 bitrate=N/A speed=   1x elapsed=0:02:11.54    
+ffmpeg-source-1  |     Last message repeated 29 times
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedbitrate=N/A dup=32 drop=0 speed=0.999x elapsed=0:04:23.57        
+mediamtx-1       | 2026/04/02 20:24:16 INF [WebRTC] [session 33375ca0] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:24:19 INF [WebRTC] [session d1a89d2d] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:24:29 INF [WebRTC] [session d1a89d2d] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:24:32 INF [WebRTC] [session f7ca78b0] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:24:42 INF [WebRTC] [session f7ca78b0] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:24:46 INF [WebRTC] [session d8ba352b] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:24:56 INF [WebRTC] [session d8ba352b] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:24:59 INF [WebRTC] [session 5d49902d] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:25:09 INF [WebRTC] [session 5d49902d] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:25:13 INF [WebRTC] [session 95c2b0a3] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:25:23 INF [WebRTC] [session 95c2b0a3] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:25:26 INF [WebRTC] [session 9b785d75] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:25:36 INF [WebRTC] [session 9b785d75] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:25:39 INF [WebRTC] [session 4f9dfc20] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:25:49 INF [WebRTC] [session 4f9dfc20] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:25:53 INF [WebRTC] [session c3717426] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:26:03 INF [WebRTC] [session c3717426] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:26:06 INF [WebRTC] [session 4494ca52] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:26:16 INF [WebRTC] [session 4494ca52] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:26:19 INF [WebRTC] [session bcde5c83] created by 99.209.117.194:34237
+mediamtx-1       | 2026/04/02 20:26:29 INF [WebRTC] [session bcde5c83] closed: deadline exceeded while waiting connection
+mediamtx-1       | 2026/04/02 20:26:33 INF [WebRTC] [session 807d8536] created by 99.209.117.194:34237
+ffmpeg-source-1  |     Last message repeated 28 times
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedA time=00:04:23.69 bitrate=N/A dup=32 drop=0 speed=0.999x elapsed=0:04:24.07    
+ffmpeg-source-1  |     Last message repeated 1 times
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedbitrate=N/A dup=64 drop=0 speed=   1x elapsed=0:06:35.62     psed=0:04:24.57    
+ffmpeg-source-1  |     Last message repeated 27 times
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedA time=00:06:35.76 bitrate=N/A dup=64 drop=0 speed=0.999x elapsed=0:06:36.12    
+ffmpeg-source-1  |     Last message repeated 2 times
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedbitrate=N/A dup=96 drop=0 speed=   1x elapsed=0:08:47.66    psed=0:06:36.62    
+ffmpeg-source-1  |     Last message repeated 26 times
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedA time=00:08:47.82 bitrate=N/A dup=96 drop=0 speed=0.999x elapsed=0:08:48.16    
+ffmpeg-source-1  |     Last message repeated 3 times
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedbitrate=N/A dup=128 drop=0 speed=   1x elapsed=0:10:59.70    psed=0:08:48.66    
+ffmpeg-source-1  |     Last message repeated 24 times
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedA time=00:10:59.89 bitrate=N/A dup=128 drop=0 speed=   1x elapsed=0:11:00.20    
+ffmpeg-source-1  |     Last message repeated 5 times
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedbitrate=N/A dup=160 drop=0 speed=   1x elapsed=0:13:11.74    psed=0:11:00.70    
+ffmpeg-source-1  |     Last message repeated 23 times
+[h264 @ 0x5b675f1615c0] non-existing PPS 0 referencedA time=00:13:11.95 bitrate=N/A dup=160 drop=0 speed=   1x elapsed=0:13:12.24    
+ffmpeg-source-1  |     Last message repeated 6 times
