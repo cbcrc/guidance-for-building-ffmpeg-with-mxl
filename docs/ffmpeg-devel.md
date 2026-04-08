@@ -100,6 +100,7 @@ The FFmpeg/MXL integration has the following FFmpeg regression tests:
 | `fate-mxl-uri` | URI parser test |
 | `fate-mxl-loc` | Locator parser test |
 | `fate-mxl-json` | JSON parser test |
+| `fate-mxl-diag` | Diagnostic server test |
 | `fate-mxl-video-encdec` | MXL video muxer-to-demuxer test |
 | `fate-mxl-audio-encdec` | MXL audio muxer-to-demuxer test |
 | `fate-mxl-av-encdec` | MXL multi-flow audio+video muxer-to-demuxer test |
@@ -117,6 +118,7 @@ $ make \
     fate-mxl-uri \
     fate-mxl-loc \
     fate-mxl-json \
+    fate-mxl-diag \
     fate-mxl-video-encdec \
     fate-mxl-audio-encdec \
     fate-mxl-av-encdec \
