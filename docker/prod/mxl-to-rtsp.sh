@@ -65,16 +65,20 @@ Optional environment:
   FFMPEG_RT_PRIORITY
         Set real time priority. If set then the process is started with `chrt`
         Default: unset
+  DIAG_SOCKET, V_DIAG_SOCKET, A_DIAG_SOCKET
+        Diagnostic socket path.
 
 From: ./ffmpeg -h demuxer=mxl
-  -blocking          <int>   .D......... Use blocking video read: auto (default), 0=non-blocking, 1=blocking (from -1 to 1) (default -1)
- -grain_index_init  <int>    .D......... initial MXL grain index (from 0 to 2) (default current)
-     current         0       .D......... current time
-     head            1       .D......... ring buffer head
-     tail            2       .D......... ring buffer tail
- -on_too_late       <int>    .D......... action when MXL reports grain index too late (from 0 to 1) (default increment)
-     increment       0       .D......... increment the grain index
-     reset           1       .D......... reset to position defined by grain_index_init
+mxl demuxer AVOptions:
+  -blocking          <int>        .D......... Use blocking video read: auto (default), 0=non-blocking, 1=blocking (from -1 to 1) (default -1)
+  -grain_index_init  <int>        .D......... initial MXL grain index (from 0 to 2) (default current)
+     current         0            .D......... current time
+     head            1            .D......... ring buffer head
+     tail            2            .D......... ring buffer tail
+  -on_too_late       <int>        .D......... action when MXL reports grain index too late (from 0 to 1) (default increment)
+     increment       0            .D......... increment the grain index
+     reset           1            .D......... reset to position defined by grain_index_init
+  -diag_socket       <string>     .D......... Unix domain socket path for diagnostic monitoring
 
 Examples:
   Host:
@@ -128,6 +132,9 @@ fi
 : "${A_GRAIN_INDEX_INIT:=0}"
 : "${V_GRAIN_INDEX_INIT:=0}"
 : "${V_BLOCKING:=1}"
+: "${DIAG_SOCKET:=}"
+: "${A_DIAG_SOCKET:=}"
+: "${V_DIAG_SOCKET:=}"
 
 case "$FFMPEG_MODE" in
     gpu|cpu)
@@ -197,105 +204,184 @@ run_with_optional_rt() {
 }
 
 run_ffmpeg_cpu_single_demux() {
-    run_with_optional_rt \
-    "$FFMPEG" \
-      -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
-      -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" -i "${AV_INPUT}" \
-      -vf format=yuv420p \
-      -c:v libx264 \
-      -preset superfast \
-      -tune zerolatency \
-      -bf 0 \
-      -rc-lookahead 0 \
-      -g 30 \
-      -sc_threshold 0 \
-      -crf 20 \
-      -x264-params "sliced-threads=1:sync-lookahead=0" \
-      -maxrate 12M -bufsize 1M \
-      -threads 4 \
-      -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
-      -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}"
+    local ffmpeg_args=(
+        "$FFMPEG"
+        -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}"
+        -threads 1
+        -f mxl
+        -on_too_late "${ON_TOO_LATE}"
+        -grain_index_init "${GRAIN_INDEX_INIT}"
+    )
+
+    if [[ -n ${DIAG_SOCKET:-} ]]; then
+        ffmpeg_args+=(-diag_socket "$DIAG_SOCKET")
+    fi
+
+    ffmpeg_args+=(
+        -i "${AV_INPUT}"
+        -vf format=yuv420p
+        -c:v libx264
+        -preset superfast
+        -tune zerolatency
+        -bf 0
+        -rc-lookahead 0
+        -g 30
+        -sc_threshold 0
+        -crf 20
+        -x264-params "sliced-threads=1:sync-lookahead=0"
+        -maxrate 12M -bufsize 1M
+        -threads 4
+        -c:a libopus -b:a 128k -application lowdelay -frame_duration 10
+        -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}"
+    )
+
+    run_with_optional_rt "${ffmpeg_args[@]}"
 }
 
 run_ffmpeg_cpu_multi_demux() {
-    run_with_optional_rt \
-    "$FFMPEG" \
-      -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
-      -threads 1 -f mxl -blocking "${V_BLOCKING}" -on_too_late "${V_ON_TOO_LATE}" -grain_index_init "${V_GRAIN_INDEX_INIT}" -i "${V_INPUT}" \
-      -f mxl -on_too_late "${A_ON_TOO_LATE}" -grain_index_init "${A_GRAIN_INDEX_INIT}" -i "${A_INPUT}" \
-      -map 0:v:0 -map 1:a:0 \
-      -vf format=yuv420p \
-      -c:v libx264 \
-      -preset superfast \
-      -tune zerolatency \
-      -bf 0 \
-      -rc-lookahead 0 \
-      -g 30 \
-      -sc_threshold 0 \
-      -crf 20 \
-      -x264-params "sliced-threads=1:sync-lookahead=0" \
-      -maxrate 12M -bufsize 1M \
-      -threads 4 \
-      -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
-      -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}"
+    local ffmpeg_args=(
+        "$FFMPEG"
+        -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}"
+        -threads 1
+        -f mxl
+        -blocking "${V_BLOCKING}"
+        -on_too_late "${V_ON_TOO_LATE}"
+        -grain_index_init "${V_GRAIN_INDEX_INIT}"
+    )
+
+    if [[ -n ${V_DIAG_SOCKET:-} ]]; then
+        ffmpeg_args+=(-diag_socket "$V_DIAG_SOCKET")
+    fi
+
+    ffmpeg_args+=(
+        -i "${V_INPUT}"
+        -f mxl
+        -on_too_late "${A_ON_TOO_LATE}"
+        -grain_index_init "${A_GRAIN_INDEX_INIT}"
+    )
+
+    if [[ -n ${A_DIAG_SOCKET:-} ]]; then
+        ffmpeg_args+=(-diag_socket "$A_DIAG_SOCKET")
+    fi
+
+    ffmpeg_args+=(
+        -i "${A_INPUT}"
+        -map 0:v:0 -map 1:a:0
+        -vf format=yuv420p
+        -c:v libx264
+        -preset superfast
+        -tune zerolatency
+        -bf 0
+        -rc-lookahead 0
+        -g 30
+        -sc_threshold 0
+        -crf 20
+        -x264-params "sliced-threads=1:sync-lookahead=0"
+        -maxrate 12M -bufsize 1M
+        -threads 4
+        -c:a libopus -b:a 128k -application lowdelay -frame_duration 10
+        -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}"
+    )
+
+    run_with_optional_rt "${ffmpeg_args[@]}"
 }
 
 run_ffmpeg_gpu_single_demux() {
-    run_with_optional_rt \
-    "$FFMPEG" \
-        -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
-        -threads 1 -f mxl -on_too_late "${ON_TOO_LATE}" -grain_index_init "${GRAIN_INDEX_INIT}" -i "${AV_INPUT}" \
-        -vf "hwupload_cuda,scale_cuda=format=nv12:interp_algo=nearest" \
-        -c:v h264_nvenc \
-        -pix_fmt cuda \
-        -profile:v high \
-        -preset p3 \
-        -tune ull \
-        -zerolatency 1 \
-        -delay 0 \
-        -bf 0 \
-        -g 30 \
-        -rc cbr \
-        -ldkfs 1 \
-        -b:v 20M \
-        -maxrate 12M \
-        -bufsize 1M \
-        -rc-lookahead 0 \
-        -surfaces 2 \
-        -spatial-aq 1 \
-        -temporal-aq 0 \
-        -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
+    local ffmpeg_args=(
+        "$FFMPEG"
+        -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}"
+        -threads 1
+        -f mxl
+        -on_too_late "${ON_TOO_LATE}"
+        -grain_index_init "${GRAIN_INDEX_INIT}"
+    )
+
+    if [[ -n ${DIAG_SOCKET:-} ]]; then
+        ffmpeg_args+=(-diag_socket "$DIAG_SOCKET")
+    fi
+
+    ffmpeg_args+=(
+        -i "${AV_INPUT}"
+        -vf "hwupload_cuda,scale_cuda=format=nv12:interp_algo=nearest"
+        -c:v h264_nvenc
+        -pix_fmt cuda
+        -profile:v high
+        -preset p3
+        -tune ull
+        -zerolatency 1
+        -delay 0
+        -bf 0
+        -g 30
+        -rc cbr
+        -ldkfs 1
+        -b:v 20M
+        -maxrate 12M
+        -bufsize 1M
+        -rc-lookahead 0
+        -surfaces 2
+        -spatial-aq 1
+        -temporal-aq 0
+        -c:a libopus -b:a 128k -application lowdelay -frame_duration 10
         -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}"
+    )
+
+    run_with_optional_rt "${ffmpeg_args[@]}"
 }
 
+
 run_ffmpeg_gpu_multi_demux() {
-    run_with_optional_rt \
-    "$FFMPEG" \
-        -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}" \
-        -threads 1 -f mxl -blocking "${V_BLOCKING}" -on_too_late "${V_ON_TOO_LATE}" -grain_index_init "${V_GRAIN_INDEX_INIT}" -i "${V_INPUT}" \
-        -f mxl -on_too_late "${A_ON_TOO_LATE}" -grain_index_init "${A_GRAIN_INDEX_INIT}" -i "${A_INPUT}" \
-        -map 0:v:0 -map 1:a:0 \
-        -vf "hwupload_cuda,scale_cuda=format=nv12:interp_algo=nearest" \
-        -c:v h264_nvenc \
-        -pix_fmt cuda \
-        -profile:v high \
-        -preset p3 \
-        -tune ull \
-        -zerolatency 1 \
-        -delay 0 \
-        -bf 0 \
-        -g 30 \
-        -rc cbr \
-        -ldkfs 1 \
-        -b:v 20M \
-        -maxrate 12M \
-        -bufsize 1M \
-        -rc-lookahead 0 \
-        -surfaces 2 \
-        -spatial-aq 1 \
-        -temporal-aq 0 \
-        -c:a libopus -b:a 128k -application lowdelay -frame_duration 10 \
+    local ffmpeg_args=(
+        "$FFMPEG"
+        -hide_banner -nostats -loglevel "${FFMPEG_LOGLEVEL}"
+        -threads 1
+        -f mxl
+        -blocking "${V_BLOCKING}"
+        -on_too_late "${V_ON_TOO_LATE}"
+        -grain_index_init "${V_GRAIN_INDEX_INIT}"
+    )
+
+    if [[ -n ${V_DIAG_SOCKET:-} ]]; then
+        ffmpeg_args+=(-diag_socket "$V_DIAG_SOCKET")
+    fi
+
+    ffmpeg_args+=(
+        -i "${V_INPUT}"
+        -f mxl
+        -on_too_late "${A_ON_TOO_LATE}"
+        -grain_index_init "${A_GRAIN_INDEX_INIT}"
+    )
+
+    if [[ -n ${A_DIAG_SOCKET:-} ]]; then
+        ffmpeg_args+=(-diag_socket "$A_DIAG_SOCKET")
+    fi
+
+    ffmpeg_args+=(
+        -i "${A_INPUT}"
+        -map 0:v:0 -map 1:a:0
+        -vf "hwupload_cuda,scale_cuda=format=nv12:interp_algo=nearest"
+        -c:v h264_nvenc
+        -pix_fmt cuda
+        -profile:v high
+        -preset p3
+        -tune ull
+        -zerolatency 1
+        -delay 0
+        -bf 0
+        -g 30
+        -rc cbr
+        -ldkfs 1
+        -b:v 20M
+        -maxrate 12M
+        -bufsize 1M
+        -rc-lookahead 0
+        -surfaces 2
+        -spatial-aq 1
+        -temporal-aq 0
+        -c:a libopus -b:a 128k -application lowdelay -frame_duration 10
         -f rtsp -rtsp_transport "${RTSP_TRANSPORT}" "${RTSP_URL}"
+    )
+
+    run_with_optional_rt "${ffmpeg_args[@]}"
 }
 
 run_ffmpeg() {
