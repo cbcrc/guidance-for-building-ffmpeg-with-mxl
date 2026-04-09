@@ -66,12 +66,13 @@ USER ${UID}:${GID}
 ARG FATE_SUITE_MIRROR
 RUN if [ -n "${FATE_SUITE_MIRROR:-}" ]; then \
         export FATE_SUITE_MIRROR; \
+        FATE="--fate"; \
     fi; \
-    /scripts/get-src.sh /src --streaming
+    /scripts/get-src.sh /src --streaming "${FATE}"
     
 RUN /scripts/build-mxl.sh /src /build --prod
 RUN /scripts/build-codecs.sh /src /build
-RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay
+RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay "${FATE}"
 
 FROM ubuntu:24.04
 

@@ -24,6 +24,7 @@ Options:
   --dev         Development build (GCC, static, debug)
   --no-ffplay   Do not build ffplay or link its dependent libraries.
   --streaming   Build with RTSP, Opus, and H.264 support.
+  --fate        Build the FFmpeg FATE suite
 
 Use --prod or --dev to select build variant, or else all variants are
 built.
@@ -129,7 +130,7 @@ build_variant() {
     ffmpeg_configure "$install_dir" "$streaming" "$linkage" "${config_opts_files[@]}"
     make clean
     make -j"$(nproc)"
-    if (( streaming )); then
+    if has_opt "--fate" "$@"; then
         if [[ ! -d "$FFMPEG_FATE_SUITE" ]]; then
             make fate-rsync
         fi

@@ -20,7 +20,8 @@ Arguments:
   <src-dir>   Directory to place source artifacts
 
 Options:
-  --streaming Get x264, opus, nvcodec, and the FFmpeg FATE suite
+  --streaming Get x264, opus, nvcodec
+  --fate      Get the FFmpeg FATE suite
 
 Environment:
   FATE_SUITE_MIRROR
@@ -128,6 +129,8 @@ main() {
         clone_x264_repo "$SRC_DIR" "$@"
         clone_opus_repo "$SRC_DIR" "$@"
         clone_nvcodec_repo "$SRC_DIR" "$@"
+    fi
+    if has_opt "--fate" "$@"; then
         rsync_fate_suite "$SRC_DIR" "${FATE_SUITE_MIRROR:-}"
     fi
 }
