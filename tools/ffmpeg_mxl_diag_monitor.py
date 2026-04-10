@@ -20,6 +20,14 @@
 # Re-enter that environment later with:
 #
 #   . ~/venvs/ffmpeg-mxl-diag/bin/activate
+#
+# To build a standalone executable, the `tdigest` and `_cffi_backend`
+# modules must be explicitly included using PyInstaller hidden imports:
+#
+# $ pyinstaller --onefile \
+#     --hidden-import tdigest --hidden-import _cffi_backend \
+#     ffmpeg_mxl_diag_monitor.py
+#
 
 import argparse
 import curses
@@ -48,7 +56,7 @@ except ImportError:
 #
 # See: https://github.com/cbcrc/FFmpeg/blob/dmf-mxl/master/libavformat/mxl_diag.h
 #
-# protocol version: 
+# protocol version:
 MXL_DIAG_VERSION = 1
 #
 # protocol event types:
@@ -97,11 +105,18 @@ ERROR_WIDTH = max(
 )
 DEPTH_WIDTH = 5
 
+# stats table widths
+STATS_LABEL_WIDTH = 5
+STATS_TIME_WIDTH = 9
+STATS_COUNT_WIDTH = 8
+STATS_TOO_LATE_WIDTH = 8
+
 # number of history events to render on the ring buffer visualization
 READ_HISTORY_LEN = 60
 
 # exit signal flag
 _running = True
+
 
 # Fallback built-in quantile estimator when TDigest (preferred) is not available.
 class P2Quantile:
@@ -327,11 +342,25 @@ def ns_to_ms(value_ns):
     return value_ns / 1_000_000.0
 
 
-def format_ms(value_ns):
-    value_ms = ns_to_ms(value_ns)
+def format_ms(value_ms):
     if value_ms is None:
         return "-"
     return f"{value_ms:.2f}"
+
+
+def format_host_status() -> str:
+    hostname = socket.gethostname()
+    now_text = time.strftime("%Y-%m-%d %H:%M:%S")
+    load1, load5, load15 = os.getloadavg()
+    cores = os.cpu_count() or 1
+    load_pct = 100.0 * load1 / cores
+
+    return (
+        f"host: {hostname}   "
+        f"local time: {now_text}   "
+        f"load: {load1:.1f} {load5:.1f} {load15:.1f}   "
+        f"(1m: {load_pct:.1f}% of {cores} cores)"
+    )
 
 
 def make_timing_state(estimator_cls):
@@ -339,8 +368,9 @@ def make_timing_state(estimator_cls):
         "prev_ok_timestamp": None,
         "ok_event_count": 0,
         "interval_count": 0,
-        "last_interval_ns": None,
-        "max_interval_ns": None,
+        "interval_sum_ms": 0.0,
+        "last_interval_ms": None,
+        "max_interval_ms": None,
         "estimator": estimator_cls(),
     }
 
@@ -371,14 +401,15 @@ def update_timing_state(timing: dict, timestamp_ns: int):
     if timestamp_ns < prev_ok_timestamp:
         return
 
-    delta_ns = timestamp_ns - prev_ok_timestamp
+    delta_ms = ns_to_ms(timestamp_ns - prev_ok_timestamp)
     timing["interval_count"] += 1
-    timing["last_interval_ns"] = delta_ns
-    timing["estimator"].add(delta_ns)
+    timing["interval_sum_ms"] += delta_ms
+    timing["last_interval_ms"] = delta_ms
+    timing["estimator"].add(delta_ms)
 
-    max_interval_ns = timing["max_interval_ns"]
-    if max_interval_ns is None or delta_ns > max_interval_ns:
-        timing["max_interval_ns"] = delta_ns
+    max_interval_ms = timing["max_interval_ms"]
+    if max_interval_ms is None or delta_ms > max_interval_ms:
+        timing["max_interval_ms"] = delta_ms
 
     timing["prev_ok_timestamp"] = timestamp_ns
 
@@ -496,21 +527,39 @@ def render_stream_line(label: str, state: dict, total_width: int) -> str:
     return prefix + bar + suffix
 
 
-def render_stats_line(label: str, state: dict) -> str:
+def render_stats_header() -> str:
+    return (
+        f"{'':<{STATS_LABEL_WIDTH}}  "
+        f"{'last':>{STATS_TIME_WIDTH}}  "
+        f"{'mean':>{STATS_TIME_WIDTH}}  "
+        f"{'med':>{STATS_TIME_WIDTH}}  "
+        f"{'p99':>{STATS_TIME_WIDTH}}  "
+        f"{'max':>{STATS_TIME_WIDTH}}  "
+        f"{'n':>{STATS_COUNT_WIDTH}}  "
+        f"{'too_late':>{STATS_TOO_LATE_WIDTH}}"
+    )
+
+
+def render_stats_row(label: str, state: dict) -> str:
     timing = state["timing"]
     estimator = timing["estimator"]
 
-    median_ns = estimator.median_estimate()
-    p99_ns = estimator.p99_estimate()
+    median_ms = estimator.median_estimate()
+    p99_ms = estimator.p99_estimate()
+
+    mean_ms = None
+    if timing["interval_count"] > 0:
+        mean_ms = timing["interval_sum_ms"] / timing["interval_count"]
 
     return (
-        f"{label:<5} "
-        f"last {format_ms(timing['last_interval_ns']):>9}  "
-        f"med {format_ms(median_ns):>9}  "
-        f"p99 {format_ms(p99_ns):>9}  "
-        f"max {format_ms(timing['max_interval_ns']):>9}  "
-        f"n {timing['interval_count']:>8}  "
-        f"too_late {state['too_late_count']:>8}"
+        f"{label:<{STATS_LABEL_WIDTH}}  "
+        f"{format_ms(timing['last_interval_ms']):>{STATS_TIME_WIDTH}}  "
+        f"{format_ms(mean_ms):>{STATS_TIME_WIDTH}}  "
+        f"{format_ms(median_ms):>{STATS_TIME_WIDTH}}  "
+        f"{format_ms(p99_ms):>{STATS_TIME_WIDTH}}  "
+        f"{format_ms(timing['max_interval_ms']):>{STATS_TIME_WIDTH}}  "
+        f"{timing['interval_count']:>{STATS_COUNT_WIDTH}}  "
+        f"{state['too_late_count']:>{STATS_TOO_LATE_WIDTH}}"
     )
 
 
@@ -547,6 +596,7 @@ def draw_ui(stdscr,
     elapsed_seconds = time.monotonic() - start_monotonic
     elapsed = format_elapsed(elapsed_seconds)
     elapsed_fps = compute_elapsed_fps(video, elapsed_seconds)
+    host_status = format_host_status()
 
     safe_addnstr(
         stdscr,
@@ -563,12 +613,14 @@ def draw_ui(stdscr,
     safe_addnstr(stdscr, 2, 0, render_stream_line("VIDEO", video, cols - 1), cols - 1)
     safe_addnstr(stdscr, 3, 0, render_stream_line("AUDIO", audio, cols - 1), cols - 1)
 
-    safe_addnstr(stdscr, 5, 0, render_stats_line("VIDEO", video), cols - 1)
-    safe_addnstr(stdscr, 6, 0, render_stats_line("AUDIO", audio), cols - 1)
+    safe_addnstr(stdscr, 5, 0, render_stats_header(), cols - 1)
+    safe_addnstr(stdscr, 6, 0, render_stats_row("VIDEO", video), cols - 1)
+    safe_addnstr(stdscr, 7, 0, render_stats_row("AUDIO", audio), cols - 1)
 
     if last_error:
-        safe_addnstr(stdscr, 8, 0, f"warning: {last_error}", cols - 1)
+        safe_addnstr(stdscr, 9, 0, f"warning: {last_error}", cols - 1)
 
+    safe_addnstr(stdscr, rows - 2, 0, host_status, cols - 1)
     safe_addnstr(stdscr, rows - 1, 0, "Ctrl-C to quit", cols - 1)
     stdscr.refresh()
 
@@ -668,7 +720,7 @@ def main():
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
-    
+
     parser.add_argument(
         "server_socket",
         metavar="SERVER_SOCKET",
@@ -688,7 +740,7 @@ def main():
             f"Default: {default_client_path()}"
         ),
     )
-    
+
     parser.add_argument(
         "--estimator",
         metavar="MODE",
@@ -702,7 +754,7 @@ def main():
             "Default: %(default)s"
         ),
     )
-    
+
     args = parser.parse_args()
 
     try:
