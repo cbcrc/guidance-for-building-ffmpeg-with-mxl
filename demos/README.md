@@ -22,15 +22,18 @@ Video only.
 docker compose up -d 
 ```
 
+## Monitor
+
 Open browser @ `http://<serverIP>:8889/mxlstream`
 
-## Inspect the domain
+## Troubleshoot
 
 ```bash
-docker volume inspect demos_mxl-domain | grep Mountpoint                                                              ✔  17:06:54 
-        "Mountpoint": "/var/lib/docker/volumes/demos_mxl-domain/_data",
-sudo find /var/lib/docker/volumes/demos_mxl-domain/_data
-...
+docker compose logs -f # watch for retstarting services
+
+sudo netstat -laputen | grep -E "8889|8554" # show socket status
+
+find /dev/shm/ffmpeg # ls flow content
 ```
 
 ## Close

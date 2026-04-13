@@ -1,22 +1,25 @@
-volumes:
-  mxl-domain:
-    driver: local
-    driver_opts:
-      device: none
-      type: tmpfs
-      o: nosuid,strictatime,uid=1000,gid=1000,mode=0755
-
 services:
+  init:
+    image: alpine
+    command: ["sh", "-c", "mkdir -p /dev/shm/mxl/ffmpeg"]
+    volumes:
+      - type: bind
+        source: /dev/shm
+        target: /dev/shm
+    restart: no
+
   ffmpeg-source:
     image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
+    depends_on:
+      - init
     restart: unless-stopped
     entrypoint: "/opt/bin/ffmpeg"
     volumes:
       - type: bind
         source: ./
         target: /tmp/
-      - type: volume
-        source: mxl-domain
+      - type: bind
+        source: /dev/shm/mxl/ffmpeg
         target: /domain
     command:
       - "-hide_banner"
@@ -50,8 +53,8 @@ services:
       - ffmpeg-source
     entrypoint: "/opt/bin/ffprobe"
     volumes:
-      - type: volume
-        source: mxl-domain
+      - type: bind
+        source: /dev/shm/mxl/ffmpeg
         target: /domain
     command: "-hide_banner \
       /domain/fe781cad-8a82-4b8e-a3c2-f833c70ac73e.mxl-flow"
@@ -66,8 +69,8 @@ services:
     network_mode: "host"
     entrypoint: "/opt/bin/ffmpeg"
     volumes:
-      - type: volume
-        source: mxl-domain
+      - type: bind
+        source: /dev/shm/mxl/ffmpeg
         target: /domain
     command: "-hide_banner \
       -f mxl -i /domain/fe781cad-8a82-4b8e-a3c2-f833c70ac73e.mxl-flow \
@@ -85,8 +88,8 @@ services:
     network_mode: "host"
     entrypoint: "/opt/bin/ffmpeg"
     volumes:
-      - type: volume
-        source: mxl-domain
+      - type: bind
+        source: /dev/shm/mxl/ffmpeg
         target: /domain
     command: "-hide_banner \
       -f mxl -i /domain/ca28b9ff-9d44-41ba-9c88-99329e7995a6.mxl-flow \
@@ -101,8 +104,8 @@ services:
     restart: unless-stopped
     network_mode: "host"
     volumes:
-      - type: volume
-        source: mxl-domain
+      - type: bind
+        source: /dev/shm/mxl/ffmpeg
         target: /domain
     environment:
       # --- Required Variables ---
