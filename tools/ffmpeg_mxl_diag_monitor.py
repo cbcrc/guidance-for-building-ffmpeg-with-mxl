@@ -106,13 +106,17 @@ ERROR_WIDTH = max(
 DEPTH_WIDTH = 5
 
 # stats table widths
-STATS_LABEL_WIDTH = 5
+OK_STATS_LABEL_WIDTH = 8
+TL_STATS_LABEL_WIDTH = 8
 STATS_TIME_WIDTH = 9
-STATS_COUNT_WIDTH = 8
-STATS_TOO_LATE_WIDTH = 8
+STATS_COUNT_WIDTH = 9
+STATS_TOO_LATE_WIDTH = 9
 
 # number of history events to render on the ring buffer visualization
 READ_HISTORY_LEN = 60
+
+# number of recent OK->TOO_LATE intervals to display on the TL lines
+TOO_LATE_HISTORY_DISPLAY_LEN = 5
 
 # exit signal flag
 _running = True
@@ -348,18 +352,28 @@ def format_ms(value_ms):
     return f"{value_ms:.2f}"
 
 
+def format_margin(value):
+    if value is None:
+        return "-"
+    return str(value)
+
+
+def format_interval_margin(interval_ms, margin_units):
+    return f"{format_ms(interval_ms)}|{format_margin(margin_units)}"
+
+
 def format_host_status() -> str:
     hostname = socket.gethostname()
     now_text = time.strftime("%Y-%m-%d %H:%M:%S")
-    load1, load5, load15 = os.getloadavg()
-    cores = os.cpu_count() or 1
-    load_pct = 100.0 * load1 / cores
+    load1m = os.getloadavg()[0]
+    cores = os.cpu_count()
+    load_pct = 100.0 * load1m / cores
 
     return (
         f"host: {hostname}   "
         f"local time: {now_text}   "
-        f"load: {load1:.1f} {load5:.1f} {load15:.1f}   "
-        f"(1m: {load_pct:.1f}% of {cores} cores)"
+        f"load 1m: {load1m:.1f} "
+        f"({load_pct:.1f}% of {cores} cores)"
     )
 
 
@@ -375,6 +389,16 @@ def make_timing_state(estimator_cls):
     }
 
 
+def make_too_late_timing_state():
+    return {
+        "pending_ok_timestamp": None,
+        "pending_ok_margin": None,
+        "interval_count": 0,
+        "interval_sum_ms": 0.0,
+        "recent_pairs": deque(maxlen=TOO_LATE_HISTORY_DISPLAY_LEN),
+    }
+
+
 def make_stream_state(estimator_cls):
     return {
         "have_data": False,
@@ -386,6 +410,7 @@ def make_stream_state(estimator_cls):
         "timestamp": 0,
         "read_history": deque(maxlen=READ_HISTORY_LEN),
         "timing": make_timing_state(estimator_cls),
+        "too_late_timing": make_too_late_timing_state(),
     }
 
 
@@ -414,6 +439,32 @@ def update_timing_state(timing: dict, timestamp_ns: int):
     timing["prev_ok_timestamp"] = timestamp_ns
 
 
+def update_too_late_timing_on_ok(too_late_timing: dict, timestamp_ns: int,
+                                 tail_index: int, read_index: int):
+    too_late_timing["pending_ok_timestamp"] = timestamp_ns
+    too_late_timing["pending_ok_margin"] = read_index - tail_index
+
+
+def update_too_late_timing_on_too_late(too_late_timing: dict, timestamp_ns: int):
+    pending_ok_timestamp = too_late_timing["pending_ok_timestamp"]
+    pending_ok_margin = too_late_timing["pending_ok_margin"]
+
+    if pending_ok_timestamp is None:
+        return
+
+    if timestamp_ns < pending_ok_timestamp:
+        return
+
+    delta_ms = ns_to_ms(timestamp_ns - pending_ok_timestamp)
+    too_late_timing["interval_count"] += 1
+    too_late_timing["interval_sum_ms"] += delta_ms
+    too_late_timing["recent_pairs"].append((delta_ms, pending_ok_margin))
+
+    # Consume this OK so only the first subsequent TOO_LATE is counted.
+    too_late_timing["pending_ok_timestamp"] = None
+    too_late_timing["pending_ok_margin"] = None
+
+
 def update_stream_state(state: dict, msg: dict):
     if state["have_data"]:
         state["read_history"].append((
@@ -431,9 +482,19 @@ def update_stream_state(state: dict, msg: dict):
 
     if msg["mxl_status"] == MXL_ERR_OUT_OF_RANGE_TOO_LATE:
         state["too_late_count"] += 1
+        update_too_late_timing_on_too_late(
+            state["too_late_timing"],
+            msg["timestamp"],
+        )
 
     if msg["mxl_status"] == MXL_STATUS_OK:
         update_timing_state(state["timing"], msg["timestamp"])
+        update_too_late_timing_on_ok(
+            state["too_late_timing"],
+            msg["timestamp"],
+            msg["tail_index"],
+            msg["read_index"],
+        )
 
 
 def map_read_position(inner: int, tail: int, head: int, read: int):
@@ -529,14 +590,13 @@ def render_stream_line(label: str, state: dict, total_width: int) -> str:
 
 def render_stats_header() -> str:
     return (
-        f"{'':<{STATS_LABEL_WIDTH}}  "
+        f"{'':<{OK_STATS_LABEL_WIDTH}}  "
         f"{'last':>{STATS_TIME_WIDTH}}  "
         f"{'mean':>{STATS_TIME_WIDTH}}  "
         f"{'med':>{STATS_TIME_WIDTH}}  "
         f"{'p99':>{STATS_TIME_WIDTH}}  "
         f"{'max':>{STATS_TIME_WIDTH}}  "
-        f"{'n':>{STATS_COUNT_WIDTH}}  "
-        f"{'too_late':>{STATS_TOO_LATE_WIDTH}}"
+        f"{'n':>{STATS_COUNT_WIDTH}}"
     )
 
 
@@ -552,14 +612,48 @@ def render_stats_row(label: str, state: dict) -> str:
         mean_ms = timing["interval_sum_ms"] / timing["interval_count"]
 
     return (
-        f"{label:<{STATS_LABEL_WIDTH}}  "
+        f"{label:<{OK_STATS_LABEL_WIDTH}}  "
         f"{format_ms(timing['last_interval_ms']):>{STATS_TIME_WIDTH}}  "
         f"{format_ms(mean_ms):>{STATS_TIME_WIDTH}}  "
         f"{format_ms(median_ms):>{STATS_TIME_WIDTH}}  "
         f"{format_ms(p99_ms):>{STATS_TIME_WIDTH}}  "
         f"{format_ms(timing['max_interval_ms']):>{STATS_TIME_WIDTH}}  "
-        f"{timing['interval_count']:>{STATS_COUNT_WIDTH}}  "
-        f"{state['too_late_count']:>{STATS_TOO_LATE_WIDTH}}"
+        f"{timing['interval_count']:>{STATS_COUNT_WIDTH}}"
+    )
+
+
+def render_too_late_header() -> str:
+    return (
+        f"{'':<{TL_STATS_LABEL_WIDTH}}  "
+        f"{'too_late':>{STATS_TOO_LATE_WIDTH}}  "
+        f"{'mean':>{STATS_TIME_WIDTH}}  "
+        f"last {TOO_LATE_HISTORY_DISPLAY_LEN} OK->TOO_LATE|margin"
+    )
+
+
+def render_too_late_row(label: str, state: dict) -> str:
+    too_late_timing = state["too_late_timing"]
+
+    mean_ms = None
+    if too_late_timing["interval_count"] > 0:
+        mean_ms = (
+            too_late_timing["interval_sum_ms"] /
+            too_late_timing["interval_count"]
+        )
+
+    recent_values = "  ".join(
+        format_interval_margin(interval_ms, margin_units)
+        for interval_ms, margin_units in too_late_timing["recent_pairs"]
+    )
+
+    if not recent_values:
+        recent_values = "-"
+
+    return (
+        f"{label:<{TL_STATS_LABEL_WIDTH}}  "
+        f"{state['too_late_count']:>{STATS_TOO_LATE_WIDTH}}  "
+        f"{format_ms(mean_ms):>{STATS_TIME_WIDTH}}  "
+        f"{recent_values}"
     )
 
 
@@ -588,8 +682,7 @@ def draw_ui(stdscr,
             start_monotonic: float,
             video: dict,
             audio: dict,
-            estimator_name: str,
-            last_error: str):
+            estimator_name: str):
     stdscr.erase()
     rows, cols = stdscr.getmaxyx()
 
@@ -614,11 +707,12 @@ def draw_ui(stdscr,
     safe_addnstr(stdscr, 3, 0, render_stream_line("AUDIO", audio, cols - 1), cols - 1)
 
     safe_addnstr(stdscr, 5, 0, render_stats_header(), cols - 1)
-    safe_addnstr(stdscr, 6, 0, render_stats_row("VIDEO", video), cols - 1)
-    safe_addnstr(stdscr, 7, 0, render_stats_row("AUDIO", audio), cols - 1)
+    safe_addnstr(stdscr, 6, 0, render_stats_row("VIDEO OK", video), cols - 1)
+    safe_addnstr(stdscr, 7, 0, render_stats_row("AUDIO OK", audio), cols - 1)
 
-    if last_error:
-        safe_addnstr(stdscr, 9, 0, f"warning: {last_error}", cols - 1)
+    safe_addnstr(stdscr, 9, 0, render_too_late_header(), cols - 1)
+    safe_addnstr(stdscr, 10, 0, render_too_late_row("VIDEO TL", video), cols - 1)
+    safe_addnstr(stdscr, 11, 0, render_too_late_row("AUDIO TL", audio), cols - 1)
 
     safe_addnstr(stdscr, rows - 2, 0, host_status, cols - 1)
     safe_addnstr(stdscr, rows - 1, 0, "Ctrl-C to quit", cols - 1)
@@ -634,7 +728,6 @@ def run_ui(stdscr,
     start_monotonic = time.monotonic()
     video = make_stream_state(estimator_cls)
     audio = make_stream_state(estimator_cls)
-    last_error = ""
 
     draw_ui(
         stdscr,
@@ -642,7 +735,6 @@ def run_ui(stdscr,
         video,
         audio,
         estimator_name,
-        last_error,
     )
 
     while _running:
@@ -650,17 +742,15 @@ def run_ui(stdscr,
             data, _addr = sock.recvfrom(4096)
         except InterruptedError:
             continue
-        except OSError as e:
+        except OSError:
             if not _running:
                 break
-            last_error = str(e)
             draw_ui(
                 stdscr,
                 start_monotonic,
                 video,
                 audio,
                 estimator_name,
-                last_error,
             )
             continue
 
@@ -668,24 +758,22 @@ def run_ui(stdscr,
             version, msg_type, size, _reserved = parse_header(data)
 
             if version != MXL_DIAG_VERSION:
-                last_error = f"unexpected version {version}"
+                pass
             elif size < HEADER_SIZE:
-                last_error = f"bad size {size}"
+                pass
             elif len(data) < size:
-                last_error = f"short datagram payload: got {len(data)} bytes, need {size}"
+                pass
             elif msg_type == MXL_DIAG_MSG_VIDEO_READ:
                 update_stream_state(video, parse_video_read(data))
-                last_error = ""
             elif msg_type == MXL_DIAG_MSG_AUDIO_READ:
                 update_stream_state(audio, parse_audio_read(data))
-                last_error = ""
             else:
-                last_error = f"ignored msg type {msg_type}"
+                pass
 
-        except ValueError as e:
-            last_error = str(e)
-        except OSError as e:
-            last_error = str(e)
+        except ValueError:
+            pass
+        except OSError:
+            pass
 
         draw_ui(
             stdscr,
@@ -693,7 +781,6 @@ def run_ui(stdscr,
             video,
             audio,
             estimator_name,
-            last_error,
         )
 
 
