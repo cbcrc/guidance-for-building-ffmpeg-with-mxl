@@ -2,13 +2,17 @@
 
 # This script connects to an FFmpeg/MXL diagnostic socket, displays a
 # visualization of the audio and video MXL ring buffers, and computes
-# a median and P99 quantile estimate of the time between good video
-# frames and audio sample buffer events, based on timestamps in the
-# diagnostic event stream.
+# median and P99 estimates of the time between good video frames and
+# audio sample buffer events based on timestamps in the diagnostic
+# event stream.
 #
-# The preferred P99 quantile estimator is t-digest, and the preferred
-# t-digest Python implementation is `tdigest-cffi`. If that is not
-# available, the script falls back to a built-in P2 estimator.
+# It also tracks OK to TOO_LATE intervals, reporting the time from the
+# last successful read to the subsequent TOO_LATE event, along with the
+# buffer margin at the preceding OK. Buffer margin is the distance from
+# the ring buffer tail index to the read index.
+#
+# The quantile estimator is t-digest, and the preferred t-digest
+# Python implementation is `tdigest-cffi`.
 #
 # Install `tdigest-cffi` locally in a virtual environment:
 #
@@ -41,17 +45,7 @@ import sys
 import tempfile
 import time
 
-# For P2Quantile
-import bisect
-import math
-import random
-
-try:
-    from tdigest import TDigest
-    HAVE_TDIGEST = True
-except ImportError:
-    TDigest = None
-    HAVE_TDIGEST = False
+from tdigest import TDigest
 
 
 # mxl_diag protocol
@@ -124,117 +118,8 @@ TOO_LATE_HISTORY_DISPLAY_LEN = 5
 _running = True
 
 
-# Fallback built-in quantile estimator when TDigest (preferred) is not available.
-class P2Quantile:
-    """
-    Streaming P2 quantile estimator for a single quantile.
-    """
-
-    def __init__(self, p: float):
-        if not 0.0 < p < 1.0:
-            raise ValueError("p must be between 0 and 1")
-
-        self.p = p
-        self.count = 0
-        self.initial = []
-        self.q = None
-        self.n = None
-        self.np = None
-        self.dn = None
-
-    def add(self, x: float):
-        x = float(x)
-        self.count += 1
-
-        if self.count <= 5:
-            bisect.insort(self.initial, x)
-            if self.count == 5:
-                p = self.p
-                self.q = self.initial[:]
-                self.n = [1, 2, 3, 4, 5]
-                self.np = [1.0, 1.0 + 2.0 * p, 1.0 + 4.0 * p, 3.0 + 2.0 * p, 5.0]
-                self.dn = [0.0, p / 2.0, p, (1.0 + p) / 2.0, 1.0]
-            return
-
-        if x < self.q[0]:
-            self.q[0] = x
-            k = 0
-        elif x < self.q[1]:
-            k = 0
-        elif x < self.q[2]:
-            k = 1
-        elif x < self.q[3]:
-            k = 2
-        elif x <= self.q[4]:
-            k = 3
-        else:
-            self.q[4] = x
-            k = 3
-
-        for i in range(k + 1, 5):
-            self.n[i] += 1
-
-        for i in range(5):
-            self.np[i] += self.dn[i]
-
-        for i in range(1, 4):
-            d = self.np[i] - self.n[i]
-            if (d >= 1.0 and self.n[i + 1] - self.n[i] > 1) or \
-               (d <= -1.0 and self.n[i - 1] - self.n[i] < -1):
-                di = 1 if d > 0.0 else -1
-                q_new = self._parabolic(i, di)
-                if self.q[i - 1] < q_new < self.q[i + 1]:
-                    self.q[i] = q_new
-                else:
-                    self.q[i] = self._linear(i, di)
-                self.n[i] += di
-
-    def estimate(self):
-        if self.q is None:
-            return None
-        return self.q[2]
-
-    def _parabolic(self, i: int, di: int) -> float:
-        return self.q[i] + (
-            di / (self.n[i + 1] - self.n[i - 1])
-        ) * (
-            (self.n[i] - self.n[i - 1] + di) *
-            (self.q[i + 1] - self.q[i]) / (self.n[i + 1] - self.n[i]) +
-            (self.n[i + 1] - self.n[i] - di) *
-            (self.q[i] - self.q[i - 1]) / (self.n[i] - self.n[i - 1])
-        )
-
-    def _linear(self, i: int, di: int) -> float:
-        return self.q[i] + di * (
-            self.q[i + di] - self.q[i]
-        ) / (self.n[i + di] - self.n[i])
-
-
-class P2Estimator:
-    name = "P2"
-
-    def __init__(self):
-        self.median = P2Quantile(0.5)
-        self.p99 = P2Quantile(0.99)
-
-    def add(self, value: float):
-        self.median.add(value)
-        self.p99.add(value)
-
-    def median_estimate(self):
-        return self.median.estimate()
-
-    def p99_estimate(self):
-        return self.p99.estimate()
-
-
-# T-digest estimator using tdigest-cffi (preferred)
 class TDigestEstimator:
-    name = "TDIGEST"
-
     def __init__(self):
-        if TDigest is None:
-            raise RuntimeError("tdigest-cffi is not available")
         self.digest = TDigest()
 
     def add(self, value: float):
@@ -249,25 +134,6 @@ class TDigestEstimator:
         if self.digest.weight <= 0:
             return None
         return self.digest.percentile(99)
-
-
-def resolve_estimator_backend(mode: str):
-    if mode == "p2":
-        return P2Estimator
-
-    if mode == "tdigest":
-        if not HAVE_TDIGEST:
-            raise RuntimeError(
-                "tdigest-cffi is not available; install it or use --estimator p2"
-            )
-        return TDigestEstimator
-
-    if mode == "auto":
-        if HAVE_TDIGEST:
-            return TDigestEstimator
-        return P2Estimator
-
-    raise RuntimeError(f"unknown estimator mode: {mode}")
 
 
 def on_signal(signum, frame):
@@ -379,7 +245,7 @@ def format_host_status() -> str:
     )
 
 
-def make_timing_state(estimator_cls):
+def make_timing_state():
     return {
         "prev_ok_timestamp": None,
         "ok_event_count": 0,
@@ -387,7 +253,7 @@ def make_timing_state(estimator_cls):
         "interval_sum_ms": 0.0,
         "last_interval_ms": None,
         "max_interval_ms": None,
-        "estimator": estimator_cls(),
+        "estimator": TDigestEstimator(),
     }
 
 
@@ -401,7 +267,7 @@ def make_too_late_timing_state():
     }
 
 
-def make_stream_state(estimator_cls):
+def make_stream_state():
     return {
         "have_data": False,
         "tail_index": 0,
@@ -411,16 +277,17 @@ def make_stream_state(estimator_cls):
         "too_late_count": 0,
         "timestamp": 0,
         "read_history": deque(maxlen=READ_HISTORY_LEN),
-        "timing": make_timing_state(estimator_cls),
+        "timing": make_timing_state(),
         "too_late_timing": make_too_late_timing_state(),
     }
 
 
-def reset_monitor_state(estimator_cls):
+def reset_monitor_state():
     start_monotonic = time.monotonic()
-    video = make_stream_state(estimator_cls)
-    audio = make_stream_state(estimator_cls)
+    video = make_stream_state()
+    audio = make_stream_state()
     return start_monotonic, video, audio
+
 
 def update_timing_state(timing: dict, timestamp_ns: int):
     timing["ok_event_count"] += 1
@@ -690,7 +557,6 @@ def draw_ui(stdscr,
             start_monotonic: float,
             video: dict,
             audio: dict,
-            estimator_name: str,
             paused: bool):
     stdscr.erase()
     rows, cols = stdscr.getmaxyx()
@@ -706,7 +572,7 @@ def draw_ui(stdscr,
         0,
         0,
         (
-            f"FFmpeg MXL diagnostic monitor   estimator: {estimator_name}"
+            f"FFmpeg MXL diagnostic monitor"
             f"   elapsed: {elapsed}"
             f"   elapsed FPS: {elapsed_fps}"
             f"{paused_text}"
@@ -762,6 +628,7 @@ def handle_socket_ready(sock: socket.socket, video: dict, audio: dict):
         except OSError:
             pass
 
+
 def handle_stdin_ready(stdscr):
     try:
         return stdscr.getch()
@@ -771,7 +638,6 @@ def handle_stdin_ready(stdscr):
 
 def handle_keypress(key: int,
                     paused: bool,
-                    estimator_cls,
                     start_monotonic: float,
                     video: dict,
                     audio: dict):
@@ -795,7 +661,7 @@ def handle_keypress(key: int,
         return paused, start_monotonic, video, audio, redraw_now
 
     if key in (ord("c"), ord("C")):
-        start_monotonic, video, audio = reset_monitor_state(estimator_cls)
+        start_monotonic, video, audio = reset_monitor_state()
         redraw_now = True
         return paused, start_monotonic, video, audio, redraw_now
 
@@ -803,16 +669,14 @@ def handle_keypress(key: int,
 
 
 def run_ui(stdscr,
-           sock: socket.socket,
-           estimator_cls,
-           estimator_name: str):
+           sock: socket.socket):
     curses.curs_set(0)
     curses.noecho()
     curses.cbreak()
     stdscr.keypad(True)
     stdscr.nodelay(True)
 
-    start_monotonic, video, audio = reset_monitor_state(estimator_cls)
+    start_monotonic, video, audio = reset_monitor_state()
     paused = False
 
     draw_ui(
@@ -820,7 +684,6 @@ def run_ui(stdscr,
         start_monotonic,
         video,
         audio,
-        estimator_name,
         paused,
     )
 
@@ -853,7 +716,6 @@ def run_ui(stdscr,
             paused, start_monotonic, video, audio, redraw_now = handle_keypress(
                 key,
                 paused,
-                estimator_cls,
                 start_monotonic,
                 video,
                 audio,
@@ -868,7 +730,6 @@ def run_ui(stdscr,
                 start_monotonic,
                 video,
                 audio,
-                estimator_name,
                 paused,
             )
 
@@ -881,16 +742,8 @@ def main():
             "ring state plus timing statistics in a curses UI."
         ),
         epilog=(
-            "Estimator modes:\n"
-            "  auto     Prefer tdigest-cffi when available, otherwise fall back to P2.\n"
-            "  tdigest  Require tdigest-cffi. Exit with an error if it is not installed.\n"
-            "  p2       Always use the built-in P2 quantile estimator.\n"
-            "\n"
             "Examples:\n"
             "  ffmpeg_mxl_diag_monitor.py /tmp/ffmpeg.diag.server.sock\n"
-            "  ffmpeg_mxl_diag_monitor.py --estimator auto /tmp/ffmpeg.diag.server.sock\n"
-            "  ffmpeg_mxl_diag_monitor.py --estimator tdigest /tmp/ffmpeg.diag.server.sock\n"
-            "  ffmpeg_mxl_diag_monitor.py --estimator p2 /tmp/ffmpeg.diag.server.sock\n"
             "  ffmpeg_mxl_diag_monitor.py --client-socket /tmp/ffmpeg.diag.client.sock "
             "/tmp/ffmpeg.diag.server.sock"
         ),
@@ -917,28 +770,7 @@ def main():
         ),
     )
 
-    parser.add_argument(
-        "--estimator",
-        metavar="MODE",
-        choices=("auto", "tdigest", "p2"),
-        default="auto",
-        help=(
-            "Quantile estimator backend to use. "
-            "'auto' prefers tdigest-cffi and falls back to P2; "
-            "'tdigest' requires tdigest-cffi; "
-            "'p2' forces the built-in P2 estimator. "
-            "Default: %(default)s"
-        ),
-    )
-
     args = parser.parse_args()
-
-    try:
-        estimator_cls = resolve_estimator_backend(args.estimator)
-    except RuntimeError as e:
-        parser.error(str(e))
-
-    estimator_name = estimator_cls.name
 
     signal.signal(signal.SIGINT, on_signal)
     signal.signal(signal.SIGTERM, on_signal)
@@ -959,8 +791,6 @@ def main():
         curses.wrapper(
             run_ui,
             sock,
-            estimator_cls,
-            estimator_name,
         )
 
     finally:
