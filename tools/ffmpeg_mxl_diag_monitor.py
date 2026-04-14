@@ -2,9 +2,9 @@
 
 # This script connects to an FFmpeg/MXL diagnostic socket, displays a
 # visualization of the audio and video MXL ring buffers, and computes
-# median and P99 estimates of the time between good video frames and
-# audio sample buffer events based on timestamps in the diagnostic
-# event stream.
+# median and P99, P99.5, and P99.9 estimates of the time between good
+# video frames and audio sample buffer events based on timestamps in
+# the diagnostic event stream.
 #
 # It also tracks OK to TOO_LATE intervals, reporting the time from the
 # last successful read to the subsequent TOO_LATE event, along with the
@@ -135,6 +135,15 @@ class TDigestEstimator:
             return None
         return self.digest.percentile(99)
 
+    def p99_5_estimate(self):
+        if self.digest.weight <= 0:
+            return None
+        return self.digest.percentile(99.5)
+
+    def p99_9_estimate(self):
+        if self.digest.weight <= 0:
+            return None
+        return self.digest.percentile(99.9)
 
 def on_signal(signum, frame):
     del signum, frame
@@ -470,10 +479,11 @@ def render_stats_header() -> str:
         f"{'mean':>{STATS_TIME_WIDTH}}  "
         f"{'med':>{STATS_TIME_WIDTH}}  "
         f"{'p99':>{STATS_TIME_WIDTH}}  "
+        f"{'p99.5':>{STATS_TIME_WIDTH}}  "
+        f"{'p99.9':>{STATS_TIME_WIDTH}}  "
         f"{'max':>{STATS_TIME_WIDTH}}  "
         f"{'n':>{STATS_COUNT_WIDTH}}"
     )
-
 
 def render_stats_row(label: str, state: dict) -> str:
     timing = state["timing"]
@@ -481,6 +491,8 @@ def render_stats_row(label: str, state: dict) -> str:
 
     median_ms = estimator.median_estimate()
     p99_ms = estimator.p99_estimate()
+    p99_5_ms = estimator.p99_5_estimate()
+    p99_9_ms = estimator.p99_9_estimate()
 
     mean_ms = None
     if timing["interval_count"] > 0:
@@ -492,10 +504,11 @@ def render_stats_row(label: str, state: dict) -> str:
         f"{format_ms(mean_ms):>{STATS_TIME_WIDTH}}  "
         f"{format_ms(median_ms):>{STATS_TIME_WIDTH}}  "
         f"{format_ms(p99_ms):>{STATS_TIME_WIDTH}}  "
+        f"{format_ms(p99_5_ms):>{STATS_TIME_WIDTH}}  "
+        f"{format_ms(p99_9_ms):>{STATS_TIME_WIDTH}}  "
         f"{format_ms(timing['max_interval_ms']):>{STATS_TIME_WIDTH}}  "
         f"{timing['interval_count']:>{STATS_COUNT_WIDTH}}"
     )
-
 
 def render_too_late_header() -> str:
     return (
