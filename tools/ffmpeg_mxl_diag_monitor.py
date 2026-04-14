@@ -33,9 +33,11 @@ import argparse
 import curses
 from collections import deque
 import os
+import select
 import signal
 import socket
 import struct
+import sys
 import tempfile
 import time
 
@@ -414,6 +416,12 @@ def make_stream_state(estimator_cls):
     }
 
 
+def reset_monitor_state(estimator_cls):
+    start_monotonic = time.monotonic()
+    video = make_stream_state(estimator_cls)
+    audio = make_stream_state(estimator_cls)
+    return start_monotonic, video, audio
+
 def update_timing_state(timing: dict, timestamp_ns: int):
     timing["ok_event_count"] += 1
 
@@ -682,7 +690,8 @@ def draw_ui(stdscr,
             start_monotonic: float,
             video: dict,
             audio: dict,
-            estimator_name: str):
+            estimator_name: str,
+            paused: bool):
     stdscr.erase()
     rows, cols = stdscr.getmaxyx()
 
@@ -690,6 +699,7 @@ def draw_ui(stdscr,
     elapsed = format_elapsed(elapsed_seconds)
     elapsed_fps = compute_elapsed_fps(video, elapsed_seconds)
     host_status = format_host_status()
+    paused_text = "   PAUSED" if paused else ""
 
     safe_addnstr(
         stdscr,
@@ -699,6 +709,7 @@ def draw_ui(stdscr,
             f"FFmpeg MXL diagnostic monitor   estimator: {estimator_name}"
             f"   elapsed: {elapsed}"
             f"   elapsed FPS: {elapsed_fps}"
+            f"{paused_text}"
         ),
         cols - 1,
     )
@@ -714,45 +725,21 @@ def draw_ui(stdscr,
     safe_addnstr(stdscr, 10, 0, render_too_late_row("VIDEO TL", video), cols - 1)
     safe_addnstr(stdscr, 11, 0, render_too_late_row("AUDIO TL", audio), cols - 1)
 
-    safe_addnstr(stdscr, rows - 2, 0, host_status, cols - 1)
-    safe_addnstr(stdscr, rows - 1, 0, "Ctrl-C to quit", cols - 1)
+    safe_addnstr(stdscr, rows - 3, 0, "q quit   p pause/resume UI   c clear/restart", cols - 1)
+    safe_addnstr(stdscr, rows - 1, 0, host_status, cols - 1)
     stdscr.refresh()
 
 
-def run_ui(stdscr,
-           sock: socket.socket,
-           estimator_cls,
-           estimator_name: str):
-    curses.curs_set(0)
-
-    start_monotonic = time.monotonic()
-    video = make_stream_state(estimator_cls)
-    audio = make_stream_state(estimator_cls)
-
-    draw_ui(
-        stdscr,
-        start_monotonic,
-        video,
-        audio,
-        estimator_name,
-    )
-
-    while _running:
+def handle_socket_ready(sock: socket.socket, video: dict, audio: dict):
+    for _ in range(8):  # small bounded drain
         try:
             data, _addr = sock.recvfrom(4096)
+        except BlockingIOError:
+            break
         except InterruptedError:
-            continue
+            return
         except OSError:
-            if not _running:
-                break
-            draw_ui(
-                stdscr,
-                start_monotonic,
-                video,
-                audio,
-                estimator_name,
-            )
-            continue
+            return
 
         try:
             version, msg_type, size, _reserved = parse_header(data)
@@ -775,13 +762,115 @@ def run_ui(stdscr,
         except OSError:
             pass
 
-        draw_ui(
-            stdscr,
-            start_monotonic,
-            video,
-            audio,
-            estimator_name,
-        )
+def handle_stdin_ready(stdscr):
+    try:
+        return stdscr.getch()
+    except curses.error:
+        return -1
+
+
+def handle_keypress(key: int,
+                    paused: bool,
+                    estimator_cls,
+                    start_monotonic: float,
+                    video: dict,
+                    audio: dict):
+    global _running
+
+    redraw_now = False
+
+    if key == -1:
+        return paused, start_monotonic, video, audio, redraw_now
+
+    if key in (ord("p"), ord("P")):
+        paused = not paused
+        redraw_now = True
+        return paused, start_monotonic, video, audio, redraw_now
+
+    if paused:
+        return paused, start_monotonic, video, audio, redraw_now
+
+    if key in (ord("q"), ord("Q")):
+        _running = False
+        return paused, start_monotonic, video, audio, redraw_now
+
+    if key in (ord("c"), ord("C")):
+        start_monotonic, video, audio = reset_monitor_state(estimator_cls)
+        redraw_now = True
+        return paused, start_monotonic, video, audio, redraw_now
+
+    return paused, start_monotonic, video, audio, redraw_now
+
+
+def run_ui(stdscr,
+           sock: socket.socket,
+           estimator_cls,
+           estimator_name: str):
+    curses.curs_set(0)
+    curses.noecho()
+    curses.cbreak()
+    stdscr.keypad(True)
+    stdscr.nodelay(True)
+
+    start_monotonic, video, audio = reset_monitor_state(estimator_cls)
+    paused = False
+
+    draw_ui(
+        stdscr,
+        start_monotonic,
+        video,
+        audio,
+        estimator_name,
+        paused,
+    )
+
+    sock_fd = sock.fileno()
+    stdin_fd = sys.stdin.fileno()
+
+    while _running:
+
+        try:
+            readable, _writable, _exceptional = select.select(
+                [sock_fd, stdin_fd],
+                [],
+                [],
+                None,
+            )
+        except InterruptedError:
+            continue
+        except OSError:
+            if not _running:
+                break
+            continue
+
+        if sock_fd in readable:
+            handle_socket_ready(sock, video, audio)
+
+        redraw_now = False
+
+        if stdin_fd in readable:
+            key = handle_stdin_ready(stdscr)
+            paused, start_monotonic, video, audio, redraw_now = handle_keypress(
+                key,
+                paused,
+                estimator_cls,
+                start_monotonic,
+                video,
+                audio,
+            )
+
+        if not _running:
+            break
+
+        if redraw_now or not paused:
+            draw_ui(
+                stdscr,
+                start_monotonic,
+                video,
+                audio,
+                estimator_name,
+                paused,
+            )
 
 
 def main():
