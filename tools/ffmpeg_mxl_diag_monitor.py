@@ -25,13 +25,10 @@
 #
 #   . ~/venvs/ffmpeg-mxl-diag/bin/activate
 #
-# To build a standalone executable, the `tdigest` and `_cffi_backend`
-# modules must be explicitly included using PyInstaller hidden imports:
+# To build a standalone executable, the _cffi_backend` module must be
+# explicitly included using PyInstaller hidden imports:
 #
-# $ pyinstaller --onefile \
-#     --hidden-import tdigest --hidden-import _cffi_backend \
-#     ffmpeg_mxl_diag_monitor.py
-#
+# $ pyinstaller --onefile --hidden-import _cffi_backend ffmpeg_mxl_diag_monitor.py
 
 import argparse
 import curses
@@ -648,7 +645,6 @@ def handle_stdin_ready(stdscr):
     except curses.error:
         return -1
 
-
 def handle_keypress(key: int,
                     paused: bool,
                     start_monotonic: float,
@@ -666,9 +662,6 @@ def handle_keypress(key: int,
         redraw_now = True
         return paused, start_monotonic, video, audio, redraw_now
 
-    if paused:
-        return paused, start_monotonic, video, audio, redraw_now
-
     if key in (ord("q"), ord("Q")):
         _running = False
         return paused, start_monotonic, video, audio, redraw_now
@@ -678,9 +671,11 @@ def handle_keypress(key: int,
         redraw_now = True
         return paused, start_monotonic, video, audio, redraw_now
 
+    if paused:
+        return paused, start_monotonic, video, audio, redraw_now
+
     return paused, start_monotonic, video, audio, redraw_now
-
-
+    
 def run_ui(stdscr,
            sock: socket.socket):
     curses.curs_set(0)
