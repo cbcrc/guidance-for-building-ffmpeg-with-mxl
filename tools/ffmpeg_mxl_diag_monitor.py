@@ -64,8 +64,8 @@ MXL_ERR_OUT_OF_RANGE_TOO_LATE = 3
 #
 # client side protocol encodings (see server side mxl_diag_msg):
 HEADER_FMT = "<HHH10s"
-VIDEO_READ_FMT = "<QQQQI4s"
-AUDIO_READ_FMT = "<QQQQII"
+VIDEO_READ_FMT = "<QQQQQI4s"
+AUDIO_READ_FMT = "<QQQQQII"
 HEADER_SIZE = struct.calcsize(HEADER_FMT)
 VIDEO_READ_SIZE = struct.calcsize(VIDEO_READ_FMT)
 AUDIO_READ_SIZE = struct.calcsize(AUDIO_READ_FMT)
@@ -101,6 +101,7 @@ DEPTH_WIDTH = 5
 # stats table widths
 OK_STATS_LABEL_WIDTH = 8
 TL_STATS_LABEL_WIDTH = 8
+EX_STATS_LABEL_WIDTH = 8
 STATS_TIME_WIDTH = 9
 STATS_COUNT_WIDTH = 9
 STATS_TOO_LATE_WIDTH = 9
@@ -142,6 +143,7 @@ class TDigestEstimator:
             return None
         return self.digest.percentile(99.9)
 
+
 def on_signal(signum, frame):
     del signum, frame
     global _running
@@ -169,11 +171,12 @@ def parse_video_read(data: bytes):
     if len(data) < need:
         raise ValueError(f"short video_read datagram: got {len(data)} bytes, need {need}")
 
-    timestamp, tail_index, head_index, read_index, mxl_status, _reserved = \
+    timestamp, exec_dur, tail_index, head_index, read_index, mxl_status, _reserved = \
         struct.unpack_from(VIDEO_READ_FMT, data, HEADER_SIZE)
 
     return {
         "timestamp": timestamp,
+        "exec_dur": exec_dur,
         "tail_index": tail_index,
         "head_index": head_index,
         "read_index": read_index,
@@ -186,11 +189,12 @@ def parse_audio_read(data: bytes):
     if len(data) < need:
         raise ValueError(f"short audio_read datagram: got {len(data)} bytes, need {need}")
 
-    timestamp, tail_index, head_index, read_index, read_size, mxl_status = \
+    timestamp, exec_dur, tail_index, head_index, read_index, read_size, mxl_status = \
         struct.unpack_from(AUDIO_READ_FMT, data, HEADER_SIZE)
 
     return {
         "timestamp": timestamp,
+        "exec_dur": exec_dur,
         "tail_index": tail_index,
         "head_index": head_index,
         "read_index": read_index,
@@ -220,10 +224,21 @@ def ns_to_ms(value_ns):
     return value_ns / 1_000_000.0
 
 
+def ns_to_us(value_ns):
+    if value_ns is None:
+        return None
+    return value_ns / 1_000.0
+
 def format_ms(value_ms):
     if value_ms is None:
         return "-"
-    return f"{value_ms:.2f}"
+    return f"{value_ms:.1f}"
+
+
+def format_us(value_us):
+    if value_us is None:
+        return "-"
+    return f"{value_us:.1f}"
 
 
 def format_margin(value):
@@ -273,6 +288,14 @@ def make_too_late_timing_state():
     }
 
 
+def make_exec_state():
+    return {
+        "ok_count": 0,
+        "sum_us": 0.0,
+        "max_us": None,
+    }
+
+
 def make_stream_state():
     return {
         "have_data": False,
@@ -285,6 +308,7 @@ def make_stream_state():
         "read_history": deque(maxlen=READ_HISTORY_LEN),
         "timing": make_timing_state(),
         "too_late_timing": make_too_late_timing_state(),
+        "exec": make_exec_state(),
     }
 
 
@@ -346,6 +370,17 @@ def update_too_late_timing_on_too_late(too_late_timing: dict, timestamp_ns: int)
     too_late_timing["pending_ok_margin"] = None
 
 
+def update_exec_state(exec_state: dict, exec_dur_ns: int):
+    exec_dur_us = ns_to_us(exec_dur_ns)
+
+    exec_state["ok_count"] += 1
+    exec_state["sum_us"] += exec_dur_us
+
+    max_us = exec_state["max_us"]
+    if max_us is None or exec_dur_us > max_us:
+        exec_state["max_us"] = exec_dur_us
+
+
 def update_stream_state(state: dict, msg: dict):
     if state["have_data"]:
         state["read_history"].append((
@@ -375,6 +410,10 @@ def update_stream_state(state: dict, msg: dict):
             msg["timestamp"],
             msg["tail_index"],
             msg["read_index"],
+        )
+        update_exec_state(
+            state["exec"],
+            msg["exec_dur"],
         )
 
 
@@ -482,6 +521,7 @@ def render_stats_header() -> str:
         f"{'n':>{STATS_COUNT_WIDTH}}"
     )
 
+
 def render_stats_row(label: str, state: dict) -> str:
     timing = state["timing"]
     estimator = timing["estimator"]
@@ -506,6 +546,7 @@ def render_stats_row(label: str, state: dict) -> str:
         f"{format_ms(timing['max_interval_ms']):>{STATS_TIME_WIDTH}}  "
         f"{timing['interval_count']:>{STATS_COUNT_WIDTH}}"
     )
+
 
 def render_too_late_header() -> str:
     return (
@@ -539,6 +580,28 @@ def render_too_late_row(label: str, state: dict) -> str:
         f"{state['too_late_count']:>{STATS_TOO_LATE_WIDTH}}  "
         f"{format_ms(mean_ms):>{STATS_TIME_WIDTH}}  "
         f"{recent_values}"
+    )
+
+
+def render_exec_header() -> str:
+    return (
+        f"{'':<{EX_STATS_LABEL_WIDTH}}  "
+        f"{'mean_us':>{STATS_TIME_WIDTH}}  "
+        f"{'max_us':>{STATS_TIME_WIDTH}}  "
+    )
+
+
+def render_exec_row(label: str, state: dict) -> str:
+    exec_state = state["exec"]
+
+    mean_us = None
+    if exec_state["ok_count"] > 0:
+        mean_us = exec_state["sum_us"] / exec_state["ok_count"]
+
+    return (
+        f"{label:<{EX_STATS_LABEL_WIDTH}}  "
+        f"{format_us(mean_us):>{STATS_TIME_WIDTH}}  "
+        f"{format_us(exec_state['max_us']):>{STATS_TIME_WIDTH}}  "
     )
 
 
@@ -601,6 +664,10 @@ def draw_ui(stdscr,
     safe_addnstr(stdscr, 10, 0, render_too_late_row("VIDEO TL", video), cols - 1)
     safe_addnstr(stdscr, 11, 0, render_too_late_row("AUDIO TL", audio), cols - 1)
 
+    safe_addnstr(stdscr, 13, 0, render_exec_header(), cols - 1)
+    safe_addnstr(stdscr, 14, 0, render_exec_row("VIDEO EX", video), cols - 1)
+    safe_addnstr(stdscr, 15, 0, render_exec_row("AUDIO EX", audio), cols - 1)
+
     safe_addnstr(stdscr, rows - 3, 0, "q quit   p pause/resume UI   c clear/restart", cols - 1)
     safe_addnstr(stdscr, rows - 1, 0, host_status, cols - 1)
     stdscr.refresh()
@@ -645,6 +712,7 @@ def handle_stdin_ready(stdscr):
     except curses.error:
         return -1
 
+
 def handle_keypress(key: int,
                     paused: bool,
                     start_monotonic: float,
@@ -675,7 +743,8 @@ def handle_keypress(key: int,
         return paused, start_monotonic, video, audio, redraw_now
 
     return paused, start_monotonic, video, audio, redraw_now
-    
+
+
 def run_ui(stdscr,
            sock: socket.socket):
     curses.curs_set(0)
