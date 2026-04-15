@@ -3,7 +3,8 @@
 ```mermaid
 graph LR
     subgraph "FFmpeg-MXL pipeline"
-    A0((fa:fa-film demo_reel.ts)) --> A[FFmpeg Source] -- "Uncompressed (v210)<br/> MXL" --> B[FFmpeg Destination]
+    A0((fa:fa-film demo_reel.ts)) --> A[FFmpeg Source] -- "Raw Video (v210)<br/> MXL" --> B[FFmpeg Destination]
+    A[FFmpeg Source] -- "Raw Audio (pcm f32le)<br/> MXL" --> B[FFmpeg Destination]
     A1((Branding message)) --> A
     end
 
@@ -14,8 +15,6 @@ graph LR
     end
 ```
 
-Video only.
-
 ## Startup the services
 
 ```bash
@@ -24,16 +23,23 @@ docker compose up -d
 
 ## Monitor
 
-Open browser @ `http://<serverIP>:8889/mxlstream`
+Open browser @ `http://<mediamtx_IP>:8889/ffmpeg`
 
 ## Troubleshoot
 
+Inspect individual essences:
+- video: `http://<mediamtx_IP>:8889/ffmpeg-v`
+- audio: `http://<mediamtx_IP>:8889/ffmpeg-a`
+
 ```bash
-docker compose logs -f # watch for retstarting services
+# watch for restarting services
+docker compose logs -f
 
-sudo netstat -laputen | grep -E "8889|8554" # show socket status
+# inspect socket status
+sudo netstat -laputen | grep -E "8889|8554"
 
-find /dev/shm/ffmpeg # ls flow content
+# inspect domain files
+find /dev/shm/ffmpeg
 ```
 
 ## Close
