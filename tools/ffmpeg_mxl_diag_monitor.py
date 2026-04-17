@@ -229,6 +229,7 @@ def ns_to_us(value_ns):
         return None
     return value_ns / 1_000.0
 
+
 def format_ms(value_ms):
     if value_ms is None:
         return "-"
@@ -247,8 +248,12 @@ def format_margin(value):
     return str(value)
 
 
-def format_interval_margin(interval_ms, margin_units):
-    return f"{format_ms(interval_ms)}|{format_margin(margin_units)}"
+def format_interval_margins(interval_ms, ok_margin_units, tl_margin_units):
+    return (
+        f"{format_ms(interval_ms)}"
+        f"|{format_margin(ok_margin_units)}"
+        f"|{format_margin(tl_margin_units)}"
+    )
 
 
 def format_host_status() -> str:
@@ -350,7 +355,10 @@ def update_too_late_timing_on_ok(too_late_timing: dict, timestamp_ns: int,
     too_late_timing["pending_ok_margin"] = read_index - tail_index
 
 
-def update_too_late_timing_on_too_late(too_late_timing: dict, timestamp_ns: int):
+def update_too_late_timing_on_too_late(too_late_timing: dict,
+                                       timestamp_ns: int,
+                                       tail_index: int,
+                                       read_index: int):
     pending_ok_timestamp = too_late_timing["pending_ok_timestamp"]
     pending_ok_margin = too_late_timing["pending_ok_margin"]
 
@@ -361,9 +369,13 @@ def update_too_late_timing_on_too_late(too_late_timing: dict, timestamp_ns: int)
         return
 
     delta_ms = ns_to_ms(timestamp_ns - pending_ok_timestamp)
+    too_late_margin = read_index - tail_index
+
     too_late_timing["interval_count"] += 1
     too_late_timing["interval_sum_ms"] += delta_ms
-    too_late_timing["recent_pairs"].append((delta_ms, pending_ok_margin))
+    too_late_timing["recent_pairs"].append(
+        (delta_ms, pending_ok_margin, too_late_margin)
+    )
 
     # Consume this OK so only the first subsequent TOO_LATE is counted.
     too_late_timing["pending_ok_timestamp"] = None
@@ -401,6 +413,8 @@ def update_stream_state(state: dict, msg: dict):
         update_too_late_timing_on_too_late(
             state["too_late_timing"],
             msg["timestamp"],
+            msg["tail_index"],
+            msg["read_index"],
         )
 
     if msg["mxl_status"] == MXL_STATUS_OK:
@@ -553,7 +567,7 @@ def render_too_late_header() -> str:
         f"{'':<{TL_STATS_LABEL_WIDTH}}  "
         f"{'too_late':>{STATS_TOO_LATE_WIDTH}}  "
         f"{'mean':>{STATS_TIME_WIDTH}}  "
-        f"last {TOO_LATE_HISTORY_DISPLAY_LEN} OK->TOO_LATE|margin"
+        f"last {TOO_LATE_HISTORY_DISPLAY_LEN} OK->TOO_LATE|ok_margin|tl_margin"
     )
 
 
@@ -568,8 +582,9 @@ def render_too_late_row(label: str, state: dict) -> str:
         )
 
     recent_values = "  ".join(
-        format_interval_margin(interval_ms, margin_units)
-        for interval_ms, margin_units in too_late_timing["recent_pairs"]
+        format_interval_margins(interval_ms, ok_margin_units, tl_margin_units)
+        for interval_ms, ok_margin_units, tl_margin_units
+        in too_late_timing["recent_pairs"]
     )
 
     if not recent_values:
