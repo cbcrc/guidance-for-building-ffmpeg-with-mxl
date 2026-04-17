@@ -34,10 +34,11 @@
 # Both the 'scripts' and the 'docker/prod' directories should be visible:
 # $ ls -d scripts docker/prod 
 #
-# Build using the default FFmpeg.org FATE suite:
+# Build and run only the FFmpeg fate-mlx-* tests:
 # $ docker build -f docker/prod/Dockerfile -t ffmpeg-mxl-$(git rev-parse --short HEAD) .
 #
-# Build using an optional FATE suite mirror (usually faster):
+# Build and run the full FFmpeg FATE tests by specifying a FATE suite
+# mirror:
 # $ docker build --build-arg FATE_SUITE_MIRROR=rsync://192.168.1.100/fate-suite/ \
 #         -f docker/prod/Dockerfile -t ffmpeg-mxl-$(git rev-parse --short HEAD) .
 
@@ -64,13 +65,12 @@ USER ${UID}:${GID}
 ARG FATE_SUITE_MIRROR
 RUN if [ -n "${FATE_SUITE_MIRROR:-}" ]; then \
         export FATE_SUITE_MIRROR; \
-        FATE="--fate"; \
     fi; \
-    /scripts/get-src.sh /src --streaming "${FATE}"
+    /scripts/get-src.sh /src --streaming ${FATE_SUITE_MIRROR:+--fate}
     
 RUN /scripts/build-mxl.sh /src /build --prod
 RUN /scripts/build-codecs.sh /src /build
-RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay "${FATE}"
+RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay ${FATE_SUITE_MIRROR:+--fate}
 
 RUN cd /src/mxl; \
     echo "=============================="; \
