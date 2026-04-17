@@ -107,14 +107,18 @@ STATS_COUNT_WIDTH = 9
 STATS_TOO_LATE_WIDTH = 9
 
 # number of history events to render on the ring buffer visualization
-READ_HISTORY_LEN = 60
+READ_HISTORY_LEN = 30
 
 # number of recent OK->TOO_LATE intervals to display on the TL lines
 TOO_LATE_HISTORY_DISPLAY_LEN = 5
 
+# timeline marker characters
+TIMELINE_CHAR = "-"
+CURRENT_REGION_CHAR = "="
+HISTORY_MARK_CHAR = ":"
+
 # exit signal flag
 _running = True
-
 
 class TDigestEstimator:
     def __init__(self):
@@ -307,6 +311,8 @@ def make_stream_state():
         "tail_index": 0,
         "head_index": 0,
         "read_index": 0,
+        "read_start_index": 0,
+        "read_end_index": 0,
         "mxl_status": 0,
         "too_late_count": 0,
         "timestamp": 0,
@@ -348,17 +354,20 @@ def update_timing_state(timing: dict, timestamp_ns: int):
 
     timing["prev_ok_timestamp"] = timestamp_ns
 
+def compute_tl_margin_units(msg: dict) -> int:
+    if "read_size" in msg:
+        return msg["read_index"] - msg["read_size"] + 1 - msg["tail_index"]
+
+    return msg["read_index"] - msg["tail_index"]
 
 def update_too_late_timing_on_ok(too_late_timing: dict, timestamp_ns: int,
-                                 tail_index: int, read_index: int):
+                                 margin_units: int):
     too_late_timing["pending_ok_timestamp"] = timestamp_ns
-    too_late_timing["pending_ok_margin"] = read_index - tail_index
-
+    too_late_timing["pending_ok_margin"] = margin_units
 
 def update_too_late_timing_on_too_late(too_late_timing: dict,
                                        timestamp_ns: int,
-                                       tail_index: int,
-                                       read_index: int):
+                                       margin_units: int):
     pending_ok_timestamp = too_late_timing["pending_ok_timestamp"]
     pending_ok_margin = too_late_timing["pending_ok_margin"]
 
@@ -369,7 +378,7 @@ def update_too_late_timing_on_too_late(too_late_timing: dict,
         return
 
     delta_ms = ns_to_ms(timestamp_ns - pending_ok_timestamp)
-    too_late_margin = read_index - tail_index
+    too_late_margin = margin_units
 
     too_late_timing["interval_count"] += 1
     too_late_timing["interval_sum_ms"] += delta_ms
@@ -377,10 +386,8 @@ def update_too_late_timing_on_too_late(too_late_timing: dict,
         (delta_ms, pending_ok_margin, too_late_margin)
     )
 
-    # Consume this OK so only the first subsequent TOO_LATE is counted.
     too_late_timing["pending_ok_timestamp"] = None
     too_late_timing["pending_ok_margin"] = None
-
 
 def update_exec_state(exec_state: dict, exec_dur_ns: int):
     exec_dur_us = ns_to_us(exec_dur_ns)
@@ -405,16 +412,26 @@ def update_stream_state(state: dict, msg: dict):
     state["tail_index"] = msg["tail_index"]
     state["head_index"] = msg["head_index"]
     state["read_index"] = msg["read_index"]
+
+    # [start,end) half-open interval
+    if "read_size" in msg:       
+        state["read_start_index"] = msg["read_index"] - msg["read_size"] + 1
+        state["read_end_index"] = msg["read_index"] + 1
+    else:
+        state["read_start_index"] = msg["read_index"]
+        state["read_end_index"] = msg["read_index"] + 1
+
     state["mxl_status"] = msg["mxl_status"]
     state["timestamp"] = msg["timestamp"]
 
+    tl_margin_units = compute_tl_margin_units(msg)
+    
     if msg["mxl_status"] == MXL_ERR_OUT_OF_RANGE_TOO_LATE:
         state["too_late_count"] += 1
         update_too_late_timing_on_too_late(
             state["too_late_timing"],
             msg["timestamp"],
-            msg["tail_index"],
-            msg["read_index"],
+            tl_margin_units,
         )
 
     if msg["mxl_status"] == MXL_STATUS_OK:
@@ -422,8 +439,7 @@ def update_stream_state(state: dict, msg: dict):
         update_too_late_timing_on_ok(
             state["too_late_timing"],
             msg["timestamp"],
-            msg["tail_index"],
-            msg["read_index"],
+            tl_margin_units,
         )
         update_exec_state(
             state["exec"],
@@ -431,26 +447,49 @@ def update_stream_state(state: dict, msg: dict):
         )
 
 
-def map_read_position(inner: int, tail: int, head: int, read: int):
+def map_index_position(inner: int, tail: int, head: int, index: int):
     if head < tail:
         return ("inside", 0)
 
-    if read < tail:
+    if index < tail:
         return ("left", None)
 
-    if read > head:
+    if index > head:
         return ("right", None)
 
     count = head - tail + 1
-    offset = read - tail
+    offset = index - tail
 
     mapped = (offset * inner) // count
     mapped = max(0, min(inner - 1, mapped))
     return ("inside", mapped)
 
+def paint_region(chars, start_pos: int, end_pos_exclusive: int, mark: str):
+    if start_pos > end_pos_exclusive:
+        start_pos, end_pos_exclusive = end_pos_exclusive, start_pos
 
-def render_bar(width: int, tail: int, head: int, read: int, read_history,
-               show_half_marker: bool = False) -> str:
+    for pos in range(start_pos, end_pos_exclusive):
+        if 0 <= pos < len(chars) and chars[pos] != "|":
+            chars[pos] = mark
+
+def map_interval_boundary(inner: int, tail: int, head: int, boundary_index: int):
+    total = (head + 1) - tail
+    if total <= 0:
+        return 0
+
+    offset = boundary_index - tail
+    mapped = (offset * inner) // total
+    mapped = max(0, min(inner, mapped))
+    return mapped
+
+def render_bar(width: int,
+               tail: int,
+               head: int,
+               read_start: int,
+               read_end: int,
+               read_history,
+               show_current_region: bool = False,
+               show_half_marker: bool = False) -> str:            
     if width < 6:
         return " " * width
 
@@ -458,31 +497,52 @@ def render_bar(width: int, tail: int, head: int, read: int, read_history,
     if inner < 1:
         inner = 1
 
-    chars = ["-"] * inner
+    chars = [TIMELINE_CHAR] * inner
     left = " "
     right = " "
 
     if show_half_marker:
         chars[(inner - 1) // 2] = "|"
 
+
     for old_tail, old_head, old_read in read_history:
-        where, mapped = map_read_position(inner, old_tail, old_head, old_read)
+        where, mapped = map_index_position(inner, old_tail, old_head, old_read)
 
         if where == "inside":
-            chars[mapped] = "r"
+            if chars[mapped] != "|":
+                chars[mapped] = HISTORY_MARK_CHAR
         elif where == "left":
-            left = "r"
+            left = HISTORY_MARK_CHAR
         elif where == "right":
-            right = "r"
+            right = HISTORY_MARK_CHAR
 
-    where, mapped = map_read_position(inner, tail, head, read)
+    if show_current_region:
+        if read_start > read_end:
+            read_start, read_end = read_end, read_start
 
-    if where == "inside":
-        chars[mapped] = "R"
-    elif where == "left":
-        left = "R"
-    elif where == "right":
-        right = "R"
+
+        if read_start < tail:
+            left = CURRENT_REGION_CHAR
+
+        if read_end > (head + 1):
+            right = CURRENT_REGION_CHAR
+
+        visible_start = max(read_start, tail)
+        visible_end = min(read_end, head + 1)
+
+
+        if visible_start < visible_end:
+            mapped_start = map_interval_boundary(
+                inner, tail, head, visible_start
+            )
+            mapped_end = map_interval_boundary(
+                inner, tail, head, visible_end
+            )
+
+            if mapped_end <= mapped_start:
+                mapped_end = min(inner, mapped_start + 1)
+
+            paint_region(chars, mapped_start, mapped_end, CURRENT_REGION_CHAR)
 
     return left + "|" + "".join(chars) + "|" + right
 
@@ -514,8 +574,10 @@ def render_stream_line(label: str, state: dict, total_width: int) -> str:
         bar_width,
         state["tail_index"],
         state["head_index"],
-        state["read_index"],
+        state["read_start_index"],
+        state["read_end_index"],
         state["read_history"],
+        show_current_region=(state["mxl_status"] == MXL_STATUS_OK),
         show_half_marker=(label == "AUDIO"),
     )
 
