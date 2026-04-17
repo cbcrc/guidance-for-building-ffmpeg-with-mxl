@@ -120,6 +120,7 @@ HISTORY_MARK_CHAR = ":"
 # exit signal flag
 _running = True
 
+
 class TDigestEstimator:
     def __init__(self):
         self.digest = TDigest()
@@ -278,7 +279,6 @@ def format_host_status() -> str:
 def make_timing_state():
     return {
         "prev_ok_timestamp": None,
-        "ok_event_count": 0,
         "interval_count": 0,
         "interval_sum_ms": 0.0,
         "last_interval_ms": None,
@@ -316,6 +316,8 @@ def make_stream_state():
         "mxl_status": 0,
         "too_late_count": 0,
         "timestamp": 0,
+        "ok_video_frame_count": 0,
+        "ok_audio_sample_count": 0,
         "read_history": deque(maxlen=READ_HISTORY_LEN),
         "timing": make_timing_state(),
         "too_late_timing": make_too_late_timing_state(),
@@ -331,8 +333,6 @@ def reset_monitor_state():
 
 
 def update_timing_state(timing: dict, timestamp_ns: int):
-    timing["ok_event_count"] += 1
-
     prev_ok_timestamp = timing["prev_ok_timestamp"]
 
     if prev_ok_timestamp is None:
@@ -354,16 +354,19 @@ def update_timing_state(timing: dict, timestamp_ns: int):
 
     timing["prev_ok_timestamp"] = timestamp_ns
 
+
 def compute_tl_margin_units(msg: dict) -> int:
     if "read_size" in msg:
         return msg["read_index"] - msg["read_size"] + 1 - msg["tail_index"]
 
     return msg["read_index"] - msg["tail_index"]
 
+
 def update_too_late_timing_on_ok(too_late_timing: dict, timestamp_ns: int,
                                  margin_units: int):
     too_late_timing["pending_ok_timestamp"] = timestamp_ns
     too_late_timing["pending_ok_margin"] = margin_units
+
 
 def update_too_late_timing_on_too_late(too_late_timing: dict,
                                        timestamp_ns: int,
@@ -388,6 +391,7 @@ def update_too_late_timing_on_too_late(too_late_timing: dict,
 
     too_late_timing["pending_ok_timestamp"] = None
     too_late_timing["pending_ok_margin"] = None
+
 
 def update_exec_state(exec_state: dict, exec_dur_ns: int):
     exec_dur_us = ns_to_us(exec_dur_ns)
@@ -414,7 +418,7 @@ def update_stream_state(state: dict, msg: dict):
     state["read_index"] = msg["read_index"]
 
     # [start,end) half-open interval
-    if "read_size" in msg:       
+    if "read_size" in msg:
         state["read_start_index"] = msg["read_index"] - msg["read_size"] + 1
         state["read_end_index"] = msg["read_index"] + 1
     else:
@@ -425,7 +429,7 @@ def update_stream_state(state: dict, msg: dict):
     state["timestamp"] = msg["timestamp"]
 
     tl_margin_units = compute_tl_margin_units(msg)
-    
+
     if msg["mxl_status"] == MXL_ERR_OUT_OF_RANGE_TOO_LATE:
         state["too_late_count"] += 1
         update_too_late_timing_on_too_late(
@@ -435,6 +439,11 @@ def update_stream_state(state: dict, msg: dict):
         )
 
     if msg["mxl_status"] == MXL_STATUS_OK:
+        if "read_size" in msg:
+            state["ok_audio_sample_count"] += msg["read_size"]
+        else:
+            state["ok_video_frame_count"] += 1
+
         update_timing_state(state["timing"], msg["timestamp"])
         update_too_late_timing_on_ok(
             state["too_late_timing"],
@@ -464,6 +473,7 @@ def map_index_position(inner: int, tail: int, head: int, index: int):
     mapped = max(0, min(inner - 1, mapped))
     return ("inside", mapped)
 
+
 def paint_region(chars, start_pos: int, end_pos_exclusive: int, mark: str):
     if start_pos > end_pos_exclusive:
         start_pos, end_pos_exclusive = end_pos_exclusive, start_pos
@@ -471,6 +481,7 @@ def paint_region(chars, start_pos: int, end_pos_exclusive: int, mark: str):
     for pos in range(start_pos, end_pos_exclusive):
         if 0 <= pos < len(chars) and chars[pos] != "|":
             chars[pos] = mark
+
 
 def map_interval_boundary(inner: int, tail: int, head: int, boundary_index: int):
     total = (head + 1) - tail
@@ -482,6 +493,7 @@ def map_interval_boundary(inner: int, tail: int, head: int, boundary_index: int)
     mapped = max(0, min(inner, mapped))
     return mapped
 
+
 def render_bar(width: int,
                tail: int,
                head: int,
@@ -489,7 +501,7 @@ def render_bar(width: int,
                read_end: int,
                read_history,
                show_current_region: bool = False,
-               show_half_marker: bool = False) -> str:            
+               show_half_marker: bool = False) -> str:
     if width < 6:
         return " " * width
 
@@ -503,7 +515,6 @@ def render_bar(width: int,
 
     if show_half_marker:
         chars[(inner - 1) // 2] = "|"
-
 
     for old_tail, old_head, old_read in read_history:
         where, mapped = map_index_position(inner, old_tail, old_head, old_read)
@@ -520,7 +531,6 @@ def render_bar(width: int,
         if read_start > read_end:
             read_start, read_end = read_end, read_start
 
-
         if read_start < tail:
             left = CURRENT_REGION_CHAR
 
@@ -529,7 +539,6 @@ def render_bar(width: int,
 
         visible_start = max(read_start, tail)
         visible_end = min(read_end, head + 1)
-
 
         if visible_start < visible_end:
             mapped_start = map_interval_boundary(
@@ -697,10 +706,17 @@ def format_elapsed(seconds: float) -> str:
 
 
 def compute_elapsed_fps(video: dict, elapsed_seconds: float):
-    ok_event_count = video["timing"]["ok_event_count"]
-    if elapsed_seconds <= 0.0 or ok_event_count <= 0:
+    ok_video_frame_count = video["ok_video_frame_count"]
+    if elapsed_seconds <= 0.0 or ok_video_frame_count <= 0:
         return "-"
-    return f"{ok_event_count / elapsed_seconds:.2f}"
+    return f"{ok_video_frame_count / elapsed_seconds:.2f}"
+
+
+def compute_elapsed_sps(audio: dict, elapsed_seconds: float):
+    ok_audio_sample_count = audio["ok_audio_sample_count"]
+    if elapsed_seconds <= 0.0 or ok_audio_sample_count <= 0:
+        return "-"
+    return f"{ok_audio_sample_count / elapsed_seconds:.0f}"
 
 
 def draw_ui(stdscr,
@@ -714,6 +730,7 @@ def draw_ui(stdscr,
     elapsed_seconds = time.monotonic() - start_monotonic
     elapsed = format_elapsed(elapsed_seconds)
     elapsed_fps = compute_elapsed_fps(video, elapsed_seconds)
+    elapsed_sps = compute_elapsed_sps(audio, elapsed_seconds)
     host_status = format_host_status()
     paused_text = "   PAUSED" if paused else ""
 
@@ -725,6 +742,7 @@ def draw_ui(stdscr,
             f"FFmpeg MXL diagnostic monitor"
             f"   elapsed: {elapsed}"
             f"   elapsed FPS: {elapsed_fps}"
+            f"   elapsed SPS: {elapsed_sps}"
             f"{paused_text}"
         ),
         cols - 1,
