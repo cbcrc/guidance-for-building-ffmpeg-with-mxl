@@ -38,6 +38,8 @@
 --enable-encoder=aac
 --enable-muxer=mp4
 --enable-muxer=mov
+--enable-muxer=tee
+--enable-muxer=opus
 --enable-protocol=file
 --enable-filter=showinfo
 --ignore-tests=source
