@@ -38,6 +38,7 @@ import select
 import signal
 import socket
 import struct
+import subprocess
 import sys
 import tempfile
 import time
@@ -69,6 +70,9 @@ AUDIO_READ_FMT = "<QQQQQII"
 HEADER_SIZE = struct.calcsize(HEADER_FMT)
 VIDEO_READ_SIZE = struct.calcsize(VIDEO_READ_FMT)
 AUDIO_READ_SIZE = struct.calcsize(AUDIO_READ_FMT)
+
+# host / ffmpeg status sampling interval
+STATUS_SAMPLE_INTERVAL_SECONDS = 1.0
 
 
 # mxlStatus enum names
@@ -261,19 +265,195 @@ def format_interval_margins(interval_ms, ok_margin_units, tl_margin_units):
     )
 
 
-def format_host_status() -> str:
+def normalize_sched_class(cls: str) -> str:
+    if cls == "TS":
+        return "NORMAL"
+    return cls
+
+
+def resolve_pid_from_server_socket(server_socket: str) -> int:
+    try:
+        result = subprocess.run(
+            ["ss", "-xlpn"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        raise RuntimeError(f"failed to run ss: {exc}") from exc
+
+    pid_matches = []
+
+    for line in result.stdout.splitlines():
+        if server_socket not in line:
+            continue
+
+        pid_marker = "pid="
+        start = line.find(pid_marker)
+        if start < 0:
+            continue
+
+        start += len(pid_marker)
+        end = start
+        while end < len(line) and line[end].isdigit():
+            end += 1
+
+        pid_text = line[start:end]
+        if not pid_text:
+            continue
+
+        try:
+            pid_matches.append(int(pid_text))
+        except ValueError:
+            continue
+
+    if not pid_matches:
+        raise RuntimeError(
+            f"could not resolve PID from server socket path using ss: {server_socket}"
+        )
+
+    return pid_matches[0]
+
+
+def read_ffmpeg_sched_info(pid: int) -> dict:
+    try:
+        result = subprocess.run(
+            ["ps", "-o", "cls=,rtprio=,ni=", "-p", str(pid)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return {
+            "pid": pid,
+            "sched_text": "unknown",
+        }
+
+    output = result.stdout.strip()
+    if not output:
+        return {
+            "pid": pid,
+            "sched_text": "unknown",
+        }
+
+    parts = output.split()
+    if len(parts) != 3:
+        return {
+            "pid": pid,
+            "sched_text": "unknown",
+        }
+
+    cls, rtprio, nice = parts
+    cls = normalize_sched_class(cls)
+
+    if cls == "NORMAL":
+        priority = nice
+    else:
+        priority = rtprio
+
+    return {
+        "pid": pid,
+        "sched_text": f"{cls}/{priority}",
+    }
+
+
+def sample_ffmpeg_cpu(pid: int):
+    try:
+        result = subprocess.run(
+            ["ps", "-o", "%cpu=", "-p", str(pid)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+
+    output = result.stdout.strip()
+    if not output:
+        return None
+
+    try:
+        return float(output)
+    except ValueError:
+        return None
+
+
+def format_ffmpeg_status(ffmpeg_status: dict) -> str:
+    cpu_pct = ffmpeg_status["cpu_pct"]
+
+    if cpu_pct is None:
+        cpu_text = "-"
+    else:
+        cpu_text = f"{cpu_pct:.1f}%"
+
+    return (
+        f"ffmpeg pid: {ffmpeg_status['pid']}   "
+        f"scheduling: {ffmpeg_status['sched_text']}   "
+        f"cpu: {cpu_text}"
+    )
+
+def format_host_status(host_status: dict) -> str:
+    return (
+        f"host: {host_status['hostname']}   "
+        f"local time: {host_status['now_text']}   "
+        f"load 1m: {host_status['load1m']:.1f} "
+        f"({host_status['load_pct']:.1f}% of {host_status['cores']} cores)"
+    )
+
+
+def make_host_status() -> dict:
     hostname = socket.gethostname()
-    now_text = time.strftime("%Y-%m-%d %H:%M:%S")
+    timestamp_struct = time.localtime()
+    now_text = time.strftime("%Y-%m-%d %H:%M:%S", timestamp_struct)
     load1m = os.getloadavg()[0]
     cores = os.cpu_count()
     load_pct = 100.0 * load1m / cores
 
-    return (
-        f"host: {hostname}   "
-        f"local time: {now_text}   "
-        f"load 1m: {load1m:.1f} "
-        f"({load_pct:.1f}% of {cores} cores)"
-    )
+    return {
+        "hostname": hostname,
+        "timestamp_struct": timestamp_struct,
+        "now_text": now_text,
+        "load1m": load1m,
+        "cores": cores,
+        "load_pct": load_pct,
+    }
+
+
+def make_ffmpeg_status(server_socket: str) -> dict:
+    pid = resolve_pid_from_server_socket(server_socket)
+    sched_info = read_ffmpeg_sched_info(pid)
+
+    return {
+        "pid": sched_info["pid"],
+        "sched_text": sched_info["sched_text"],
+        "cpu_pct": None,
+    }
+
+
+def update_dynamic_statuses(host_status: dict,
+                            ffmpeg_status: dict):
+    fresh_host_status = make_host_status()
+    host_status.clear()
+    host_status.update(fresh_host_status)
+
+    ffmpeg_status["cpu_pct"] = sample_ffmpeg_cpu(ffmpeg_status["pid"])
+
+
+def maybe_update_dynamic_statuses(host_status: dict,
+                                  ffmpeg_status: dict,
+                                  status_state: dict,
+                                  paused: bool,
+                                  now_monotonic: float):
+    if paused:
+        return
+
+    last_sample_monotonic = status_state["last_sample_monotonic"]
+    if last_sample_monotonic is not None:
+        if (now_monotonic - last_sample_monotonic) < STATUS_SAMPLE_INTERVAL_SECONDS:
+            return
+
+    update_dynamic_statuses(host_status, ffmpeg_status)
+    status_state["last_sample_monotonic"] = now_monotonic
 
 
 def make_timing_state():
@@ -723,7 +903,9 @@ def draw_ui(stdscr,
             start_monotonic: float,
             video: dict,
             audio: dict,
-            paused: bool):
+            paused: bool,
+            ffmpeg_status: dict,
+            host_status: dict):
     stdscr.erase()
     rows, cols = stdscr.getmaxyx()
 
@@ -731,7 +913,6 @@ def draw_ui(stdscr,
     elapsed = format_elapsed(elapsed_seconds)
     elapsed_fps = compute_elapsed_fps(video, elapsed_seconds)
     elapsed_sps = compute_elapsed_sps(audio, elapsed_seconds)
-    host_status = format_host_status()
     paused_text = "   PAUSED" if paused else ""
 
     safe_addnstr(
@@ -763,8 +944,9 @@ def draw_ui(stdscr,
     safe_addnstr(stdscr, 14, 0, render_exec_row("VIDEO EX", video), cols - 1)
     safe_addnstr(stdscr, 15, 0, render_exec_row("AUDIO EX", audio), cols - 1)
 
-    safe_addnstr(stdscr, rows - 3, 0, "q quit   p pause/resume UI   c clear/restart", cols - 1)
-    safe_addnstr(stdscr, rows - 1, 0, host_status, cols - 1)
+    safe_addnstr(stdscr, rows - 4, 0, "q quit   p pause/resume UI   c clear/restart", cols - 1)
+    safe_addnstr(stdscr, rows - 2, 0, format_ffmpeg_status(ffmpeg_status), cols - 1)
+    safe_addnstr(stdscr, rows - 1, 0, format_host_status(host_status), cols - 1)
     stdscr.refresh()
 
 
@@ -841,7 +1023,9 @@ def handle_keypress(key: int,
 
 
 def run_ui(stdscr,
-           sock: socket.socket):
+           sock: socket.socket,
+           ffmpeg_status: dict,
+           host_status: dict):
     curses.curs_set(0)
     curses.noecho()
     curses.cbreak()
@@ -850,6 +1034,12 @@ def run_ui(stdscr,
 
     start_monotonic, video, audio = reset_monitor_state()
     paused = False
+    status_state = {
+        "last_sample_monotonic": None,
+    }
+
+    update_dynamic_statuses(host_status, ffmpeg_status)
+    status_state["last_sample_monotonic"] = time.monotonic()
 
     draw_ui(
         stdscr,
@@ -857,6 +1047,8 @@ def run_ui(stdscr,
         video,
         audio,
         paused,
+        ffmpeg_status,
+        host_status,
     )
 
     sock_fd = sock.fileno()
@@ -877,6 +1069,15 @@ def run_ui(stdscr,
             if not _running:
                 break
             continue
+
+        now_monotonic = time.monotonic()
+        maybe_update_dynamic_statuses(
+            host_status,
+            ffmpeg_status,
+            status_state,
+            paused,
+            now_monotonic,
+        )
 
         if sock_fd in readable:
             handle_socket_ready(sock, video, audio)
@@ -903,6 +1104,8 @@ def run_ui(stdscr,
                 video,
                 audio,
                 paused,
+                ffmpeg_status,
+                host_status,
             )
 
 
@@ -952,6 +1155,9 @@ def main():
     if os.path.exists(args.client_socket):
         os.unlink(args.client_socket)
 
+    ffmpeg_status = make_ffmpeg_status(args.server_socket)
+    host_status = make_host_status()
+
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 
     try:
@@ -963,6 +1169,8 @@ def main():
         curses.wrapper(
             run_ui,
             sock,
+            ffmpeg_status,
+            host_status,
         )
 
     finally:
