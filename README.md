@@ -25,8 +25,8 @@ The FFmpeg/MXL integration currently supports Linux only.
 
 | component | repository | branch | tag/commit |
 |-----------|------------|--------|------------|
-| MXL | [/dmf-mxl/mxl](https://github.com/dmf-mxl/mxl/tree/release/v1.0) |  release/1.0 | v1.0.0 |
-| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/master) | dmf-mxl/master | 66a0493 |
+| MXL | [/dmf-mxl/mxl](https://github.com/dmf-mxl/mxl/tree/release/v1.0) |  release/1.0 | 80623d7 |
+| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/master) | dmf-mxl/master | 5c5d593 |
 
 The tag/commit is the last known good version. These repos are cloned by build scripts.
 
@@ -63,8 +63,6 @@ See the code structure, how to compile manually and test regressions [here](./do
 - video/v210a (v210+alpha) is not supported 
 - video/smpt201 (ancillary data) is not supported
 - macOS FFmpeg/MXL build is not supported
-- MXL test "DomainWatcher thread start/stop behavior" is disabled
-  pending intermittent failure investigation. See [MXL Bug 446](https://github.com/dmf-mxl/mxl/issues/446)
 - [MXL Bug 445](https://github.com/dmf-mxl/mxl/issues/445) explains the huge [`mxl-info` latency value](https://github.com/cbcrc/guidance-for-building-ffmpeg-with-mxl/blob/main/docs/usage.md#ffmpeg-mxl-write--ffplay-mxl-read) in the examples. The example documentation will be updated when MXL Bug 445 is resolved.
 - The Ubuntu20.04 build support is deprecated and will soon be removed. Don't use it.
 - The "extended" build is deprecated and may soon be removed.
