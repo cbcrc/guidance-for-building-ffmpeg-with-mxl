@@ -81,7 +81,7 @@ services:
       -vf 'scale=1280:720,format=yuv420p' \
       -c:v libx264 -preset fast -tune zerolatency -b:v 5M \
       -x264-params 'sliced-threads=1:sync-lookahead=0' \
-      -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/ffmpeg-v"
+      -f rtsp -rtsp_transport tcp rtsp://${MEDIAMTX_IP:-127.0.0.1}:8554/ffmpeg-v"
 
   ffmpeg-dest-a:
     image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
@@ -98,7 +98,7 @@ services:
     command: "-hide_banner \
       -f mxl -i /domain/ca28b9ff-9d44-41ba-9c88-99329e7995a6.mxl-flow \
       -c:a libopus -b:a 64k \
-      -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/ffmpeg-a"
+      -f rtsp -rtsp_transport tcp rtsp://${MEDIAMTX_IP:-127.0.0.1}:8554/ffmpeg-a"
 
   ffmpeg-dest:
     image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
@@ -125,11 +125,10 @@ services:
       - MXL_DOMAIN=/domain
       - VIDEO_ID=fe781cad-8a82-4b8e-a3c2-f833c70ac73e
       - AUDIO_ID=ca28b9ff-9d44-41ba-9c88-99329e7995a6
-      - RTSP_URL=rtsp://127.0.0.1:8554/ffmpeg
+      - RTSP_URL=rtsp://${MEDIAMTX_IP:-127.0.0.1}:8554/ffmpeg
       #  --- Optional ---
       - FFMPEG_LOGLEVEL=info
       - FFMPEG_MODE=gpu
-      - FFMPEG_DEMUX=single
       - RTSP_TRANSPORT=tcp
       - V_BLOCKING=0
       - A_GRAIN_INDEX_INIT=1

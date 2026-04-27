@@ -18,18 +18,19 @@ graph LR
 ## Startup the services
 
 ```bash
+export MEDIAMTX_HOST=X.X.X.X # default is 127.0.0.1
 docker compose up -d 
 ```
 
 ## Monitor
 
-Open browser @ `http://<mediamtx_IP>:8889/ffmpeg`
+Open browser @ `http://${MEDIAMTX_HOST:-127.0.0.1}:8889/ffmpeg`
 
-## Troubleshoot
+## Troubleshoot from the host
 
 Inspect individual essences:
-- video: `http://<mediamtx_IP>:8889/ffmpeg-v`
-- audio: `http://<mediamtx_IP>:8889/ffmpeg-a`
+- video: `http://${MEDIAMTX_HOST:-127.0.0.1}:8889/ffmpeg-v`
+- audio: `http://${MEDIAMTX_HOST:-127.0.0.1}:8889/ffmpeg-a`
 
 ```bash
 # watch for restarting services

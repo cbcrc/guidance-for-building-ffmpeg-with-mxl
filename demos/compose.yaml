@@ -77,7 +77,7 @@ services:
       -vf 'scale=1280:720,format=yuv420p' \
       -c:v libx264 -preset fast -tune zerolatency -b:v 5M \
       -x264-params 'sliced-threads=1:sync-lookahead=0' \
-      -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/ffmpeg-v"
+      -f rtsp -rtsp_transport tcp rtsp://${MEDIAMTX_HOST:-127.0.0.1}:8554/ffmpeg-v"
 
   ffmpeg-dest-a:
     image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
@@ -94,7 +94,7 @@ services:
     command: "-hide_banner \
       -f mxl -i /domain/ca28b9ff-9d44-41ba-9c88-99329e7995a6.mxl-flow \
       -c:a libopus -b:a 64k \
-      -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/ffmpeg-a"
+      -f rtsp -rtsp_transport tcp rtsp://${MEDIAMTX_HOST:-127.0.0.1}:8554/ffmpeg-a"
 
   ffmpeg-dest:
     image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
@@ -116,7 +116,7 @@ services:
       # The ID of the audio stream to capture
       - AUDIO_ID=ca28b9ff-9d44-41ba-9c88-99329e7995a6
       # The destination RTSP URL where the transcoded stream will be pushed
-      - RTSP_URL=rtsp://127.0.0.1:8554/ffmpeg
+      - RTSP_URL=rtsp://${MEDIAMTX_HOST:-127.0.0.1}:8554/ffmpeg"
       #  --- Optional ---
       - FFMPEG_LOGLEVEL=info
       - FFMPEG_MODE=cpu
