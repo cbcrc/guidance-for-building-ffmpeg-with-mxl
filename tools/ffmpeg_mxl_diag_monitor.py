@@ -38,6 +38,7 @@ import select
 import signal
 import socket
 import struct
+import subprocess
 import sys
 import tempfile
 import time
@@ -69,6 +70,9 @@ AUDIO_READ_FMT = "<QQQQQII"
 HEADER_SIZE = struct.calcsize(HEADER_FMT)
 VIDEO_READ_SIZE = struct.calcsize(VIDEO_READ_FMT)
 AUDIO_READ_SIZE = struct.calcsize(AUDIO_READ_FMT)
+
+# host / ffmpeg status sampling interval
+STATUS_SAMPLE_INTERVAL_SECONDS = 1.0
 
 
 # mxlStatus enum names
@@ -107,10 +111,15 @@ STATS_COUNT_WIDTH = 9
 STATS_TOO_LATE_WIDTH = 9
 
 # number of history events to render on the ring buffer visualization
-READ_HISTORY_LEN = 60
+READ_HISTORY_LEN = 30
 
 # number of recent OK->TOO_LATE intervals to display on the TL lines
 TOO_LATE_HISTORY_DISPLAY_LEN = 5
+
+# timeline marker characters
+TIMELINE_CHAR = "-"
+CURRENT_REGION_CHAR = "="
+HISTORY_MARK_CHAR = ":"
 
 # exit signal flag
 _running = True
@@ -229,6 +238,7 @@ def ns_to_us(value_ns):
         return None
     return value_ns / 1_000.0
 
+
 def format_ms(value_ms):
     if value_ms is None:
         return "-"
@@ -247,29 +257,208 @@ def format_margin(value):
     return str(value)
 
 
-def format_interval_margin(interval_ms, margin_units):
-    return f"{format_ms(interval_ms)}|{format_margin(margin_units)}"
+def format_interval_margins(interval_ms, ok_margin_units, tl_margin_units):
+    return (
+        f"{format_ms(interval_ms)}"
+        f"|{format_margin(ok_margin_units)}"
+        f"|{format_margin(tl_margin_units)}"
+    )
 
 
-def format_host_status() -> str:
+def normalize_sched_class(cls: str) -> str:
+    if cls == "TS":
+        return "NORMAL"
+    return cls
+
+
+def resolve_pid_from_server_socket(server_socket: str) -> int:
+    try:
+        result = subprocess.run(
+            ["ss", "-xlpn"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        raise RuntimeError(f"failed to run ss: {exc}") from exc
+
+    pid_matches = []
+
+    for line in result.stdout.splitlines():
+        if server_socket not in line:
+            continue
+
+        pid_marker = "pid="
+        start = line.find(pid_marker)
+        if start < 0:
+            continue
+
+        start += len(pid_marker)
+        end = start
+        while end < len(line) and line[end].isdigit():
+            end += 1
+
+        pid_text = line[start:end]
+        if not pid_text:
+            continue
+
+        try:
+            pid_matches.append(int(pid_text))
+        except ValueError:
+            continue
+
+    if not pid_matches:
+        raise RuntimeError(
+            f"could not resolve PID from server socket path using ss: {server_socket}"
+        )
+
+    return pid_matches[0]
+
+
+def read_ffmpeg_sched_info(pid: int) -> dict:
+    try:
+        result = subprocess.run(
+            ["ps", "-o", "cls=,rtprio=,ni=", "-p", str(pid)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return {
+            "pid": pid,
+            "sched_text": "unknown",
+        }
+
+    output = result.stdout.strip()
+    if not output:
+        return {
+            "pid": pid,
+            "sched_text": "unknown",
+        }
+
+    parts = output.split()
+    if len(parts) != 3:
+        return {
+            "pid": pid,
+            "sched_text": "unknown",
+        }
+
+    cls, rtprio, nice = parts
+    cls = normalize_sched_class(cls)
+
+    if cls == "NORMAL":
+        priority = nice
+    else:
+        priority = rtprio
+
+    return {
+        "pid": pid,
+        "sched_text": f"{cls}/{priority}",
+    }
+
+
+def sample_ffmpeg_cpu(pid: int):
+    try:
+        result = subprocess.run(
+            ["ps", "-o", "%cpu=", "-p", str(pid)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+
+    output = result.stdout.strip()
+    if not output:
+        return None
+
+    try:
+        return float(output)
+    except ValueError:
+        return None
+
+
+def format_ffmpeg_status(ffmpeg_status: dict) -> str:
+    cpu_pct = ffmpeg_status["cpu_pct"]
+
+    if cpu_pct is None:
+        cpu_text = "-"
+    else:
+        cpu_text = f"{cpu_pct:.1f}%"
+
+    return (
+        f"ffmpeg pid: {ffmpeg_status['pid']}   "
+        f"scheduling: {ffmpeg_status['sched_text']}   "
+        f"cpu: {cpu_text}"
+    )
+
+def format_host_status(host_status: dict) -> str:
+    return (
+        f"host: {host_status['hostname']}   "
+        f"local time: {host_status['now_text']}   "
+        f"load 1m: {host_status['load1m']:.1f} "
+        f"({host_status['load_pct']:.1f}% of {host_status['cores']} cores)"
+    )
+
+
+def make_host_status() -> dict:
     hostname = socket.gethostname()
-    now_text = time.strftime("%Y-%m-%d %H:%M:%S")
+    timestamp_struct = time.localtime()
+    now_text = time.strftime("%Y-%m-%d %H:%M:%S", timestamp_struct)
     load1m = os.getloadavg()[0]
     cores = os.cpu_count()
     load_pct = 100.0 * load1m / cores
 
-    return (
-        f"host: {hostname}   "
-        f"local time: {now_text}   "
-        f"load 1m: {load1m:.1f} "
-        f"({load_pct:.1f}% of {cores} cores)"
-    )
+    return {
+        "hostname": hostname,
+        "timestamp_struct": timestamp_struct,
+        "now_text": now_text,
+        "load1m": load1m,
+        "cores": cores,
+        "load_pct": load_pct,
+    }
+
+
+def make_ffmpeg_status(server_socket: str) -> dict:
+    pid = resolve_pid_from_server_socket(server_socket)
+    sched_info = read_ffmpeg_sched_info(pid)
+
+    return {
+        "pid": sched_info["pid"],
+        "sched_text": sched_info["sched_text"],
+        "cpu_pct": None,
+    }
+
+
+def update_dynamic_statuses(host_status: dict,
+                            ffmpeg_status: dict):
+    fresh_host_status = make_host_status()
+    host_status.clear()
+    host_status.update(fresh_host_status)
+
+    ffmpeg_status["cpu_pct"] = sample_ffmpeg_cpu(ffmpeg_status["pid"])
+
+
+def maybe_update_dynamic_statuses(host_status: dict,
+                                  ffmpeg_status: dict,
+                                  status_state: dict,
+                                  paused: bool,
+                                  now_monotonic: float):
+    if paused:
+        return
+
+    last_sample_monotonic = status_state["last_sample_monotonic"]
+    if last_sample_monotonic is not None:
+        if (now_monotonic - last_sample_monotonic) < STATUS_SAMPLE_INTERVAL_SECONDS:
+            return
+
+    update_dynamic_statuses(host_status, ffmpeg_status)
+    status_state["last_sample_monotonic"] = now_monotonic
 
 
 def make_timing_state():
     return {
         "prev_ok_timestamp": None,
-        "ok_event_count": 0,
         "interval_count": 0,
         "interval_sum_ms": 0.0,
         "last_interval_ms": None,
@@ -302,9 +491,13 @@ def make_stream_state():
         "tail_index": 0,
         "head_index": 0,
         "read_index": 0,
+        "read_start_index": 0,
+        "read_end_index": 0,
         "mxl_status": 0,
         "too_late_count": 0,
         "timestamp": 0,
+        "ok_video_frame_count": 0,
+        "ok_audio_sample_count": 0,
         "read_history": deque(maxlen=READ_HISTORY_LEN),
         "timing": make_timing_state(),
         "too_late_timing": make_too_late_timing_state(),
@@ -320,8 +513,6 @@ def reset_monitor_state():
 
 
 def update_timing_state(timing: dict, timestamp_ns: int):
-    timing["ok_event_count"] += 1
-
     prev_ok_timestamp = timing["prev_ok_timestamp"]
 
     if prev_ok_timestamp is None:
@@ -344,13 +535,22 @@ def update_timing_state(timing: dict, timestamp_ns: int):
     timing["prev_ok_timestamp"] = timestamp_ns
 
 
+def compute_tl_margin_units(msg: dict) -> int:
+    if "read_size" in msg:
+        return msg["read_index"] - msg["read_size"] + 1 - msg["tail_index"]
+
+    return msg["read_index"] - msg["tail_index"]
+
+
 def update_too_late_timing_on_ok(too_late_timing: dict, timestamp_ns: int,
-                                 tail_index: int, read_index: int):
+                                 margin_units: int):
     too_late_timing["pending_ok_timestamp"] = timestamp_ns
-    too_late_timing["pending_ok_margin"] = read_index - tail_index
+    too_late_timing["pending_ok_margin"] = margin_units
 
 
-def update_too_late_timing_on_too_late(too_late_timing: dict, timestamp_ns: int):
+def update_too_late_timing_on_too_late(too_late_timing: dict,
+                                       timestamp_ns: int,
+                                       margin_units: int):
     pending_ok_timestamp = too_late_timing["pending_ok_timestamp"]
     pending_ok_margin = too_late_timing["pending_ok_margin"]
 
@@ -361,11 +561,14 @@ def update_too_late_timing_on_too_late(too_late_timing: dict, timestamp_ns: int)
         return
 
     delta_ms = ns_to_ms(timestamp_ns - pending_ok_timestamp)
+    too_late_margin = margin_units
+
     too_late_timing["interval_count"] += 1
     too_late_timing["interval_sum_ms"] += delta_ms
-    too_late_timing["recent_pairs"].append((delta_ms, pending_ok_margin))
+    too_late_timing["recent_pairs"].append(
+        (delta_ms, pending_ok_margin, too_late_margin)
+    )
 
-    # Consume this OK so only the first subsequent TOO_LATE is counted.
     too_late_timing["pending_ok_timestamp"] = None
     too_late_timing["pending_ok_margin"] = None
 
@@ -393,23 +596,39 @@ def update_stream_state(state: dict, msg: dict):
     state["tail_index"] = msg["tail_index"]
     state["head_index"] = msg["head_index"]
     state["read_index"] = msg["read_index"]
+
+    # [start,end) half-open interval
+    if "read_size" in msg:
+        state["read_start_index"] = msg["read_index"] - msg["read_size"] + 1
+        state["read_end_index"] = msg["read_index"] + 1
+    else:
+        state["read_start_index"] = msg["read_index"]
+        state["read_end_index"] = msg["read_index"] + 1
+
     state["mxl_status"] = msg["mxl_status"]
     state["timestamp"] = msg["timestamp"]
+
+    tl_margin_units = compute_tl_margin_units(msg)
 
     if msg["mxl_status"] == MXL_ERR_OUT_OF_RANGE_TOO_LATE:
         state["too_late_count"] += 1
         update_too_late_timing_on_too_late(
             state["too_late_timing"],
             msg["timestamp"],
+            tl_margin_units,
         )
 
     if msg["mxl_status"] == MXL_STATUS_OK:
+        if "read_size" in msg:
+            state["ok_audio_sample_count"] += msg["read_size"]
+        else:
+            state["ok_video_frame_count"] += 1
+
         update_timing_state(state["timing"], msg["timestamp"])
         update_too_late_timing_on_ok(
             state["too_late_timing"],
             msg["timestamp"],
-            msg["tail_index"],
-            msg["read_index"],
+            tl_margin_units,
         )
         update_exec_state(
             state["exec"],
@@ -417,25 +636,51 @@ def update_stream_state(state: dict, msg: dict):
         )
 
 
-def map_read_position(inner: int, tail: int, head: int, read: int):
+def map_index_position(inner: int, tail: int, head: int, index: int):
     if head < tail:
         return ("inside", 0)
 
-    if read < tail:
+    if index < tail:
         return ("left", None)
 
-    if read > head:
+    if index > head:
         return ("right", None)
 
     count = head - tail + 1
-    offset = read - tail
+    offset = index - tail
 
     mapped = (offset * inner) // count
     mapped = max(0, min(inner - 1, mapped))
     return ("inside", mapped)
 
 
-def render_bar(width: int, tail: int, head: int, read: int, read_history,
+def paint_region(chars, start_pos: int, end_pos_exclusive: int, mark: str):
+    if start_pos > end_pos_exclusive:
+        start_pos, end_pos_exclusive = end_pos_exclusive, start_pos
+
+    for pos in range(start_pos, end_pos_exclusive):
+        if 0 <= pos < len(chars) and chars[pos] != "|":
+            chars[pos] = mark
+
+
+def map_interval_boundary(inner: int, tail: int, head: int, boundary_index: int):
+    total = (head + 1) - tail
+    if total <= 0:
+        return 0
+
+    offset = boundary_index - tail
+    mapped = (offset * inner) // total
+    mapped = max(0, min(inner, mapped))
+    return mapped
+
+
+def render_bar(width: int,
+               tail: int,
+               head: int,
+               read_start: int,
+               read_end: int,
+               read_history,
+               show_current_region: bool = False,
                show_half_marker: bool = False) -> str:
     if width < 6:
         return " " * width
@@ -444,7 +689,7 @@ def render_bar(width: int, tail: int, head: int, read: int, read_history,
     if inner < 1:
         inner = 1
 
-    chars = ["-"] * inner
+    chars = [TIMELINE_CHAR] * inner
     left = " "
     right = " "
 
@@ -452,23 +697,41 @@ def render_bar(width: int, tail: int, head: int, read: int, read_history,
         chars[(inner - 1) // 2] = "|"
 
     for old_tail, old_head, old_read in read_history:
-        where, mapped = map_read_position(inner, old_tail, old_head, old_read)
+        where, mapped = map_index_position(inner, old_tail, old_head, old_read)
 
         if where == "inside":
-            chars[mapped] = "r"
+            if chars[mapped] != "|":
+                chars[mapped] = HISTORY_MARK_CHAR
         elif where == "left":
-            left = "r"
+            left = HISTORY_MARK_CHAR
         elif where == "right":
-            right = "r"
+            right = HISTORY_MARK_CHAR
 
-    where, mapped = map_read_position(inner, tail, head, read)
+    if show_current_region:
+        if read_start > read_end:
+            read_start, read_end = read_end, read_start
 
-    if where == "inside":
-        chars[mapped] = "R"
-    elif where == "left":
-        left = "R"
-    elif where == "right":
-        right = "R"
+        if read_start < tail:
+            left = CURRENT_REGION_CHAR
+
+        if read_end > (head + 1):
+            right = CURRENT_REGION_CHAR
+
+        visible_start = max(read_start, tail)
+        visible_end = min(read_end, head + 1)
+
+        if visible_start < visible_end:
+            mapped_start = map_interval_boundary(
+                inner, tail, head, visible_start
+            )
+            mapped_end = map_interval_boundary(
+                inner, tail, head, visible_end
+            )
+
+            if mapped_end <= mapped_start:
+                mapped_end = min(inner, mapped_start + 1)
+
+            paint_region(chars, mapped_start, mapped_end, CURRENT_REGION_CHAR)
 
     return left + "|" + "".join(chars) + "|" + right
 
@@ -500,8 +763,10 @@ def render_stream_line(label: str, state: dict, total_width: int) -> str:
         bar_width,
         state["tail_index"],
         state["head_index"],
-        state["read_index"],
+        state["read_start_index"],
+        state["read_end_index"],
         state["read_history"],
+        show_current_region=(state["mxl_status"] == MXL_STATUS_OK),
         show_half_marker=(label == "AUDIO"),
     )
 
@@ -553,7 +818,7 @@ def render_too_late_header() -> str:
         f"{'':<{TL_STATS_LABEL_WIDTH}}  "
         f"{'too_late':>{STATS_TOO_LATE_WIDTH}}  "
         f"{'mean':>{STATS_TIME_WIDTH}}  "
-        f"last {TOO_LATE_HISTORY_DISPLAY_LEN} OK->TOO_LATE|margin"
+        f"last {TOO_LATE_HISTORY_DISPLAY_LEN} OK->TOO_LATE|ok_margin|tl_margin"
     )
 
 
@@ -568,8 +833,9 @@ def render_too_late_row(label: str, state: dict) -> str:
         )
 
     recent_values = "  ".join(
-        format_interval_margin(interval_ms, margin_units)
-        for interval_ms, margin_units in too_late_timing["recent_pairs"]
+        format_interval_margins(interval_ms, ok_margin_units, tl_margin_units)
+        for interval_ms, ok_margin_units, tl_margin_units
+        in too_late_timing["recent_pairs"]
     )
 
     if not recent_values:
@@ -620,24 +886,33 @@ def format_elapsed(seconds: float) -> str:
 
 
 def compute_elapsed_fps(video: dict, elapsed_seconds: float):
-    ok_event_count = video["timing"]["ok_event_count"]
-    if elapsed_seconds <= 0.0 or ok_event_count <= 0:
+    ok_video_frame_count = video["ok_video_frame_count"]
+    if elapsed_seconds <= 0.0 or ok_video_frame_count <= 0:
         return "-"
-    return f"{ok_event_count / elapsed_seconds:.2f}"
+    return f"{ok_video_frame_count / elapsed_seconds:.2f}"
+
+
+def compute_elapsed_sps(audio: dict, elapsed_seconds: float):
+    ok_audio_sample_count = audio["ok_audio_sample_count"]
+    if elapsed_seconds <= 0.0 or ok_audio_sample_count <= 0:
+        return "-"
+    return f"{ok_audio_sample_count / elapsed_seconds:.0f}"
 
 
 def draw_ui(stdscr,
             start_monotonic: float,
             video: dict,
             audio: dict,
-            paused: bool):
+            paused: bool,
+            ffmpeg_status: dict,
+            host_status: dict):
     stdscr.erase()
     rows, cols = stdscr.getmaxyx()
 
     elapsed_seconds = time.monotonic() - start_monotonic
     elapsed = format_elapsed(elapsed_seconds)
     elapsed_fps = compute_elapsed_fps(video, elapsed_seconds)
-    host_status = format_host_status()
+    elapsed_sps = compute_elapsed_sps(audio, elapsed_seconds)
     paused_text = "   PAUSED" if paused else ""
 
     safe_addnstr(
@@ -648,6 +923,7 @@ def draw_ui(stdscr,
             f"FFmpeg MXL diagnostic monitor"
             f"   elapsed: {elapsed}"
             f"   elapsed FPS: {elapsed_fps}"
+            f"   elapsed SPS: {elapsed_sps}"
             f"{paused_text}"
         ),
         cols - 1,
@@ -668,8 +944,9 @@ def draw_ui(stdscr,
     safe_addnstr(stdscr, 14, 0, render_exec_row("VIDEO EX", video), cols - 1)
     safe_addnstr(stdscr, 15, 0, render_exec_row("AUDIO EX", audio), cols - 1)
 
-    safe_addnstr(stdscr, rows - 3, 0, "q quit   p pause/resume UI   c clear/restart", cols - 1)
-    safe_addnstr(stdscr, rows - 1, 0, host_status, cols - 1)
+    safe_addnstr(stdscr, rows - 4, 0, "q quit   p pause/resume UI   c clear/restart", cols - 1)
+    safe_addnstr(stdscr, rows - 2, 0, format_ffmpeg_status(ffmpeg_status), cols - 1)
+    safe_addnstr(stdscr, rows - 1, 0, format_host_status(host_status), cols - 1)
     stdscr.refresh()
 
 
@@ -746,7 +1023,9 @@ def handle_keypress(key: int,
 
 
 def run_ui(stdscr,
-           sock: socket.socket):
+           sock: socket.socket,
+           ffmpeg_status: dict,
+           host_status: dict):
     curses.curs_set(0)
     curses.noecho()
     curses.cbreak()
@@ -755,6 +1034,12 @@ def run_ui(stdscr,
 
     start_monotonic, video, audio = reset_monitor_state()
     paused = False
+    status_state = {
+        "last_sample_monotonic": None,
+    }
+
+    update_dynamic_statuses(host_status, ffmpeg_status)
+    status_state["last_sample_monotonic"] = time.monotonic()
 
     draw_ui(
         stdscr,
@@ -762,6 +1047,8 @@ def run_ui(stdscr,
         video,
         audio,
         paused,
+        ffmpeg_status,
+        host_status,
     )
 
     sock_fd = sock.fileno()
@@ -782,6 +1069,15 @@ def run_ui(stdscr,
             if not _running:
                 break
             continue
+
+        now_monotonic = time.monotonic()
+        maybe_update_dynamic_statuses(
+            host_status,
+            ffmpeg_status,
+            status_state,
+            paused,
+            now_monotonic,
+        )
 
         if sock_fd in readable:
             handle_socket_ready(sock, video, audio)
@@ -808,6 +1104,8 @@ def run_ui(stdscr,
                 video,
                 audio,
                 paused,
+                ffmpeg_status,
+                host_status,
             )
 
 
@@ -857,6 +1155,9 @@ def main():
     if os.path.exists(args.client_socket):
         os.unlink(args.client_socket)
 
+    ffmpeg_status = make_ffmpeg_status(args.server_socket)
+    host_status = make_host_status()
+
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 
     try:
@@ -868,6 +1169,8 @@ def main():
         curses.wrapper(
             run_ui,
             sock,
+            ffmpeg_status,
+            host_status,
         )
 
     finally:

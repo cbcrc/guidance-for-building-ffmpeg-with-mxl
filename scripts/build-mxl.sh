@@ -101,12 +101,7 @@ build_variant() {
     log "testing MXL preset $preset with shared $shared..."
     cd "$variant_build_dir"
 
-    # NOTE: temporarily disable the test:
-    #   "DomainWatcher thread start/stop behavior"
-    # because it is randomly failing in v1.0.0.
-    # MXL BUG: TBD
     safer_ctest "$variant_build_dir"/ctest_output.log \
-                -E "DomainWatcher thread start/stop behavior" \
                 --test-dir "$variant_build_dir" --stop-on-failure --output-on-failure
 
     cmake --build "$variant_build_dir" -j --target doc
