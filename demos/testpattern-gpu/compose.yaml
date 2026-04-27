@@ -150,4 +150,4 @@ services:
       - "8189:8189/udp"
       - "9997:9997"
     volumes:
-      - ./mediamtx.yml:/mediamtx.yml:ro
+      - ../mediamtx.yml:/mediamtx.yml:ro

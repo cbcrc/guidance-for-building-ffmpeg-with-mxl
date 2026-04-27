@@ -109,13 +109,9 @@ services:
         target: /domain
     environment:
       # --- Required Variables ---
-      # Path to the MXL domain (mapped via volume)
       - MXL_DOMAIN=/domain
-      # The ID of the video stream to capture
       - VIDEO_ID=fe781cad-8a82-4b8e-a3c2-f833c70ac73e
-      # The ID of the audio stream to capture
       - AUDIO_ID=ca28b9ff-9d44-41ba-9c88-99329e7995a6
-      # The destination RTSP URL where the transcoded stream will be pushed
       - RTSP_URL=rtsp://${MEDIAMTX_HOST:-127.0.0.1}:8554/ffmpeg"
       #  --- Optional ---
       - FFMPEG_LOGLEVEL=info
@@ -140,4 +136,4 @@ services:
       - "8189:8189/udp"
       - "9997:9997"
     volumes:
-      - ./mediamtx.yml:/mediamtx.yml:ro
+      - ../mediamtx.yml:/mediamtx.yml:ro

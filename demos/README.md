@@ -18,6 +18,7 @@ graph LR
 ## Startup the services
 
 ```bash
+cd <demo_dir>
 export MEDIAMTX_HOST=X.X.X.X # default is 127.0.0.1
 docker compose up -d 
 ```
