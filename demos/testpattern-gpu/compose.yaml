@@ -120,6 +120,8 @@ services:
         target: /domain
     environment:
       # --- Required Variables ---
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=video
       - MXL_DOMAIN=/domain
       - VIDEO_ID=fe781cad-8a82-4b8e-a3c2-f833c70ac73e
       - AUDIO_ID=ca28b9ff-9d44-41ba-9c88-99329e7995a6
