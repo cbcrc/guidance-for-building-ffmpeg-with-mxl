@@ -112,11 +112,12 @@ services:
       - MXL_DOMAIN=/domain
       - VIDEO_ID=fe781cad-8a82-4b8e-a3c2-f833c70ac73e
       - AUDIO_ID=ca28b9ff-9d44-41ba-9c88-99329e7995a6
-      - RTSP_URL=rtsp://${MEDIAMTX_HOST:-127.0.0.1}:8554/ffmpeg"
+      - RTSP_URL=rtsp://${MEDIAMTX_HOST:-127.0.0.1}:8554/ffmpeg
       #  --- Optional ---
       - FFMPEG_LOGLEVEL=info
       - FFMPEG_MODE=cpu
       - RTSP_TRANSPORT=tcp
+      - V_BLOCKING=0
       - A_GRAIN_INDEX_INIT=1
       - V_GRAIN_INDEX_INIT=1
 
