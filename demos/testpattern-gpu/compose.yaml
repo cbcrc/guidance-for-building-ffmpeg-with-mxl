@@ -9,7 +9,7 @@ services:
     restart: no
 
   ffmpeg-source:
-    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
+    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
     depends_on:
       - init
     restart: unless-stopped
@@ -52,7 +52,7 @@ services:
       - "/domain"
 
   ffmpeg-probe:
-    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
+    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
     depends_on:
       - ffmpeg-source
     entrypoint: "/opt/bin/ffprobe"
@@ -65,7 +65,7 @@ services:
     restart: no
 
   ffmpeg-dest-v:
-    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
+    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
     depends_on:
       - mediamtx
       - ffmpeg-source
@@ -84,7 +84,7 @@ services:
       -f rtsp -rtsp_transport tcp rtsp://${MEDIAMTX_HOST:-127.0.0.1}:8554/ffmpeg-v"
 
   ffmpeg-dest-a:
-    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
+    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
     depends_on:
       - mediamtx
       - ffmpeg-source
@@ -101,7 +101,7 @@ services:
       -f rtsp -rtsp_transport tcp rtsp://${MEDIAMTX_HOST:-127.0.0.1}:8554/ffmpeg-a"
 
   ffmpeg-dest:
-    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0
+    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
     depends_on:
       - mediamtx
       - ffmpeg-source
