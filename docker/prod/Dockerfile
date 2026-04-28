@@ -79,7 +79,8 @@ RUN cd /src/mxl; \
 
 RUN cd /src/FFmpeg; \
     echo "=============================="; \
-    echo "FFmpeg version: missing #FIXME";
+    echo "FFmpeg version: missing"; \
+    git describe --tags;
 
 #===================================================================================================
 
