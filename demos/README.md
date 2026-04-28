@@ -1,5 +1,7 @@
 # Demos
 
+## Example: Reel playback + rolling text
+
 ```mermaid
 graph LR
     subgraph "FFmpeg-MXL pipeline"
@@ -15,11 +17,21 @@ graph LR
     end
 ```
 
+## List of demos and test results
+
+|Demo | Details | Status |
+|---|---|---|
+| Simple MXL Reader | GPU transcode | tested with GVAMPP: OK |
+| Reel playback | + rolling text | jittery |
+| Test Pattern Generator | GPU transcode | jittery |
+
+# Usage
+
 ## Startup the services
 
 ```bash
-cd <demo_dir>
 export MEDIAMTX_HOST=X.X.X.X # default is 127.0.0.1
+cd <demo_dir>
 docker compose up -d 
 ```
 

@@ -30,6 +30,8 @@ services:
       - "/tmp/demo_reel.ts"
       - "-map"
       - "0:v"
+      - "-vf"
+      - "drawtext=text='CBC/RC - BREAKING NEWS - FFmpeg now supports MXL!':x='mod(w-t*200, w+tw)-tw':y=h-th-50:fontfile=/usr/share/fonts/truetype/freefont/FreeSansBold.ttf:fontcolor=white:fontsize=100:shadowcolor=red:shadowx=5:shadowy=5"
       - "-c:v"
       - "v210"
       - "-f"

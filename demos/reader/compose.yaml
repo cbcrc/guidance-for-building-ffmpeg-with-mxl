@@ -1,0 +1,31 @@
+services:
+  ffmpeg-dest:
+    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
+    restart: unless-stopped
+    network_mode: "host"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - type: bind
+        source: /dev/shm/mxl/gv
+        target: /domain
+    environment:
+      # --- Required Variables ---
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=video
+      - MXL_DOMAIN=/domain
+      - VIDEO_ID=190b18d2-5531-4eb2-88bd-11972d377bfa
+      - AUDIO_ID=9490685e-5385-45eb-afca-878786d5392c
+      - RTSP_URL=rtsp://${MEDIAMTX_HOST:-127.0.0.1}:8554/gv
+      #  --- Optional ---
+      - FFMPEG_LOGLEVEL=info
+      - FFMPEG_MODE=gpu
+      - RTSP_TRANSPORT=tcp
+      - V_BLOCKING=0
+      - A_GRAIN_INDEX_INIT=1
+      - V_GRAIN_INDEX_INIT=1
