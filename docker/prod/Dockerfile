@@ -79,7 +79,7 @@ RUN cd /src/mxl; \
 
 RUN cd /src/FFmpeg; \
     echo "=============================="; \
-    echo "FFmpeg version: missing"; \
+    echo "FFmpeg version:"; \
     git describe --tags;
 
 #===================================================================================================
@@ -87,12 +87,9 @@ RUN cd /src/FFmpeg; \
 FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    zlib1g \
     libfreetype6 \
     libharfbuzz0b \
     fonts-freefont-ttf \
-    nvidia-cuda-toolkit \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /build/ffmpeg/install/Linux-GCC-Release/static/bin /opt/bin
