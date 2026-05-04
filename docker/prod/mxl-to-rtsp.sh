@@ -42,7 +42,7 @@ Required environment:
 
 Optional environment:
   FFMPEG_DEMUX
-        Select 'single' or 'multi' demux
+        Select 'single' (video only), 'combined' (in one thread) or 'multi' (2 threads) demux
         Default: 'multi'
   FFMPEG_MODE
         Select 'cpu' or 'gpu' H.264 encoding
@@ -140,16 +140,27 @@ case "$FFMPEG_MODE" in
     gpu|cpu)
         ;;
     *)
-        echo "Error: FFMPEG_MODE must be 'gpu' or 'cpu'" >&2
+        echo Error:
+        usage | grep -A2 FFMPEG_MODE >&2
         exit 1
         ;;
 esac
 
+A_INPUT="mxl://${MXL_DOMAIN}?id=${AUDIO_ID}"
+V_INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}"
+
 case "$FFMPEG_DEMUX" in
-    multi|single)
-    ;;
+    multi)
+        ;;
+    combined)
+        AV_INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}&id=${AUDIO_ID}"
+        ;;
+    single)
+        AV_INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}"
+        ;;
     *)
-        echo "Error: FFMPEG_DEMUX must be 'multi' or 'single'" >&2
+        echo Error:
+        usage | grep -A2 FFMPEG_DEMUX >&2
         exit 1
         ;;
 esac
@@ -158,14 +169,11 @@ case "$RTSP_TRANSPORT" in
     tcp|udp)
         ;;
     *)
-        echo "Error: RTSP_TRANSPORT must be 'tcp' or 'udp'" >&2
+        echo Error:
+        usage | grep -A2 RTSP_TRANSPORT >&2
         exit 1
         ;;
 esac
-
-AV_INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}&id=${AUDIO_ID}"
-A_INPUT="mxl://${MXL_DOMAIN}?id=${AUDIO_ID}"
-V_INPUT="mxl://${MXL_DOMAIN}?id=${VIDEO_ID}"
 
 echo "Starting FFmpeg MXL to RTSP transcoder"
 echo "FFmpeg:      $FFMPEG"
@@ -390,12 +398,16 @@ run_ffmpeg() {
         gpu:multi)
             run_ffmpeg_gpu_multi_demux
             ;;
+        gpu:combined)
+            ;&
         gpu:single)
             run_ffmpeg_gpu_single_demux
             ;;
         cpu:multi)
             run_ffmpeg_cpu_multi_demux
             ;;
+        cpu:combined)
+            ;&
         cpu:single)
             run_ffmpeg_cpu_single_demux
             ;;
