@@ -6,6 +6,12 @@
 # video frames and audio sample buffer events based on timestamps in
 # the diagnostic event stream.
 #
+# It also tracks read safety margins, reporting low-tail statistics that
+# characterize how close reads get to the TOO_LATE threshold under load.
+# Video safety margin is the distance from tail to read_index. Audio safety
+# margin is the distance from tail to the start of the audio read region,
+# minus half of the current ring depth.
+#
 # It also tracks OK to TOO_LATE intervals, reporting the time from the
 # last successful read to the subsequent TOO_LATE event, along with the
 # buffer margin at the preceding OK. Buffer margin is the distance from
@@ -28,7 +34,7 @@
 # To build a standalone executable, the _cffi_backend` module must be
 # explicitly included using PyInstaller hidden imports:
 #
-# $ pyinstaller --onefile --hidden-import _cffi_backend ffmpeg_mxl_diag_monitor.py
+# $ pyinstaller --onedir --hidden-import _cffi_backend ffmpeg_mxl_diag_monitor.py
 
 import argparse
 import curses
@@ -62,6 +68,7 @@ MXL_DIAG_MSG_AUDIO_READ = 4
 # encoded mxl status values:
 MXL_STATUS_OK = 0
 MXL_ERR_OUT_OF_RANGE_TOO_LATE = 3
+MXL_ERR_OUT_OF_RANGE_TOO_EARLY = 4
 #
 # client side protocol encodings (see server side mxl_diag_msg):
 HEADER_FMT = "<HHH10s"
@@ -105,6 +112,8 @@ DEPTH_WIDTH = 5
 # stats table widths
 OK_STATS_LABEL_WIDTH = 8
 TL_STATS_LABEL_WIDTH = 8
+SAFETY_STATS_LABEL_WIDTH = 10
+SAFETY_STATUS_WIDTH = 8
 EX_STATS_LABEL_WIDTH = 8
 STATS_TIME_WIDTH = 9
 STATS_COUNT_WIDTH = 9
@@ -151,6 +160,21 @@ class TDigestEstimator:
         if self.digest.weight <= 0:
             return None
         return self.digest.percentile(99.9)
+
+    def p1_estimate(self):
+        if self.digest.weight <= 0:
+            return None
+        return self.digest.percentile(1)
+
+    def p0_5_estimate(self):
+        if self.digest.weight <= 0:
+            return None
+        return self.digest.percentile(0.5)
+
+    def p0_1_estimate(self):
+        if self.digest.weight <= 0:
+            return None
+        return self.digest.percentile(0.1)
 
 
 def on_signal(signum, frame):
@@ -257,6 +281,12 @@ def format_margin(value):
     return str(value)
 
 
+def format_safety_margin(value):
+    if value is None:
+        return "-"
+    return f"{value:.1f}"
+
+
 def format_interval_margins(interval_ms, ok_margin_units, tl_margin_units):
     return (
         f"{format_ms(interval_ms)}"
@@ -313,6 +343,35 @@ def resolve_pid_from_server_socket(server_socket: str) -> int:
         )
 
     return pid_matches[0]
+
+
+def resolve_pid_from_cmdline_socket_path(server_socket: str):
+    needle = server_socket.encode()
+
+    for proc_name in os.listdir("/proc"):
+        if not proc_name.isdigit():
+            continue
+
+        cmdline_path = os.path.join("/proc", proc_name, "cmdline")
+
+        try:
+            with open(cmdline_path, "rb") as f:
+                cmdline = f.read()
+        except OSError:
+            continue
+
+        if needle not in cmdline:
+            continue
+
+        if b"ffmpeg" not in cmdline:
+            continue
+
+        try:
+            return int(proc_name)
+        except ValueError:
+            continue
+
+    return None
 
 
 def read_ffmpeg_sched_info(pid: int) -> dict:
@@ -420,7 +479,23 @@ def make_host_status() -> dict:
 
 
 def make_ffmpeg_status(server_socket: str) -> dict:
-    pid = resolve_pid_from_server_socket(server_socket)
+    pid = None
+
+    try:
+        pid = resolve_pid_from_server_socket(server_socket)
+    except RuntimeError:
+        pass
+
+    if pid is None:
+        pid = resolve_pid_from_cmdline_socket_path(server_socket)
+
+    if pid is None:
+        return {
+            "pid": "unknown",
+            "sched_text": "unknown",
+            "cpu_pct": None,
+        }
+
     sched_info = read_ffmpeg_sched_info(pid)
 
     return {
@@ -436,7 +511,10 @@ def update_dynamic_statuses(host_status: dict,
     host_status.clear()
     host_status.update(fresh_host_status)
 
-    ffmpeg_status["cpu_pct"] = sample_ffmpeg_cpu(ffmpeg_status["pid"])
+    if isinstance(ffmpeg_status["pid"], int):
+        ffmpeg_status["cpu_pct"] = sample_ffmpeg_cpu(ffmpeg_status["pid"])
+    else:
+        ffmpeg_status["cpu_pct"] = None
 
 
 def maybe_update_dynamic_statuses(host_status: dict,
@@ -485,6 +563,17 @@ def make_exec_state():
     }
 
 
+def make_safety_margin_state():
+    return {
+        "count": 0,
+        "sum": 0.0,
+        "last": None,
+        "min": None,
+        "read_unit_size": None,
+        "estimator": TDigestEstimator(),
+    }
+
+
 def make_stream_state():
     return {
         "have_data": False,
@@ -502,6 +591,7 @@ def make_stream_state():
         "timing": make_timing_state(),
         "too_late_timing": make_too_late_timing_state(),
         "exec": make_exec_state(),
+        "safety_margin": make_safety_margin_state(),
     }
 
 
@@ -540,6 +630,39 @@ def compute_tl_margin_units(msg: dict) -> int:
         return msg["read_index"] - msg["read_size"] + 1 - msg["tail_index"]
 
     return msg["read_index"] - msg["tail_index"]
+
+
+def compute_read_safety_margin(msg: dict) -> float:
+    if "read_size" in msg:
+        ring_depth = msg["head_index"] - msg["tail_index"] + 1
+        audio_read_margin = (
+            msg["read_index"] - msg["read_size"] + 1 - msg["tail_index"]
+        )
+        return audio_read_margin - (ring_depth / 2.0)
+
+    video_read_margin = msg["read_index"] - msg["tail_index"]
+    return float(video_read_margin)
+
+
+def compute_read_unit_size(msg: dict) -> float:
+    if "read_size" in msg:
+        return float(msg["read_size"])
+
+    return 1.0
+
+
+def update_safety_margin_state(safety_margin_state: dict,
+                               margin: float,
+                               read_unit_size: float):
+    safety_margin_state["count"] += 1
+    safety_margin_state["sum"] += margin
+    safety_margin_state["last"] = margin
+    safety_margin_state["read_unit_size"] = read_unit_size
+    safety_margin_state["estimator"].add(margin)
+
+    min_margin = safety_margin_state["min"]
+    if min_margin is None or margin < min_margin:
+        safety_margin_state["min"] = margin
 
 
 def update_too_late_timing_on_ok(too_late_timing: dict, timestamp_ns: int,
@@ -609,6 +732,14 @@ def update_stream_state(state: dict, msg: dict):
     state["timestamp"] = msg["timestamp"]
 
     tl_margin_units = compute_tl_margin_units(msg)
+    if msg["mxl_status"] != MXL_ERR_OUT_OF_RANGE_TOO_EARLY:
+        read_safety_margin = compute_read_safety_margin(msg)
+        read_unit_size = compute_read_unit_size(msg)
+        update_safety_margin_state(
+            state["safety_margin"],
+            read_safety_margin,
+            read_unit_size,
+        )
 
     if msg["mxl_status"] == MXL_ERR_OUT_OF_RANGE_TOO_LATE:
         state["too_late_count"] += 1
@@ -813,6 +944,67 @@ def render_stats_row(label: str, state: dict) -> str:
     )
 
 
+def compute_safety_status(safety_margin_state: dict) -> str:
+    min_margin = safety_margin_state["min"]
+    read_unit_size = safety_margin_state["read_unit_size"]
+
+    if min_margin is not None and min_margin < 0:
+        return "FAIL"
+
+    if read_unit_size is None:
+        return ""
+
+    p0_1_margin = safety_margin_state["estimator"].p0_1_estimate()
+    if p0_1_margin is None:
+        return ""
+
+    if p0_1_margin < read_unit_size:
+        return "CRITICAL"
+
+    if p0_1_margin < (2.0 * read_unit_size):
+        return "WARN"
+
+    return ""
+
+
+def render_safety_margin_header() -> str:
+    return (
+        f"{'':<{SAFETY_STATS_LABEL_WIDTH}}"
+        f"{'last':>{STATS_TIME_WIDTH}}  "
+        f"{'mean':>{STATS_TIME_WIDTH}}  "
+        f"{'med':>{STATS_TIME_WIDTH}}  "
+        f"{'p1':>{STATS_TIME_WIDTH}}  "
+        f"{'p0.5':>{STATS_TIME_WIDTH}}  "
+        f"{'p0.1':>{STATS_TIME_WIDTH}}  "
+        f"{'min':>{STATS_TIME_WIDTH}}  "
+        f"{'n':>{STATS_COUNT_WIDTH}}  "
+        f"{'status':>{SAFETY_STATUS_WIDTH}}"
+    )
+
+
+def render_safety_margin_row(label: str, state: dict) -> str:
+    safety_margin = state["safety_margin"]
+    estimator = safety_margin["estimator"]
+    status = compute_safety_status(safety_margin)
+
+    mean_margin = None
+    if safety_margin["count"] > 0:
+        mean_margin = safety_margin["sum"] / safety_margin["count"]
+
+    return (
+        f"{label:<{SAFETY_STATS_LABEL_WIDTH}}"
+        f"{format_safety_margin(safety_margin['last']):>{STATS_TIME_WIDTH}}  "
+        f"{format_safety_margin(mean_margin):>{STATS_TIME_WIDTH}}  "
+        f"{format_safety_margin(estimator.median_estimate()):>{STATS_TIME_WIDTH}}  "
+        f"{format_safety_margin(estimator.p1_estimate()):>{STATS_TIME_WIDTH}}  "
+        f"{format_safety_margin(estimator.p0_5_estimate()):>{STATS_TIME_WIDTH}}  "
+        f"{format_safety_margin(estimator.p0_1_estimate()):>{STATS_TIME_WIDTH}}  "
+        f"{format_safety_margin(safety_margin['min']):>{STATS_TIME_WIDTH}}  "
+        f"{safety_margin['count']:>{STATS_COUNT_WIDTH}}  "
+        f"{status:>{SAFETY_STATUS_WIDTH}}"
+    )
+
+
 def render_too_late_header() -> str:
     return (
         f"{'':<{TL_STATS_LABEL_WIDTH}}  "
@@ -936,13 +1128,17 @@ def draw_ui(stdscr,
     safe_addnstr(stdscr, 6, 0, render_stats_row("VIDEO OK", video), cols - 1)
     safe_addnstr(stdscr, 7, 0, render_stats_row("AUDIO OK", audio), cols - 1)
 
-    safe_addnstr(stdscr, 9, 0, render_too_late_header(), cols - 1)
-    safe_addnstr(stdscr, 10, 0, render_too_late_row("VIDEO TL", video), cols - 1)
-    safe_addnstr(stdscr, 11, 0, render_too_late_row("AUDIO TL", audio), cols - 1)
+    safe_addnstr(stdscr, 9, 0, render_safety_margin_header(), cols - 1)
+    safe_addnstr(stdscr, 10, 0, render_safety_margin_row("VIDEO SAFE", video), cols - 1)
+    safe_addnstr(stdscr, 11, 0, render_safety_margin_row("AUDIO SAFE", audio), cols - 1)
 
-    safe_addnstr(stdscr, 13, 0, render_exec_header(), cols - 1)
-    safe_addnstr(stdscr, 14, 0, render_exec_row("VIDEO EX", video), cols - 1)
-    safe_addnstr(stdscr, 15, 0, render_exec_row("AUDIO EX", audio), cols - 1)
+    safe_addnstr(stdscr, 13, 0, render_too_late_header(), cols - 1)
+    safe_addnstr(stdscr, 14, 0, render_too_late_row("VIDEO TL", video), cols - 1)
+    safe_addnstr(stdscr, 15, 0, render_too_late_row("AUDIO TL", audio), cols - 1)
+
+    safe_addnstr(stdscr, 17, 0, render_exec_header(), cols - 1)
+    safe_addnstr(stdscr, 18, 0, render_exec_row("VIDEO EX", video), cols - 1)
+    safe_addnstr(stdscr, 19, 0, render_exec_row("AUDIO EX", audio), cols - 1)
 
     safe_addnstr(stdscr, rows - 4, 0, "q quit   p pause/resume UI   c clear/restart", cols - 1)
     safe_addnstr(stdscr, rows - 2, 0, format_ffmpeg_status(ffmpeg_status), cols - 1)
