@@ -8,6 +8,8 @@
 #
 # It also tracks read safety margins, reporting low-tail statistics that
 # characterize how close reads get to the TOO_LATE threshold under load.
+# Safety status is based on the P0.01 low-tail margin, with FAIL still
+# based on any observed negative minimum margin.
 # Video safety margin is the distance from tail to read_index. Audio safety
 # margin is the distance from tail to the start of the audio read region,
 # minus half of the current ring depth.
@@ -129,6 +131,7 @@ TOO_LATE_HISTORY_DISPLAY_LEN = 5
 TIMELINE_CHAR = "-"
 CURRENT_REGION_CHAR = "="
 HISTORY_MARK_CHAR = ":"
+AUDIO_MIN_SAFETY_MARK_CHAR = "^"
 
 # exit signal flag
 _running = True
@@ -175,6 +178,16 @@ class TDigestEstimator:
         if self.digest.weight <= 0:
             return None
         return self.digest.percentile(0.1)
+
+    def p0_05_estimate(self):
+        if self.digest.weight <= 0:
+            return None
+        return self.digest.percentile(0.05)
+
+    def p0_01_estimate(self):
+        if self.digest.weight <= 0:
+            return None
+        return self.digest.percentile(0.01)
 
 
 def on_signal(signum, frame):
@@ -997,14 +1010,14 @@ def compute_safety_status(safety_margin_state: dict) -> str:
     if read_unit_size is None:
         return ""
 
-    p0_1_margin = safety_margin_state["estimator"].p0_1_estimate()
-    if p0_1_margin is None:
+    p0_01_margin = safety_margin_state["estimator"].p0_01_estimate()
+    if p0_01_margin is None:
         return ""
 
-    if p0_1_margin < read_unit_size:
+    if p0_01_margin < read_unit_size:
         return "CRITICAL"
 
-    if p0_1_margin < (2.0 * read_unit_size):
+    if p0_01_margin < (2.0 * read_unit_size):
         return "WARN"
 
     return ""
@@ -1016,9 +1029,9 @@ def render_safety_margin_header() -> str:
         f"{'last':>{STATS_TIME_WIDTH}}  "
         f"{'mean':>{STATS_TIME_WIDTH}}  "
         f"{'med':>{STATS_TIME_WIDTH}}  "
-        f"{'p1':>{STATS_TIME_WIDTH}}  "
-        f"{'p0.5':>{STATS_TIME_WIDTH}}  "
         f"{'p0.1':>{STATS_TIME_WIDTH}}  "
+        f"{'p0.05':>{STATS_TIME_WIDTH}}  "
+        f"{'p0.01':>{STATS_TIME_WIDTH}}  "
         f"{'min':>{STATS_TIME_WIDTH}}  "
         f"{'n':>{STATS_COUNT_WIDTH}}  "
         f"{'status':>{SAFETY_STATUS_WIDTH}}"
@@ -1039,9 +1052,9 @@ def render_safety_margin_row(label: str, state: dict) -> str:
         f"{format_safety_margin(safety_margin['last']):>{STATS_TIME_WIDTH}}  "
         f"{format_safety_margin(mean_margin):>{STATS_TIME_WIDTH}}  "
         f"{format_safety_margin(estimator.median_estimate()):>{STATS_TIME_WIDTH}}  "
-        f"{format_safety_margin(estimator.p1_estimate()):>{STATS_TIME_WIDTH}}  "
-        f"{format_safety_margin(estimator.p0_5_estimate()):>{STATS_TIME_WIDTH}}  "
         f"{format_safety_margin(estimator.p0_1_estimate()):>{STATS_TIME_WIDTH}}  "
+        f"{format_safety_margin(estimator.p0_05_estimate()):>{STATS_TIME_WIDTH}}  "
+        f"{format_safety_margin(estimator.p0_01_estimate()):>{STATS_TIME_WIDTH}}  "
         f"{format_safety_margin(safety_margin['min']):>{STATS_TIME_WIDTH}}  "
         f"{safety_margin['count']:>{STATS_COUNT_WIDTH}}  "
         f"{status:>{SAFETY_STATUS_WIDTH}}"
@@ -1113,6 +1126,58 @@ def safe_addnstr(stdscr, y: int, x: int, text: str, maxcols: int):
     stdscr.addnstr(y, x, text, min(maxcols, cols - x))
 
 
+def draw_audio_min_marker(stdscr,
+                          y: int,
+                          state: dict,
+                          total_width: int):
+    if not state["have_data"]:
+        return
+
+    min_margin = state["safety_margin"]["min"]
+    if min_margin is None:
+        return
+
+    tail = state["tail_index"]
+    head = state["head_index"]
+
+    ring_depth = head - tail + 1
+    if ring_depth <= 0:
+        return
+
+    min_index = int(round(
+        tail + (ring_depth / 2.0) + min_margin
+    ))
+
+    prefix_len = len(f"{'AUDIO':<5} {ring_depth:>{DEPTH_WIDTH}} ")
+    suffix_len = 2 + OK_WIDTH + 2 + ERROR_WIDTH
+
+    bar_width = total_width - prefix_len - suffix_len
+    if bar_width < 8:
+        bar_width = 8
+
+    inner = max(1, bar_width - 4)
+
+    where, mapped = map_index_position(
+        inner,
+        tail,
+        head,
+        min_index,
+    )
+
+    if where != "inside":
+        return
+
+    x = prefix_len + 1 + mapped
+
+    safe_addnstr(
+        stdscr,
+        y,
+        x,
+        AUDIO_MIN_SAFETY_MARK_CHAR,
+        1,
+    )
+
+
 def format_elapsed(seconds: float) -> str:
     total = int(seconds)
     hours, rem = divmod(total, 3600)
@@ -1167,21 +1232,28 @@ def draw_ui(stdscr,
     safe_addnstr(stdscr, 2, 0, render_stream_line("VIDEO", video, cols - 1), cols - 1)
     safe_addnstr(stdscr, 3, 0, render_stream_line("AUDIO", audio, cols - 1), cols - 1)
 
-    safe_addnstr(stdscr, 5, 0, render_stats_header(), cols - 1)
-    safe_addnstr(stdscr, 6, 0, render_stats_row("VIDEO OK", video), cols - 1)
-    safe_addnstr(stdscr, 7, 0, render_stats_row("AUDIO OK", audio), cols - 1)
+    draw_audio_min_marker(
+        stdscr,
+        4,
+        audio,
+        cols - 1,
+    )
 
-    safe_addnstr(stdscr, 9, 0, render_safety_margin_header(), cols - 1)
-    safe_addnstr(stdscr, 10, 0, render_safety_margin_row("VIDEO SAFE", video), cols - 1)
-    safe_addnstr(stdscr, 11, 0, render_safety_margin_row("AUDIO SAFE", audio), cols - 1)
+    safe_addnstr(stdscr, 6, 0, render_stats_header(), cols - 1)
+    safe_addnstr(stdscr, 7, 0, render_stats_row("VIDEO OK", video), cols - 1)
+    safe_addnstr(stdscr, 8, 0, render_stats_row("AUDIO OK", audio), cols - 1)
 
-    safe_addnstr(stdscr, 13, 0, render_too_late_header(), cols - 1)
-    safe_addnstr(stdscr, 14, 0, render_too_late_row("VIDEO TL", video), cols - 1)
-    safe_addnstr(stdscr, 15, 0, render_too_late_row("AUDIO TL", audio), cols - 1)
+    safe_addnstr(stdscr, 10, 0, render_safety_margin_header(), cols - 1)
+    safe_addnstr(stdscr, 11, 0, render_safety_margin_row("VIDEO SAFE", video), cols - 1)
+    safe_addnstr(stdscr, 12, 0, render_safety_margin_row("AUDIO SAFE", audio), cols - 1)
 
-    safe_addnstr(stdscr, 17, 0, render_exec_header(), cols - 1)
-    safe_addnstr(stdscr, 18, 0, render_exec_row("VIDEO EX", video), cols - 1)
-    safe_addnstr(stdscr, 19, 0, render_exec_row("AUDIO EX", audio), cols - 1)
+    safe_addnstr(stdscr, 14, 0, render_too_late_header(), cols - 1)
+    safe_addnstr(stdscr, 15, 0, render_too_late_row("VIDEO TL", video), cols - 1)
+    safe_addnstr(stdscr, 16, 0, render_too_late_row("AUDIO TL", audio), cols - 1)
+
+    safe_addnstr(stdscr, 18, 0, render_exec_header(), cols - 1)
+    safe_addnstr(stdscr, 19, 0, render_exec_row("VIDEO EX", video), cols - 1)
+    safe_addnstr(stdscr, 20, 0, render_exec_row("AUDIO EX", audio), cols - 1)
 
     safe_addnstr(stdscr, rows - 4, 0, "q quit   p pause/resume UI   c clear/restart", cols - 1)
     safe_addnstr(stdscr, rows - 2, 0, format_ffmpeg_status(ffmpeg_status), cols - 1)
