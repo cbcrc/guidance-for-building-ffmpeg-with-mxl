@@ -344,12 +344,20 @@ def resolve_pid_from_server_socket(server_socket: str) -> int:
 
     return pid_matches[0]
 
-
 def resolve_pid_from_cmdline_socket_path(server_socket: str):
     needle = server_socket.encode()
+    self_pid = os.getpid()
 
     for proc_name in os.listdir("/proc"):
         if not proc_name.isdigit():
+            continue
+
+        try:
+            pid = int(proc_name)
+        except ValueError:
+            continue
+
+        if pid == self_pid:
             continue
 
         cmdline_path = os.path.join("/proc", proc_name, "cmdline")
@@ -363,16 +371,19 @@ def resolve_pid_from_cmdline_socket_path(server_socket: str):
         if needle not in cmdline:
             continue
 
-        if b"ffmpeg" not in cmdline:
+        argv = [arg for arg in cmdline.split(b"\x00") if arg]
+
+        has_ffmpeg = any(
+            os.path.basename(arg.decode(errors="ignore")) == "ffmpeg"
+            for arg in argv
+        )
+
+        if not has_ffmpeg:
             continue
 
-        try:
-            return int(proc_name)
-        except ValueError:
-            continue
+        return pid
 
     return None
-
 
 def read_ffmpeg_sched_info(pid: int) -> dict:
     try:
