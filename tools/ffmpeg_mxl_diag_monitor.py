@@ -416,25 +416,52 @@ def read_ffmpeg_sched_info(pid: int) -> dict:
     }
 
 
-def sample_ffmpeg_cpu(pid: int):
+def read_proc_stat_cpu_ticks(pid: int):
     try:
-        result = subprocess.run(
-            ["ps", "-o", "%cpu=", "-p", str(pid)],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (subprocess.SubprocessError, OSError):
-        return None
-
-    output = result.stdout.strip()
-    if not output:
+        with open(f"/proc/{pid}/stat", "r", encoding="ascii") as f:
+            stat = f.read()
+    except OSError:
         return None
 
     try:
-        return float(output)
-    except ValueError:
+        close_paren = stat.rfind(")")
+        fields = stat[close_paren + 2:].split()
+
+        # After removing "pid (comm) ", fields[0] is proc stat field 3.
+        # utime is field 14, stime is field 15.
+        utime = int(fields[11])
+        stime = int(fields[12])
+    except (IndexError, ValueError):
         return None
+
+    return utime + stime
+
+
+def sample_ffmpeg_cpu(pid: int, cpu_sample_state: dict):
+    now_monotonic = time.monotonic()
+    cpu_ticks = read_proc_stat_cpu_ticks(pid)
+
+    if cpu_ticks is None:
+        cpu_sample_state.clear()
+        return None
+
+    previous_ticks = cpu_sample_state.get("cpu_ticks")
+    previous_monotonic = cpu_sample_state.get("monotonic")
+
+    cpu_sample_state["cpu_ticks"] = cpu_ticks
+    cpu_sample_state["monotonic"] = now_monotonic
+
+    if previous_ticks is None or previous_monotonic is None:
+        return None
+
+    elapsed_seconds = now_monotonic - previous_monotonic
+    if elapsed_seconds <= 0.0:
+        return None
+
+    ticks_per_second = os.sysconf(os.sysconf_names["SC_CLK_TCK"])
+    cpu_seconds = (cpu_ticks - previous_ticks) / ticks_per_second
+
+    return 100.0 * cpu_seconds / elapsed_seconds
 
 
 def format_ffmpeg_status(ffmpeg_status: dict) -> str:
@@ -494,6 +521,7 @@ def make_ffmpeg_status(server_socket: str) -> dict:
             "pid": "unknown",
             "sched_text": "unknown",
             "cpu_pct": None,
+            "cpu_sample_state": {},
         }
 
     sched_info = read_ffmpeg_sched_info(pid)
@@ -502,6 +530,7 @@ def make_ffmpeg_status(server_socket: str) -> dict:
         "pid": sched_info["pid"],
         "sched_text": sched_info["sched_text"],
         "cpu_pct": None,
+        "cpu_sample_state": {},
     }
 
 
@@ -512,7 +541,10 @@ def update_dynamic_statuses(host_status: dict,
     host_status.update(fresh_host_status)
 
     if isinstance(ffmpeg_status["pid"], int):
-        ffmpeg_status["cpu_pct"] = sample_ffmpeg_cpu(ffmpeg_status["pid"])
+        ffmpeg_status["cpu_pct"] = sample_ffmpeg_cpu(
+            ffmpeg_status["pid"],
+            ffmpeg_status["cpu_sample_state"],
+        )
     else:
         ffmpeg_status["cpu_pct"] = None
 
