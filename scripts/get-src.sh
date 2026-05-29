@@ -71,7 +71,7 @@ clone_ffmpeg_repo() {
     local src_dir="$1"
     cd "$src_dir"
 
-    git clone --single-branch --branch dmf-mxl/master --depth 1 https://github.com/cbcrc/FFmpeg.git
+    git clone --single-branch --branch dmf-mxl/master https://github.com/cbcrc/FFmpeg.git
 
     cd FFmpeg
     git switch --detach 5c5d593

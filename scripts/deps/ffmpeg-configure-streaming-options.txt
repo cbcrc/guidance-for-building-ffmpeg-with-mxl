@@ -14,6 +14,7 @@
 --enable-gpl
 --enable-libx264
 --enable-encoder=libx264
+--enable-decoder=h264
 --enable-filter=scale
 --enable-filter=format
 # gpu nvenc encode:
@@ -43,3 +44,7 @@
 --enable-protocol=file
 --enable-filter=showinfo
 --ignore-tests=source
+# text overlay
+--enable-filter=drawtext
+--enable-libfreetype
+--enable-libharfbuzz

@@ -46,11 +46,6 @@ FROM ubuntu:24.04 AS builder
 
 ARG UID=1000
 ARG GID=1000
-
-COPY scripts /scripts
-
-RUN echo "container" > /run/ffmpeg-build-context && /scripts/setup-env-all.sh --streaming
-
 RUN set -e; \
     if ! getent group "${GID}" >/dev/null; then \
         groupadd -g "${GID}" builder; \
@@ -61,6 +56,9 @@ RUN set -e; \
 
 RUN install -d -o ${UID} -g ${GID} /build
 RUN install -d -o ${UID} -g ${GID} /src
+
+COPY scripts /scripts
+RUN echo "container" > /run/ffmpeg-build-context && /scripts/setup-env-all.sh --streaming
 
 USER ${UID}:${GID}
 
@@ -74,12 +72,25 @@ RUN /scripts/build-mxl.sh /src /build --prod
 RUN /scripts/build-codecs.sh /src /build
 RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay ${FATE_SUITE_MIRROR:+--fate}
 
+RUN cd /src/mxl; \
+    echo "=============================="; \
+    echo "MXL version:"; \
+    git describe --tags;
+
+RUN cd /src/FFmpeg; \
+    echo "=============================="; \
+    echo "FFmpeg version:"; \
+    git describe --tags;
+
+#===================================================================================================
+
 FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    zlib1g \
- && rm -rf /var/lib/apt/lists/*
+    libfreetype6 \
+    libharfbuzz0b \
+    fonts-freefont-ttf \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /build/ffmpeg/install/Linux-GCC-Release/static/bin /opt/bin
 
@@ -87,3 +98,5 @@ COPY docker/prod/mxl-to-rtsp.sh /usr/local/bin/mxl-to-rtsp.sh
 RUN chmod +x /usr/local/bin/mxl-to-rtsp.sh
 
 ENTRYPOINT ["/usr/local/bin/mxl-to-rtsp.sh", "/opt/bin/ffmpeg"]
+
+LABEL org.opencontainers.image.source https://github.com/cbcrc/guidance-for-building-ffmpeg-with-mxl
