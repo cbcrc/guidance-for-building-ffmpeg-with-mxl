@@ -55,14 +55,6 @@ clone_mxl_repo() {
     # Fix for https://github.com/dmf-mxl/mxl/issues/446
     # Pending tagging of V1.0.1
     git switch --detach 80623d7
-
-    # optional patch
-    if has_opt "--mxl-patch" "$@"; then
-      local patchfile=""
-      get_opt patchfile "--mxl-patch" "$@"
-      log "MXL patch file: $patchfile"
-      git apply "$SCRIPT_DIR"/patches/"$patchfile"
-    fi
 }
 
 clone_ffmpeg_repo() {

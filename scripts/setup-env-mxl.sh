@@ -45,13 +45,10 @@ setup_environment() {
     read_list cmake_repo_apt_pkgs "deps/cmake-repo-apt-pkgs.txt"
     safe_sudo "install cmake repo dependencies" apt-get install -y --no-install-recommends "${cmake_repo_apt_pkgs[@]}"
     safe_sudo "update cmake repo" "$SCRIPT_DIR/deps/cmake-repo-upgrade.sh"
-
-    # setup ppa repo (if necessary)
-    safe_sudo "setup ppa repository" "$SCRIPT_DIR/deps/ppa-repo-add.sh"
-    
+ 
     # rustup installer
     "$SCRIPT_DIR/deps/install-rustup.sh"
-    
+
     # MXL build environment dependencies
     local -a config_opts_files=("deps/mxl-apt-pkgs.txt")
     if has_opt "--clang" "${SCRIPT_ARGS[@]}"; then

@@ -137,7 +137,7 @@ $ host-setup-and-build.sh ~/src ~/build --prod --allow-root
 
 ## Docker build
 
-### Install docker on the host (Ubuntu >= 20.04)
+### Install docker on the host (Ubuntu >= 24.04)
 
 ```bash
 $ sudo apt install docker.io docker-buildx
@@ -192,34 +192,6 @@ $ docker tag ffmpeg-mxl-prod:latest ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
 $ docker push ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
 ```
 
-## Ubuntu 20.04 Build (experimental)
-
-Ubuntu 20.04 support is experimental. The MXL build requires
-GCC 13. The FFmpeg build uses the OS-provided GCC 9. GCC 13 for Ubuntu
-20.04 is sourced from an [Ubuntu
-PPA](https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test)
-and may install more slowly than packages from the standard Ubuntu
-release archive.
-
-```bash
-$ get-src.sh ~/src --mxl-patch mxl-ubuntu20.04-build.diff
-```
-
-```bash
-$ host-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --prod --allow-root
-
-# Streaming builds are supported:
-$ host-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --skip-setup --prod --streaming --no-ffplay --allow-root
-
-# OR with docker with dedicated Dockerfile
-$ docker-setup-and-build.sh ~/src ~/build --mxl-gcc-preset GCC13 --mxl-cmake-config-args "-DBUILD_TOOLS=OFF" --dockerfile Dockerfile.ubuntu20.04.dev --prod --streaming --no-ffplay
-```
-
-Docker images built on Ubuntu 24.04 hosts are not guaranteed to be
-backward-compatible with Ubuntu 20.04 hosts. For reliable deployment
-on 20.04, images should be built using a 20.04 environment. See:
-[Docker Multi-platform builds](https://docs.docker.com/build/building/multi-platform/)
-
 ## Extended FFmpeg Build (experimental)
 
 Build support for an experimental *extended* configuration is
@@ -239,8 +211,6 @@ $ host-setup-and-build.sh ~/src ~/build --prod --allow-root --extended
 # OR
 $ docker-setup-and-build.sh ~/src ~/build --prod --extended
 ```
-
-The extended build has been tested on Ubuntu 20.04 and Ubuntu 24.04.
 
 ## FFmpeg FATE suite mirror
 

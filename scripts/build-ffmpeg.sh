@@ -53,16 +53,6 @@ ffmpeg_configure() {
     if (( include_fate_samples )); then
         cmd+=("--samples=$FFMPEG_FATE_SUITE")
     fi
-
-    # Statically link GCC-13 libstdc++ so the resulting binaries do
-    # not depend on the target system's libstdc++ version (workaround
-    # for compatibility with stock Ubuntu 20.04 systems and MXL GCC-13
-    # dependency).
-    if [[ "$linkage" == static ]]; then
-        local libstdcpp
-        libstdcpp="$(g++-13 -print-file-name=libstdc++.a)"
-        cmd+=("--extra-libs=$libstdcpp")
-    fi
     
     log_cmd "${cmd[@]}"
     "${cmd[@]}"
