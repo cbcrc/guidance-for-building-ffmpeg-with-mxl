@@ -50,7 +50,7 @@ setup_environment() {
     safe_sudo "setup ppa repository" "$SCRIPT_DIR/deps/ppa-repo-add.sh"
     
     # rustup installer
-    safe_sudo "install rustup" "$SCRIPT_DIR/deps/install-rustup.sh"
+    "$SCRIPT_DIR/deps/install-rustup.sh"
     
     # MXL build environment dependencies
     local -a config_opts_files=("deps/mxl-apt-pkgs.txt")
