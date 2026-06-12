@@ -17,10 +17,11 @@
 #   AUDIO_ID
 #   RTSP_TRANSPORT
 #   RTSP_URL
-#   FFMPEG_MOD
+#   FFMPEG_MODE
 #   FFMPEG_LOGLEVEL
+#   FFMPEG_RT_PRIORITY
 #
-# See `mxl-to-rtsp.sh --help` for runtime configuration details.
+# See `mxl-to-rtsp.py --help` for runtime configuration details.
 #
 # This image is intended to act as a parameterized appliance:
 # it provides a fixed FFmpeg+MXL runtime, while the source and
@@ -87,6 +88,7 @@ RUN cd /src/FFmpeg; \
 FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y \
+    python3 \
     libfreetype6 \
     libharfbuzz0b \
     fonts-freefont-ttf \
@@ -94,9 +96,9 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=builder /build/ffmpeg/install/Linux-GCC-Release/static/bin /opt/bin
 
-COPY docker/prod/mxl-to-rtsp.sh /usr/local/bin/mxl-to-rtsp.sh
-RUN chmod +x /usr/local/bin/mxl-to-rtsp.sh
+COPY docker/prod/mxl-to-rtsp.py /usr/local/bin/mxl-to-rtsp.py
+RUN chmod +x /usr/local/bin/mxl-to-rtsp.py
 
-ENTRYPOINT ["/usr/local/bin/mxl-to-rtsp.sh", "/opt/bin/ffmpeg"]
+ENTRYPOINT ["/usr/local/bin/mxl-to-rtsp.py", "/opt/bin/ffmpeg"]
 
 LABEL org.opencontainers.image.source https://github.com/cbcrc/guidance-for-building-ffmpeg-with-mxl
