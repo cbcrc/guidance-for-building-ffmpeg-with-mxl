@@ -82,6 +82,10 @@ build_variant() {
     local full_mxl_install_dir="$mxl_install/$mxl_preset/$linkage"
     export PKG_CONFIG_PATH="$full_mxl_install_dir"/lib/pkgconfig:"$full_mxl_install_dir"/x64-linux/lib/pkgconfig
 
+    # Note: match MXL build path convention
+    local build_dir="$FFMPEG_BUILD/$preset/$linkage"
+    local install_dir="$FFMPEG_INSTALL/$preset/$linkage"
+    
     if (( streaming )); then
         local codecs_install="$BUILD_DIR/codecs/install/Linux-GCC-Release/static/lib/pkgconfig"
         export PKG_CONFIG_PATH="$PKG_CONFIG_PATH":"$codecs_install"
@@ -97,7 +101,18 @@ build_variant() {
         unset LD_LIBRARY_PATH
         config_opts_files+=("deps/ffmpeg-configure-static-options.txt")
     else
-        export LD_LIBRARY_PATH="$full_mxl_install_dir"/lib:libswscale:libswresample:libavutil:libavformat:libavfilter:libavdevice:libavcodec
+        local -a ld_library_path=(
+            "$full_mxl_install_dir/lib"
+            "$build_dir/libswscale"
+            "$build_dir/libswresample"
+            "$build_dir/libavutil"
+            "$build_dir/libavformat"
+            "$build_dir/libavfilter"
+            "$build_dir/libavdevice"
+            "$build_dir/libavcodec"
+        )
+        export LD_LIBRARY_PATH
+        LD_LIBRARY_PATH=$(IFS=:; echo "${ld_library_path[*]}")        
         log_cmd "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
         config_opts_files+=("deps/ffmpeg-configure-shared-options.txt")
     fi
@@ -110,10 +125,6 @@ build_variant() {
         config_opts_files+=("deps/ffmpeg-configure-noplay-options.txt")
     fi
     
-    # Note: match MXL build path convention
-    local build_dir="$FFMPEG_BUILD/$preset/$linkage"
-    local install_dir="$FFMPEG_INSTALL/$preset/$linkage"
-
     mkdir -p "$build_dir"
     pushd "$build_dir"
 
