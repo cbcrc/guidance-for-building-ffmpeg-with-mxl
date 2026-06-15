@@ -1,0 +1,6 @@
+[submodule "mxl"]
+	path = mxl
+	url = https://github.com/dmf-mxl/mxl.git
+[submodule "FFmpeg"]
+	path = FFmpeg
+	url = https://github.com/cbcrc/FFmpeg.git

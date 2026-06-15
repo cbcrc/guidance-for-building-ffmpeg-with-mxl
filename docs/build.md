@@ -25,10 +25,17 @@ Note that these scripts set up the *minimum* set of system
 dependencies and the *minimum* FFmpeg configuration that is necessary
 to build FFmpeg with MXL and the FFmpeg/MXL regression tests.
 
+## Get the dependencies
+
+MXL and FFmpeg are treated as git submodules; update them:
+
+```bash
+git submodule update --init --recursive
+```
+
 ## Build on host
 
-The `get-src.sh` script installs all the MXL and FFmpeg source code at
-the correct revision.
+The `get-src.sh` script installs additional build dependencies.
 
 ### Get the sources
 
@@ -171,13 +178,15 @@ configured for streaming and excludes `ffplay`.
 ```bash
 $ docker build -f docker/prod/Dockerfile -t ffmpeg-mxl-prod .
 ...
-==============================
-MXL version:
+
+Pickup xml and ffmpeg versions:
+
+```bash
+cd ./mxl; git describe --tag; cd -
 v1.0.0
-==============================
-FFmpeg version:
+cd ./FFmpeg; git describe --tag; cd -
 n3.5-dev-33821-ged6e484214
-```
+```bash
 
 For maintiners only, tag the latest build from MXL version and FFmpeg verion (cbc commit hash after "-g"), then push to github packages.
 

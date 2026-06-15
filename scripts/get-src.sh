@@ -33,6 +33,7 @@ Environment:
 EOF
 }
 
+# this is a build depencency mxl SDK
 clone_vcpkg_repo() {
     log "fetch vcpkg git repository..."
 
@@ -40,33 +41,6 @@ clone_vcpkg_repo() {
     cd "$src_dir"
 
     git clone https://github.com/microsoft/vcpkg
-}
-
-clone_mxl_repo() {
-    log "fetch MXL git repository..."
-
-    local src_dir="$1"    
-    cd "$src_dir"
-
-    git clone https://github.com/dmf-mxl/mxl.git
-
-    cd mxl
-    # Hash that includes "Fix race condition in DomainWatcher::stop()"
-    # Fix for https://github.com/dmf-mxl/mxl/issues/446
-    # Pending tagging of V1.0.1
-    git switch --detach 80623d7
-}
-
-clone_ffmpeg_repo() {
-    log "fetch FFmpeg git repository..."
-
-    local src_dir="$1"
-    cd "$src_dir"
-
-    git clone --single-branch --branch dmf-mxl/master https://github.com/cbcrc/FFmpeg.git
-
-    cd FFmpeg
-    git switch --detach 5c5d593
 }
 
 clone_x264_repo() {
@@ -117,8 +91,6 @@ main() {
     mkdir -p "$SRC_DIR"
 
     clone_vcpkg_repo "$SRC_DIR" "$@"
-    clone_mxl_repo "$SRC_DIR" "$@"
-    clone_ffmpeg_repo "$SRC_DIR" "$@"
 
     if has_opt "--streaming" "$@"; then
         clone_x264_repo "$SRC_DIR" "$@"

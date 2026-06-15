@@ -8,7 +8,7 @@
 #      FFmpeg binaries in /opt/bin, and the mxl-to-rtsp.sh launcher.
 #
 # The container starts by running:
-#   /usr/local/bin/mxl-to-rtsp.sh /opt/bin/ffmpeg
+#   /usr/local/bin/mxl-to-rtsp.py /opt/bin/ffmpeg
 #
 # The launcher script is configured at runtime using environment
 # variables such as:
@@ -68,20 +68,12 @@ RUN if [ -n "${FATE_SUITE_MIRROR:-}" ]; then \
         export FATE_SUITE_MIRROR; \
     fi; \
     /scripts/get-src.sh /src --streaming ${FATE_SUITE_MIRROR:+--fate}
+COPY mxl /src/mxl
+COPY FFmpeg /src/FFmpeg
     
 RUN /scripts/build-mxl.sh /src /build --prod
 RUN /scripts/build-codecs.sh /src /build
 RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay ${FATE_SUITE_MIRROR:+--fate}
-
-RUN cd /src/mxl; \
-    echo "=============================="; \
-    echo "MXL version:"; \
-    git describe --tags;
-
-RUN cd /src/FFmpeg; \
-    echo "=============================="; \
-    echo "FFmpeg version:"; \
-    git describe --tags;
 
 #===================================================================================================
 
