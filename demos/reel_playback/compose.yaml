@@ -31,7 +31,7 @@ services:
       - "-map"
       - "0:v"
       - "-vf"
-      - "drawtext=text='CBC/RC - BREAKING NEWS - FFmpeg now supports MXL!':x='mod(w-t*200, w+tw)-tw':y=h-th-50:fontfile=/usr/share/fonts/truetype/freefont/FreeSansBold.ttf:fontcolor=white:fontsize=100:shadowcolor=red:shadowx=5:shadowy=5"
+      - "drawtext=text='CBC/RC - BREAKING NEWS - MXL is coming to FFmpeg!':x='mod(w-t*200, w+tw)-tw':y=h-th-50:fontfile=/usr/share/fonts/truetype/freefont/FreeSansBold.ttf:fontcolor=white:fontsize=100:shadowcolor=red:shadowx=5:shadowy=5"
       - "-c:v"
       - "v210"
       - "-f"
@@ -109,6 +109,10 @@ services:
       - type: bind
         source: /dev/shm/mxl/ffmpeg
         target: /domain
+    cap_add:
+      - SYS_NICE
+    ulimits:
+      rtprio: 40
     environment:
       # --- Required Variables ---
       - MXL_DOMAIN=/domain
@@ -118,6 +122,7 @@ services:
       #  --- Optional ---
       - FFMPEG_LOGLEVEL=info
       - FFMPEG_MODE=cpu
+      - FFMPEG_RT_PRIORITY=40
       - RTSP_TRANSPORT=tcp
       - V_BLOCKING=0
       - A_GRAIN_INDEX_INIT=1
