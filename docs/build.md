@@ -126,7 +126,6 @@ Passthrough options (to underlying build scripts):
 - `--no-ffplay`   compile ffmpeg and ffprobe only
 - `--streaming`   [add streaming codecs](./streaming.md) for headless server. Must be applied with `--prod`. It also runs the FATE suite, see details below.
 - `--fate`        get the FFmpeg FATE suite, details below
-- `--extended`    activate more FFmpeg features, details below
 - `--mxl-....`    gcc/cmake options
 
 Example:
@@ -190,26 +189,6 @@ $ docker push ghcr.io/cbcrc/ffmpeg-mxl-prod:v1.0.0-ed6e484214
 
 $ docker tag ffmpeg-mxl-prod:latest ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
 $ docker push ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
-```
-
-## Extended FFmpeg Build (experimental)
-
-Build support for an experimental *extended* configuration is
-implemented by
-[`setup-env-ffmpeg-extended.sh`](/scripts/setup-env-ffmpeg-extended.sh)
-and [`build-ffmpeg-extended.sh`](/scripts/build-ffmpeg-extended.sh).
-This build includes additional codecs and activates additional FFmpeg
-features.
-
-The extended configuration is enabled in both host and Docker builds
-by adding the `--extended` option. Only the release build variant
-(`--prod`) is supported.
-
-``` bash
-$ get-src.sh ~/src
-$ host-setup-and-build.sh ~/src ~/build --prod --allow-root --extended
-# OR
-$ docker-setup-and-build.sh ~/src ~/build --prod --extended
 ```
 
 ## FFmpeg FATE suite mirror

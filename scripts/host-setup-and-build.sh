@@ -59,11 +59,7 @@ main() {
         ./build-codecs.sh "$SRC_DIR" "$BUILD_DIR" "$@"
     fi
     
-    ./build-ffmpeg.sh "$SRC_DIR" "$BUILD_DIR" "$@"
-    
-    if has_opt "--extended" "$@"; then
-        WITH_VMAF=0 WITH_X265=0 ./build-ffmpeg-extended.sh "$SRC_DIR" "$BUILD_DIR" --build-all "$@"
-    fi
+    ./build-ffmpeg.sh "$SRC_DIR" "$BUILD_DIR" "$@"    
 }
 
 main "$@"

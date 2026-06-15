@@ -28,10 +28,6 @@ main() {
     enforce_setup_context "$@"
     "$SCRIPT_DIR"/setup-env-mxl.sh "$@"
     "$SCRIPT_DIR"/setup-env-ffmpeg.sh "$@"
-
-    if has_opt "--extended" "$@"; then
-        "$SCRIPT_DIR"/setup-env-ffmpeg-extended.sh "$@"
-    fi
 }
 
 main "$@"

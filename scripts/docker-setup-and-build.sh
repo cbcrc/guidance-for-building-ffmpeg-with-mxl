@@ -31,11 +31,6 @@ main() {
     get_var SRC_DIR "$@" && shift
     get_var BUILD_DIR "$@" && shift
 
-    local EXTENDED=0
-    if has_opt --extended "$@"; then
-        EXTENDED=1
-    fi
-
     # grab mxl version and stick it to image tag
     cd "$SRC_DIR/mxl/"
     MXL_TAG=$(git describe --tags)
@@ -85,18 +80,6 @@ main() {
            "$IMAGE_TAG" \
            /scripts/build-ffmpeg.sh /src /build "$@"
        
-    if has_opt "--extended" "$@"; then
-        docker run --rm \
-               --user "$(id -u)":"$(id -g)" \
-               --volume "$SCRIPT_DIR":/scripts \
-               --volume "$SRC_DIR":/src \
-               --volume "$BUILD_DIR":/build \
-               -e WITH_X265=0 \
-               -e WITH_VMAF=0 \
-               "$IMAGE_TAG" \
-               /scripts/build-ffmpeg-extended.sh /src /build --build-all "$@"
-    fi
-
     log "docker interactive shell command:"
     log_cmd docker run -it \
             --rm \

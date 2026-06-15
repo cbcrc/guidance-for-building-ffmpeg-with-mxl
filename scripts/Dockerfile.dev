@@ -6,7 +6,6 @@ FROM ubuntu:24.04
 
 ARG UID
 ARG GID
-ARG EXTENDED
 ARG SETUP_OPTIONS=""
 ENV SETUP_OPTIONS="${SETUP_OPTIONS}"
 
@@ -15,7 +14,6 @@ RUN test -n "$UID" && test -n "$GID" || \
 
 RUN echo "container" > /run/ffmpeg-build-context
 RUN --mount=type=bind,from=scripts,target=/scripts,ro /scripts/setup-env-all.sh ${SETUP_OPTIONS}
-RUN --mount=type=bind,from=scripts,target=/scripts,ro if [ "$EXTENDED" = "1" ]; then /scripts/setup-env-ffmpeg-extended.sh; fi
 
 RUN set -e; \
     if ! getent group "${GID}" >/dev/null; then \
