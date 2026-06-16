@@ -51,10 +51,7 @@ clone_mxl_repo() {
     git clone https://github.com/dmf-mxl/mxl.git
 
     cd mxl
-    # Hash that includes "Fix race condition in DomainWatcher::stop()"
-    # Fix for https://github.com/dmf-mxl/mxl/issues/446
-    # Pending tagging of V1.0.1
-    git switch --detach 80623d7
+    git switch --detach v1.1.0-beta-1
 }
 
 clone_ffmpeg_repo() {

@@ -55,52 +55,58 @@ Input #0, mxl, from '/dev/shm/mxl/b3bb5be7-9fe9-4324-a5bb-4c70e1084449.mxl-flow'
 Let's replace the test source with FFmpeg.
 MXL SDK also comes with `mxl-info` utility which shows flow metrics:
 
+Note that the FFmpeg test source runs faster than realtime, hence the
+`mxl-info` reported Latency is negative. This is a peculiarity of
+FFmpeg's test source, not MXL.
+
 Video:
 ```bash
 $ ~/build/ffmpeg/install/Linux-GCC-Debug/static/bin/ffmpeg  -re -f lavfi -i testsrc2=size=1920x1080:rate=50 -c:v v210 -f mxl -video_flow_id fe781cad-8a82-4b8e-a3c2-f833c70ac73e /dev/shm/mxl &
 $ ~/build/ffmpeg/install/Linux-GCC-Debug/static/bin/ffplay /dev/shm/mxl/fe781cad-8a82-4b8e-a3c2-f833c70ac73e.mxl-flow
 $ ~/build/mxl/install/Linux-GCC-Debug/static/bin/mxl-info --domain /dev/shm/mxl --flow fe781cad-8a82-4b8e-a3c2-f833c70ac73e
 - Flow [fe781cad-8a82-4b8e-a3c2-f833c70ac73e]
-	           Version: 1
-	       Struct size: 2048
-	            Format: Video
-	 Grain/sample rate: 50/1
-	 Commit batch size: 1080
-	   Sync batch size: 1080
-	  Payload Location: Host
-	      Device Index: -1
-	             Flags: 00000000
-	       Grain count: 10
+	             Version: 1
+	         Struct size: 2048
+	              Format: Video
+	   Grain/sample rate: 50/1
+	   Commit batch size: 1080
+	     Sync batch size: 1080
+	    Payload Location: Host
+	        Device Index: -1
+	               Flags: 00000000
+	         Grain count: 10
 
-	        Head index: 88411783498
-	   Last write time: 1768235669455895609
-	    Last read time: 1768235648241778461
-	  Latency (grains): 18446744073709551591
-	            Active: true
+	          Head index: 89081027151
+	     Last write time: 1781620542521446136
+	      Last read time: 1781620505346405018
+	Latency (grains, ms): -24, -482.998717
+	              Active: true
 ```
 
 Audio:
 ```bash
 $ ~/build/ffmpeg/install/Linux-GCC-Debug/static/bin/ffmpeg -re -f lavfi -i "sine=frequency=200:sample_rate=48000,aformat=sample_fmts=flt:channel_layouts=stereo" -map 0:a:0 -c:a pcm_f32le -f mxl -audio_flow_id ca28b9ff-9d44-41ba-9c88-99329e7995a6 /dev/shm/mxl &
+$ ~/build/ffmpeg/install/Linux-GCC-Debug/static/bin/ffplay /dev/shm/mxl/ca28b9ff-9d44-41ba-9c88-99329e7995a6.mxl-flow
 $ ~/build/mxl/install/Linux-GCC-Debug/static/bin/mxl-info --domain /dev/shm/mxl --flow ca28b9ff-9d44-41ba-9c88-99329e7995a6
 - Flow [ca28b9ff-9d44-41ba-9c88-99329e7995a6]
-	           Version: 1
-	       Struct size: 2048
-	            Format: Audio
-	 Grain/sample rate: 48000/1
-	 Commit batch size: 480
-	   Sync batch size: 480
-	  Payload Location: Host
-	      Device Index: -1
-	             Flags: 00000000
-	     Channel count: 2
-	     Buffer length: 10240
+	             Version: 1
+	         Struct size: 2048
+	              Format: Audio
+	   Grain/sample rate: 48000/1
+	   Commit batch size: 480
+	     Sync batch size: 480
+	    Payload Location: Host
+	        Device Index: -1
+	               Flags: 00000000
+	       Channel count: 2
+	       Buffer length: 19456
 
-	        Head index: 84875304606224
-	   Last write time: 1768235403360202151
-	    Last read time: 1768235403360202151
-	  Latency (grains): 18446744073709528025
-	            Active: true
+	          Head index: 85517799358558
+	     Last write time: 1781620797633808012
+	      Last read time: 1781620797633808012
+	Latency (grains, ms): -23471, -488.985336
+	              Active: true
+
 ```
 
 ## MXL URI Support
