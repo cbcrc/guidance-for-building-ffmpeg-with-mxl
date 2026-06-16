@@ -23,6 +23,20 @@ Prepare Dockerfile.dev container and build source located at
 <src-dir>. Populate <src-dir> with get-src.sh before invoking this
 script. The command-line arguments are passed through to build-mxl.sh
 and build-ffmpeg.sh (e.g. --dev or --prod).
+
+For example:
+
+# development debug+static build, minimal FFmpeg and MXL build
+$ ./get-src.sh ~/tmp/src
+$ ./docker-setup-and-build.sh ~/tmp/src ~/tmp/build --dev
+
+# production optimized+static build, streaming features activated, with fate tests
+$ ./get-src.sh ~/tmp/src --fate --streaming
+$ ./docker-setup-and-build.sh ~/tmp/src ~/tmp/build --prod --fate --streaming
+
+# All variants, minimal FFmpeg and MXL build
+$ ./get-src.sh ~/tmp/src
+$ ./docker-setup-and-build.sh ~/tmp/src ~/tmp/build
 EOF
 }
 
@@ -51,7 +65,6 @@ main() {
            --build-context scripts="$SCRIPT_DIR" \
            --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
            --build-arg SETUP_OPTIONS="$*" \
-           --build-arg EXTENDED="$EXTENDED" \
            --tag "$IMAGE_TAG" .
     
     docker run --rm \
