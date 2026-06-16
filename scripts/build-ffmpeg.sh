@@ -140,7 +140,9 @@ build_variant() {
         make fate
     else
         log Run only MXL FATE tests
+        # shellcheck disable=SC2046
         log_cmd make $(make fate-list | grep mxl)
+        # shellcheck disable=SC2046
         make $(make fate-list | grep mxl)
     fi
     make install
