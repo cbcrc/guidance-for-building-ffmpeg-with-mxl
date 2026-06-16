@@ -28,6 +28,20 @@ Prepare host environment and build both MXL and FFmpeg. Populate
 <src-dir> with get-src.sh before invoking this script. All
 command-line arguments are passed through to build-mxl.sh and
 build-ffmpeg.sh (e.g. --dev or --prod).
+
+For example:
+
+# development debug+static build, minimal FFmpeg and MXL build
+$ ./get-src.sh ~/tmp/src
+$ ./host-setup-and-build.sh ~/tmp/src ~/tmp/build --dev
+
+# production optimized+static build, streaming features activated, with fate tests
+$ ./get-src.sh ~/tmp/src --fate --streaming
+$ ./host-setup-and-build.sh ~/tmp/src ~/tmp/build --prod --fate --streaming
+
+# All variants, minimal FFmpeg and MXL build
+$ ./get-src.sh ~/tmp/src
+$ ./host-setup-and-build.sh ~/tmp/src ~/tmp/build
 EOF
 }
 
