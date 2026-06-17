@@ -56,7 +56,7 @@ See the code structure, how to compile manually and test regressions [here](./do
 
 - [Simple examples](./docs/usage.md)
 - [Streaming example](./docs/streaming.md)
-- [Measurements tools](./tools/)(latency)
+- [Measurements tools](./tools/)
 
 ## Known Limitations & Future Work
 
