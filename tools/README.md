@@ -61,9 +61,17 @@ echo "$id [$(./extract_stage_events.py "$stage" "$id" "$log" 200 20 --summary --
 ## Diagnostic Monitor
 
 `ffmpeg_mxl_diag_monitor.py` is an experimental tool that connects to
-the FFmpeg MXL demuxer diagnostic socket to display a live data
+the FFmpeg MXL demuxer diagnostic socket to display a live
 visualization of the audio and video MXL ring buffers and compute
 buffer statistics.
+
+Use the FFmpeg MXL demuxer's `-diag_socket` option to enable
+diagnostic monitoring. The monitor connects to the specified socket.
+
+```
+$ ffmpeg ... -f mxl -diag_socket /tmp/server.sock ... \
+             -i "mxl:///domain/?id=<audio_id>&id=<video_id>" ...
+```
 
 ![Screenshot](images/diag_monitor.png)
 
