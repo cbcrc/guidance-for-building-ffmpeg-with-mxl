@@ -69,7 +69,7 @@ Optional environment:
   FFMPEG_MODE
         Select 'cpu' or 'gpu' H.264 encoding.
         Has no effect when VIDEO_ID is not specified.
-        Default: 'gpu'
+        Default: 'cpu'
 
   VIDEO_BITRATE
         Set the video bitrate.
@@ -88,6 +88,12 @@ Optional environment:
 
   FFMPEG_RT_PRIORITY
         Set realtime priority. If set, ffmpeg is started with `chrt`.
+        Default: unset
+
+  FFMPEG_DEBUG_TS
+        Enable FFmpeg's -debug_ts option.
+        This option is typically used with FFMPEG_LOGLEVEL=debug or with FFREPORT.
+        Allowed values: 1, true, yes
         Default: unset
 
   In single-demux mode, the plain option names are used.
@@ -134,6 +140,35 @@ Realtime priority in Docker:
 
   If FFMPEG_RT_PRIORITY is specified and the requested priority
   cannot be set, mxl-to-rtsp.py exits with an error.
+
+FFmpeg reporting and timestamp diagnostics:
+
+  FFREPORT is used directly by FFmpeg to enable reporting. The report
+filename and location are passed as the value of the FFREPORT
+variable. Setting FFREPORT enables FFmpeg report mode. The generated
+report contains debug-level logging.
+
+  FFMPEG_DEBUG_TS enables FFmpeg's -debug_ts option. It is typically
+  used with FFMPEG_LOGLEVEL=debug or with FFREPORT.
+
+  Examples:
+
+        FFMPEG_DEBUG_TS=1
+        FFREPORT=file=/logs/debug_ts.log
+
+        or
+
+        FFMPEG_DEBUG_TS=1
+        FFMPEG_LOGLEVEL=debug
+
+  When running in Docker, bind-mount a host directory to make the
+  report file immediately available outside the container:
+
+        docker run ... \\
+          -v "$(pwd)/logs:/logs" \\
+          -e FFMPEG_DEBUG_TS=1 \\
+          -e FFREPORT=file=/logs/debug_ts.log \\
+          ...
 
 FFmpeg MXL demuxer options reference:
 
@@ -182,6 +217,11 @@ Examples:
 def env_or_default(name, default):
     value = os.environ.get(name)
     return default if value is None or value == "" else value
+
+
+def env_flag_enabled(name):
+    value = os.environ.get(name, "")
+    return value.lower() in ("1", "true", "yes")
 
 
 def handle_signal(_signum, _frame):
@@ -448,6 +488,7 @@ def build_ffmpeg_cmd(
     v_grain_init,
     v_blocking,
     video_bitrate,
+    ffmpeg_debug_ts,
 ):
     cmd = [
         ffmpeg_bin,
@@ -458,6 +499,9 @@ def build_ffmpeg_cmd(
         "-threads",
         "1",
     ]
+
+    if ffmpeg_debug_ts:
+        cmd.append("-debug_ts")
 
     if demux == "single":
         cmd.extend(
@@ -525,6 +569,7 @@ def print_startup_configuration(
     diag_socket,
     a_diag_socket,
     v_diag_socket,
+    ffmpeg_debug_ts,
 ):
     print(
         "Starting FFmpeg MXL to RTSP transcoder",
@@ -550,6 +595,9 @@ def print_startup_configuration(
 
     if rt_priority:
         print_configuration("RT Priority:", rt_priority)
+
+    if ffmpeg_debug_ts:
+        print_configuration("Debug TS:", "enabled")
 
     if demux == "single":
         if diag_socket:
@@ -621,7 +669,7 @@ def main():
         )
         return 1
 
-    ffmpeg_mode = env_or_default("FFMPEG_MODE", "gpu")
+    ffmpeg_mode = env_or_default("FFMPEG_MODE", "cpu")
 
     if video_id and ffmpeg_mode not in ("gpu", "cpu"):
         print(
@@ -643,6 +691,7 @@ def main():
 
     ffmpeg_loglevel = env_or_default("FFMPEG_LOGLEVEL", "error")
     ffmpeg_rt_priority = env_or_default("FFMPEG_RT_PRIORITY", "")
+    ffmpeg_debug_ts = env_flag_enabled("FFMPEG_DEBUG_TS")
 
     blocking = env_or_default("BLOCKING", "-1")
 
@@ -687,6 +736,7 @@ def main():
         v_grain_init,
         v_blocking,
         video_bitrate,
+        ffmpeg_debug_ts,
     )
 
     if ffmpeg_rt_priority:
@@ -712,6 +762,7 @@ def main():
         diag_socket,
         a_diag_socket,
         v_diag_socket,
+        ffmpeg_debug_ts,
     )
 
     while not terminate_requested:
@@ -753,4 +804,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
