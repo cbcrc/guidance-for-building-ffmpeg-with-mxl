@@ -23,6 +23,8 @@ Options:
   --skip-setup  Skip environment setup.
   --allow-root  Run all environment setup under a single sudo invocation
                 to avoid repeated password prompts.
+  --mtl         Build Intel Media-Transport-Library (ST 2110) and its DPDK
+                dependency, then enable the MTL plugin in FFmpeg.
 
 Prepare host environment and build both MXL and FFmpeg. Populate
 <src-dir> with get-src.sh before invoking this script. All
@@ -68,6 +70,11 @@ main() {
     mkdir -p "$BUILD_DIR"
 
     ./build-mxl.sh "$SRC_DIR" "$BUILD_DIR" "$@"
+
+    if has_opt "--mtl" "$@"; then
+        ./build-dpdk.sh "$SRC_DIR" "$BUILD_DIR" "$@"
+        ./build-mtl.sh "$SRC_DIR" "$BUILD_DIR" "$@"
+    fi
 
     if has_opt "--streaming" "$@"; then
         ./build-codecs.sh "$SRC_DIR" "$BUILD_DIR" "$@"
