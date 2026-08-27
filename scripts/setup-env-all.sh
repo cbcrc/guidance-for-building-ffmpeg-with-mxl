@@ -19,6 +19,7 @@ Options:
   --allow-root    Allow execution as root for host builds (normally refused)
   --clang         Install and configure Clang for MXL build
   --streaming     Install FFmpeg streaming build dependencies
+  --mtl           Install DPDK and Intel Media Transport Library build dependencies
 EOF
 }
 
@@ -28,6 +29,9 @@ main() {
     enforce_setup_context "$@"
     "$SCRIPT_DIR"/setup-env-mxl.sh "$@"
     "$SCRIPT_DIR"/setup-env-ffmpeg.sh "$@"
+    if has_opt "--tmp" "$@"; then
+        "$SCRIPT_DIR"/setup-env-dpdk-mtl.sh "$@"
+    fi
 }
 
 main "$@"

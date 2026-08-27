@@ -1,0 +1,4 @@
+# FFmpeg MTL (Intel Media-Transport-Library / ST 2110) configure options
+--enable-mtl
+--enable-indev=mtl
+--enable-outdev=mtl
