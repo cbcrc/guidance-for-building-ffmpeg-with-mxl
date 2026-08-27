@@ -24,6 +24,10 @@ Prepare Dockerfile.dev container and build source located at
 script. The command-line arguments are passed through to build-mxl.sh
 and build-ffmpeg.sh (e.g. --dev or --prod).
 
+Options:
+  --mtl         Build Intel Media-Transport-Library (ST 2110) and its DPDK
+                dependency, then enable the MTL plugin in FFmpeg.
+
 For example:
 
 # development debug+static build, minimal FFmpeg and MXL build
@@ -74,7 +78,29 @@ main() {
            --volume "$BUILD_DIR":/build \
            "$IMAGE_TAG" \
            /scripts/build-mxl.sh /src /build "$@"
-    
+
+    if has_opt "--mtl" "$@"; then
+        # Mount the submodule so build-dpdk.sh and build-mtl.sh can reach it
+        # inside the container at /scripts/../Media-Transport-Library.
+        docker run --rm \
+               --user "$(id -u)":"$(id -g)" \
+               --volume "$SCRIPT_DIR":/scripts \
+               --volume "$SCRIPT_DIR/../Media-Transport-Library":/Media-Transport-Library \
+               --volume "$SRC_DIR":/src \
+               --volume "$BUILD_DIR":/build \
+               "$IMAGE_TAG" \
+               /scripts/build-dpdk.sh /src /build "$@"
+
+        docker run --rm \
+               --user "$(id -u)":"$(id -g)" \
+               --volume "$SCRIPT_DIR":/scripts \
+               --volume "$SCRIPT_DIR/../Media-Transport-Library":/Media-Transport-Library \
+               --volume "$SRC_DIR":/src \
+               --volume "$BUILD_DIR":/build \
+               "$IMAGE_TAG" \
+               /scripts/build-mtl.sh /src /build "$@"
+    fi
+
     if has_opt "--streaming" "$@"; then
         docker run --rm \
                --user "$(id -u)":"$(id -g)" \
