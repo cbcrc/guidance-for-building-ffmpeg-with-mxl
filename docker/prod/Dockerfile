@@ -59,7 +59,11 @@ RUN install -d -o ${UID} -g ${GID} /build
 RUN install -d -o ${UID} -g ${GID} /src
 
 COPY scripts /scripts
-RUN echo "container" > /run/ffmpeg-build-context && /scripts/setup-env-all.sh --streaming
+COPY --chown=${UID}:${GID} Media-Transport-Library /Media-Transport-Library
+RUN echo "container" > /run/ffmpeg-build-context && /scripts/setup-env-all.sh --streaming --mtl
+
+RUN /scripts/build-dpdk.sh /src /build
+RUN chown -R ${UID}:${GID} /build
 
 USER ${UID}:${GID}
 
@@ -71,7 +75,8 @@ RUN if [ -n "${FATE_SUITE_MIRROR:-}" ]; then \
     
 RUN /scripts/build-mxl.sh /src /build --prod
 RUN /scripts/build-codecs.sh /src /build
-RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay ${FATE_SUITE_MIRROR:+--fate}
+RUN /scripts/build-mtl.sh /src /build
+RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay --mtl ${FATE_SUITE_MIRROR:+--fate}
 
 RUN cd /src/mxl; \
     echo "=============================="; \
@@ -92,13 +97,25 @@ RUN apt-get update && apt-get install -y \
     libfreetype6 \
     libharfbuzz0b \
     fonts-freefont-ttf \
+    libatomic1 \
+    libpcap-dev \
+    libnuma1 \
+    libjson-c-dev \
+    ibverbs-providers \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /build/ffmpeg/install/Linux-GCC-Release/static/bin /opt/bin
+COPY --from=builder /build/mtl/install/lib/x86_64-linux-gnu/ /usr/local/lib/
+
+RUN mkdir -p /build/mtl/install/lib/x86_64-linux-gnu/
+RUN ln -s /usr/local/lib/dpdk /build/mtl/install/lib/x86_64-linux-gnu/dpdk
 
 COPY docker/prod/mxl-to-rtsp.py /usr/local/bin/mxl-to-rtsp.py
 RUN chmod +x /usr/local/bin/mxl-to-rtsp.py
 
+ENV  LD_LIBRARY_PATH="/usr/local/lib/:/build/mtl/install/lib/x86_64-linux-gnu/dpdk/pmds-26.1/"
 ENTRYPOINT ["/usr/local/bin/mxl-to-rtsp.py", "/opt/bin/ffmpeg"]
 
 LABEL org.opencontainers.image.source https://github.com/cbcrc/guidance-for-building-ffmpeg-with-mxl
+
+# expected sizes: no_mtl:53MB  with_mtl:345MB
