@@ -59,7 +59,11 @@ RUN install -d -o ${UID} -g ${GID} /build
 RUN install -d -o ${UID} -g ${GID} /src
 
 COPY scripts /scripts
-RUN echo "container" > /run/ffmpeg-build-context && /scripts/setup-env-all.sh --streaming
+COPY --chown=${UID}:${GID} Media-Transport-Library /Media-Transport-Library
+RUN echo "container" > /run/ffmpeg-build-context && /scripts/setup-env-all.sh --streaming --tmp
+
+RUN /scripts/build-dpdk.sh /src /build
+RUN chown -R ${UID}:${GID} /build
 
 USER ${UID}:${GID}
 
@@ -71,7 +75,8 @@ RUN if [ -n "${FATE_SUITE_MIRROR:-}" ]; then \
     
 RUN /scripts/build-mxl.sh /src /build --prod
 RUN /scripts/build-codecs.sh /src /build
-RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay ${FATE_SUITE_MIRROR:+--fate}
+RUN /scripts/build-mtl.sh /src /build
+RUN /scripts/build-ffmpeg.sh /src /build --prod --streaming --no-ffplay --mtl ${FATE_SUITE_MIRROR:+--fate}
 
 RUN cd /src/mxl; \
     echo "=============================="; \
