@@ -35,9 +35,9 @@ The FFmpeg rows are the supported FFmpeg variants. `8.x-orig`
 preserves the original FFmpeg/MXL development integration and is based
 on upstream FFmpeg development between the 8.0 and 8.1 releases. `8.1`
 and `9.0` track the corresponding FFmpeg release branches, while
-`master` tracks the current `cbcrc/FFmpeg/master` branch.
+`master` tracks the master branch of the cbcrc/FFmpeg fork.
 
-The tag/commit is the last known good version. These repos are cloned
+The tag/commit is the last known good revision. These repos are cloned
 by build scripts.
 
 **Supported Operating System**
