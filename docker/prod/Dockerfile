@@ -100,6 +100,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /build/ffmpeg/install/Linux-GCC-Release/static/bin /opt/bin
+COPY --from=builder /build/mtl/install/lib/x86_64-linux-gnu/*.so /usr/lib
 
 COPY docker/prod/mxl-to-rtsp.py /usr/local/bin/mxl-to-rtsp.py
 RUN chmod +x /usr/local/bin/mxl-to-rtsp.py
