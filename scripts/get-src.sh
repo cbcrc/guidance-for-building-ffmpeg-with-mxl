@@ -20,6 +20,9 @@ Arguments:
   <src-dir>   Directory to place source artifacts
 
 Options:
+  --ffmpeg-version <version>
+              FFmpeg version to fetch: 8.x-orig, 8.1, 9.0, or master
+              Default: 8.1
   --streaming Get x264, opus, nvcodec
   --fate      Get the FFmpeg FATE suite
 
@@ -54,28 +57,49 @@ clone_mxl_repo() {
     git switch --detach v1.1.0-beta-1
 }
 
-clone_ffmpeg_repo() {
+clone_ffmpeg_branch() {
     log "fetch FFmpeg git repository..."
 
     local src_dir="$1"
+    local branch="$2"
+    local revision="$3"
+
     cd "$src_dir"
 
-    git clone --single-branch --branch dmf-mxl/master https://github.com/cbcrc/FFmpeg.git
+    git clone --single-branch --branch "$branch" https://github.com/cbcrc/FFmpeg.git
 
     cd FFmpeg
-    git switch --detach 5c5d593
+    git switch --detach "$revision"
 }
 
-clone_x264_repo() {
-    log "fetch x264 git repository..." 
+clone_ffmpeg_repo() {
     local src_dir="$1"
-    cd "$src_dir"
-    git clone https://code.videolan.org/videolan/x264.git
-    cd x264
+    shift
 
-    # x264 doesn't have release tags, instead use the commit hash as
-    # of 9 Feb 2026.
-    git switch --detach 0480cb05
+    local ffmpeg_version="8.1"
+    if has_opt "--ffmpeg-version" "$@"; then
+        get_opt ffmpeg_version "--ffmpeg-version" "$@"
+    fi
+
+    case "$ffmpeg_version" in
+        8.x-orig)
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/8.x-orig 5c5d59370e
+            ;;
+        8.1)
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/8.1 9eddb90ac0
+            ;;
+        9.0)
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/9.0 16abbf0413
+            ;;
+        master)
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/master 361268ffa2
+            ;;
+        *)
+            echo "Unsupported FFmpeg version: $ffmpeg_version" >&2
+            echo "Supported versions: 8.x-orig, 8.1, 9.0, master" >&2
+            return 1
+            ;;
+    esac
 }
 
 clone_opus_repo() {

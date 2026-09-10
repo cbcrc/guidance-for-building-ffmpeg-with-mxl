@@ -25,10 +25,20 @@ The FFmpeg/MXL integration currently supports Linux only.
 
 | component | repository | branch | tag/commit |
 |-----------|------------|--------|------------|
-| MXL | [/dmf-mxl/mxl](https://github.com/dmf-mxl/mxl/tree/release/v1.0) |  release/1.0 | 80623d7 |
-| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/master) | dmf-mxl/master | 5c5d593 |
+| MXL | [/dmf-mxl/mxl](https://github.com/dmf-mxl/mxl/tree/release/v1.0) | release/1.0 | 80623d7 |
+| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/8.x-orig) | dmf-mxl/8.x-orig | 5c5d59370e |
+| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/8.1) | dmf-mxl/8.1 | 9eddb90ac0 |
+| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/9.0) | dmf-mxl/9.0 | 16abbf0413 |
+| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/master) | dmf-mxl/master | 361268ffa2 |
 
-The tag/commit is the last known good version. These repos are cloned by build scripts.
+The FFmpeg rows are the supported FFmpeg variants. `8.x-orig`
+preserves the original FFmpeg/MXL development integration and is based
+on upstream FFmpeg development between the 8.0 and 8.1 releases. `8.1`
+and `9.0` track the corresponding FFmpeg release branches, while
+`master` tracks the current `cbcrc/FFmpeg/master` branch.
+
+The tag/commit is the last known good version. These repos are cloned
+by build scripts.
 
 **Supported Operating System**
 - Ubuntu 24.04

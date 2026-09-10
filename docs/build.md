@@ -33,9 +33,18 @@ the correct revision.
 ### Get the sources
 
 ```bash
+# fetch the default FFmpeg variant (8.1) and dependencies
 $ mkdir -p ~/src/
 $ get-src.sh ~/src/
+
+# or
+
+# fetch a specified FFmpeg variant and dependencies
+$ mkdir -p ~/src/
+$ get-src.sh ~/src/ --ffmpeg-version 9.0
 ```
+
+Supported FFmpeg variants: 8.x-orig, 8.1, 9.0, master
 
 ### Setup Env
 
@@ -55,19 +64,26 @@ for the MXL and FFmpeg builds individually.
 ### Compile
 
 The `build-{mxl,ffmpeg}.sh` scripts configure, build, and test MXL and
-FFmpeg. Both scripts build static/shared and debug/release
+FFmpeg. Both scripts build static/shared and debug/release compilation
 variants. By default all variants are built: static+debug,
-static+release, shared+debug, shared+release. Use the "--prod" option
-to build only the static+release variant. Use the "--dev" option to
+static+release, shared+debug, shared+release. Use the `--prod` option
+to build only the static+release variant. Use the `--dev` option to
 build only the static+debug variant.
+
+Note: The FFmpeg version is selected when the sources are fetched and
+does not need to be specified again when compiling.
 
 ```bash
 $ mkdir -p ~/build/
-# build all the variantS
-$ build-mxl.sh ~/src ~/build && build-ffmpeg.sh ~/src ~/build
+#
+# build all compilation variants
+$ build-mxl.sh ~/src ~/build
+$ build-ffmpeg.sh ~/src ~/build
+#
 # Or, to build a single development variant:
-$ build-mxl.sh ~/src ~/build --dev && build-ffmpeg.sh ~/src ~/build --dev
-# Look in the `~/build` directory for the (all-variants) results:
+$ build-mxl.sh ~/src ~/build --dev
+$ build-ffmpeg.sh ~/src ~/build --dev
+# Look in the `~/build` directory for the compilation variants:
 $ tree -L 4 ~/build
 ~/build
 ├── ffmpeg
