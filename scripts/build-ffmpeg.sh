@@ -66,7 +66,7 @@ apply_mtl_patch() {
     log "Apply MTL FFmpeg plugin patches (FFmpeg $ffmpeg_version)"
     for patch_file in "$patch_dir"/*.patch; do
         [[ -f "$patch_file" ]] || continue
-        log "  Applying: $(basename "$patch_file")"
+        log "  Applying: $patch_file"
         patch -p1 < "$patch_file"
     done
 
@@ -124,10 +124,6 @@ build_variant() {
     local full_mxl_install_dir="$mxl_install/$mxl_preset/$linkage"
     export PKG_CONFIG_PATH="$full_mxl_install_dir"/lib/pkgconfig:"$full_mxl_install_dir"/x64-linux/lib/pkgconfig
 
-    if has_opt "--mtl" "$@"; then
-        PKG_CONFIG_PATH="$BUILD_DIR/mtl/install/lib/pkgconfig:$PKG_CONFIG_PATH"
-    fi
-
     # Note: match MXL build path convention
     local build_dir="$FFMPEG_BUILD/$preset/$linkage"
     local install_dir="$FFMPEG_INSTALL/$preset/$linkage"
@@ -159,7 +155,6 @@ build_variant() {
         )
         export LD_LIBRARY_PATH
         LD_LIBRARY_PATH=$(IFS=:; echo "${ld_library_path[*]}")        
-        log_cmd "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
         config_opts_files+=("deps/ffmpeg-configure-shared-options.txt")
     fi
 
@@ -173,7 +168,12 @@ build_variant() {
 
     if has_opt "--mtl" "$@"; then
         config_opts_files+=("deps/ffmpeg-configure-mtl-options.txt")
+        export LD_LIBRARY_PATH="/build/mtl/install/lib/x86_64-linux-gnu"
+        export PKG_CONFIG_PATH="$BUILD_DIR/mtl/install/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
     fi
+
+    log_cmd "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+    log_cmd "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
 
     mkdir -p "$build_dir"
     pushd "$build_dir"
