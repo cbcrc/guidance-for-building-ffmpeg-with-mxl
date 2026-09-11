@@ -60,10 +60,10 @@ clone_ffmpeg_repo() {
     local src_dir="$1"
     cd "$src_dir"
 
-    git clone --single-branch --branch dmf-mxl/master https://github.com/cbcrc/FFmpeg.git
+    git clone --single-branch --branch dmf-mxl/8.1 https://github.com/cbcrc/FFmpeg.git
 
     cd FFmpeg
-    git switch --detach 5c5d593
+    git switch --detach 9eddb90ac0cf6063aaacc4fc2775f19d873500eb
 }
 
 clone_x264_repo() {
