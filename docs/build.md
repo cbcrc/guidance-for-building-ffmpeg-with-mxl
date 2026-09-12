@@ -220,6 +220,9 @@ available to the build scripts. This prevents `build-ffmpeg.sh` from
 running `make fate-rsync`, which in turn avoids the potentially
 lengthy `ffmpeg.org` rsync.
 
+Note that the trailing `/` in the FATE_SUITE_MIRROR value is
+important.
+
 ```bash
 # rsync the fate-suite one time
 $ rsync -av rsync://fate-suite.ffmpeg.org/fate-suite/ /mirror/fate-suite/
