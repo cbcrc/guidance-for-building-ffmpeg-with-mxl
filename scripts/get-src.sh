@@ -102,6 +102,18 @@ clone_ffmpeg_repo() {
     esac
 }
 
+clone_x264_repo() {
+    log "fetch x264 git repository..." 
+    local src_dir="$1"
+    cd "$src_dir"
+    git clone https://code.videolan.org/videolan/x264.git
+    cd x264
+
+    # x264 doesn't have release tags, instead use the commit hash as
+    # of 9 Feb 2026.
+    git switch --detach 0480cb05
+}
+
 clone_opus_repo() {
     log "fetch Opus git repository..."
     local src_dir="$1"
