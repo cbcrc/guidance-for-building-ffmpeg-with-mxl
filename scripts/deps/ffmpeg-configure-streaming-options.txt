@@ -29,6 +29,8 @@
 --enable-filter=scale_cuda
 --enable-filter=scale_npp
 # extra:
+--enable-demuxer=wav
+--enable-muxer=wav
 --enable-demuxer=mpegts
 --enable-muxer=mpegts
 --enable-muxer=hls
@@ -43,6 +45,7 @@
 --enable-muxer=opus
 --enable-protocol=file
 --enable-filter=showinfo
+--enable-protocol=md5
 # text overlay
 --enable-filter=drawtext
 --enable-libfreetype
