@@ -37,11 +37,17 @@ docker compose up -d
 
 ## Monitor
 
+Grab available stream from MediaMTX.
+```bash
+curl http://${MEDIAMTX_HOST:-127.0.0.1}:9997/v3/paths/list  | jq | grep name
+ "name": "ffmpeg",
+```
+
 Open browser @ `http://${MEDIAMTX_HOST:-127.0.0.1}:8889/ffmpeg`
 
 ## Troubleshoot from the host
 
-Inspect individual essences:
+Inspect individual essences if available:
 - video: `http://${MEDIAMTX_HOST:-127.0.0.1}:8889/ffmpeg-v`
 - audio: `http://${MEDIAMTX_HOST:-127.0.0.1}:8889/ffmpeg-a`
 

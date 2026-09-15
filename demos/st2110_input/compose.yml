@@ -1,0 +1,71 @@
+# see ../../docs/st_2110.md for details
+services:
+  ffmpeg-st2110-to-mxl-v:
+    image: fmpeg-st2110-to-mxl:latest
+    container_name: ffmpeg-st2110-to-mxl-v
+    network_mode: "host"
+    privileged: true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - /var/run/imtl:/var/run/imtl
+      - /dev/shm/mxl/st2110:/domain
+    entrypoint: ["/opt/bin/ffmpeg"]
+    command:
+      - -pacing_way
+      - tsc
+      - -interlaced
+      - "1"
+      - -p_port
+      - "${PCI_ADDR}"
+      - -p_sip
+      - "${LOCAL_IFACE_IP}"
+      - -p_rx_ip
+      - "${VIDEO_MCAST_IP}"
+      - -udp_port
+      - "20000"
+      - -payload_type
+      - "96"
+      - -fps
+      - "29.97"
+      - -pix_fmt
+      - yuv422p10le
+      - -video_size
+      - 1920x1080
+      - -f
+      - mtl_st20p
+      - -i
+      - k
+      - -c:v
+      - v210
+      - -f
+      - mxl
+      - -video_flow_id
+      - fe781cad-8a82-4b8e-a3c2-f833c70ac73e
+      - /domain
+
+  ffmpeg-mxl-to-rtp:
+    image: ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
+    container_name: ffmpeg-mxl-to-rtp
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - type: bind
+        source: /dev/shm/mxl/st2110/
+        target: /domain
+    cap_add:
+      - SYS_NICE
+    ulimits:
+      rtprio: 40
+    environment:
+      # --- Required Variables ---
+      - MXL_DOMAIN=/domain
+      - VIDEO_ID=fe781cad-8a82-4b8e-a3c2-f833c70ac73e
+      - RTSP_URL=rtsp://${MEDIAMTX_HOST:-127.0.0.1}:8554/st2110
+      #  --- Optional ---
+      - FFMPEG_LOGLEVEL=info
+      - FFMPEG_MODE=cpu
+      - FFMPEG_RT_PRIORITY=40
+      - RTSP_TRANSPORT=tcp
