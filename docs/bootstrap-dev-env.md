@@ -41,6 +41,7 @@ PKG_CONFIG_PATH='$HOME/dev/build/mxl/install/Linux-GCC-Debug/static/lib/pkgconfi
 
 # For example, this will set PKG_CONFIG_PATH in your environment:
 $ eval "$(grep PKG_CONFIG_PATH= ~/dev/build/ffmpeg/build/Linux-GCC-Debug/static/ffbuild/config.log )"
+$ export PKG_CONFIG_PATH
 
 # Confirm:
 $ echo $PKG_CONFIG_PATH
