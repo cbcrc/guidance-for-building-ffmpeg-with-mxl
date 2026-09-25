@@ -1,10 +1,16 @@
-# see ../../docs/st_2110.md for details
+# Permissions from https://github.com/OpenVisualCloud/Media-Transport-Library/tree/main/docker#run-with-dpdk
+# But IPC_LOCK doesn't seem necessary.
+# see ../../docs/st_2110.md for detailsO
 services:
   ffmpeg-st2110-to-mxl-v:
     image: fmpeg-st2110-to-mxl:latest
     container_name: ffmpeg-st2110-to-mxl-v
     network_mode: "host"
-    privileged: true
+    user: 1000:1000
+    devices:
+      - /dev/vfio/
+    cap_add:
+      - SYS_NICE
     ulimits:
       memlock:
         soft: -1
