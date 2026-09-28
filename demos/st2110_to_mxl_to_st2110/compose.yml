@@ -3,10 +3,10 @@
 # see ../../docs/st_2110.md for detailsO
 services:
   ffmpeg-st2110-to-mxl-v:
-    image: fmpeg-st2110-to-mxl:latest
+    image: ghcr.io/cbcrc/ffmpeg-mxl-imtl:latest
     container_name: ffmpeg-st2110-to-mxl-v
     network_mode: "host"
-    user: 1000:1000
+    user: ${UID}:${GUI}
     devices:
       - /dev/vfio/
     cap_add:
@@ -25,11 +25,11 @@ services:
       - -interlaced
       - "1"
       - -p_port
-      - "${PCI_ADDR}"
+      - "${RX_PCI_ADDR}"
       - -p_sip
       - "${LOCAL_IFACE_IP}"
       - -p_rx_ip
-      - "${VIDEO_MCAST_IP}"
+      - "${RX_VIDEO_MCAST_IP}"
       - -udp_port
       - "20000"
       - -payload_type
@@ -49,8 +49,70 @@ services:
       - -f
       - mxl
       - -video_flow_id
-      - fe781cad-8a82-4b8e-a3c2-f833c70ac73e
+      - ${VIDEO_FLOW_ID}
       - /domain
+
+  ffmpeg-mxl-to-st2110-v:
+    image: ghcr.io/cbcrc/ffmpeg-mxl-imtl:latest
+    container_name: ffmpeg-mxl-to-st2110-v
+    depends_on:
+      - ffmpeg-mxl-to-rtp
+    network_mode: "host"
+    user: ${UID}:${GUI}
+    devices:
+      - /dev/vfio/
+    cap_add:
+      - SYS_NICE
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - /var/run/imtl:/var/run/imtl
+      - /dev/shm/mxl/st2110:/domain
+    entrypoint: ["/opt/bin/ffmpeg"]
+    command:
+      - -hide_banner
+      - -nostats
+      - -threads
+      - "1"
+      - -f
+      - mxl
+      - -blocking
+      - "-1"
+      - -on_too_late
+      - "1"
+      - -grain_index_init
+      - "0"
+      - -i
+      - "mxl:///domain?id=${VIDEO_FLOW_ID}"
+      - -pix_fmt
+      - yuv422p10le
+      - -vcodec
+      - rawvideo
+      - -pacing_way
+      - tsc
+      - -video_size
+      - 1920x1080
+      - -fps
+      - "59.94"
+      - -interlaced
+      - "1"
+      - -p_port
+      - "${TX_PCI_ADDR}"
+      - -p_sip
+      - "${LOCAL_IFACE_IP}"
+      - -p_tx_ip
+      - "${TX_VIDEO_MCAST_IP}"
+      - -udp_port
+      - "20000"
+      - -payload_type
+      - "96"
+      - -pix_fmt
+      - yuv422p10le
+      - -f
+      - mtl_st20p
+      - "-"
 
   ffmpeg-mxl-to-rtp:
     image: ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
@@ -68,7 +130,7 @@ services:
     environment:
       # --- Required Variables ---
       - MXL_DOMAIN=/domain
-      - VIDEO_ID=fe781cad-8a82-4b8e-a3c2-f833c70ac73e
+      - VIDEO_ID=${VIDEO_FLOW_ID}
       - RTSP_URL=rtsp://${MEDIAMTX_HOST:-127.0.0.1}:8554/st2110
       #  --- Optional ---
       - FFMPEG_LOGLEVEL=info
