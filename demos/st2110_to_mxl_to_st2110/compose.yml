@@ -44,6 +44,8 @@ services:
       - mtl_st20p
       - -i
       - k
+      - -vf
+      - yadif
       - -c:v
       - v210
       - -f

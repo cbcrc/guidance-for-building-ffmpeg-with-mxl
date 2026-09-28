@@ -6,3 +6,4 @@
 --enable-outdev=mtl_st30p
 --enable-encoder=pcm_s24be
 --enable-decoder=pcm_s24be
+--enable-filter=yadif
