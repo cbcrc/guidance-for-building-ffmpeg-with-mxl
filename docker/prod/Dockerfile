@@ -110,11 +110,11 @@ COPY --from=builder /build/mtl/install/lib/x86_64-linux-gnu/ /usr/local/lib/
 RUN mkdir -p /build/mtl/install/lib/x86_64-linux-gnu/
 RUN ln -s /usr/local/lib/dpdk /build/mtl/install/lib/x86_64-linux-gnu/dpdk
 
-COPY docker/prod/mxl-to-rtsp.py /usr/local/bin/mxl-to-rtsp.py
-RUN chmod +x /usr/local/bin/mxl-to-rtsp.py
+COPY docker/prod/*.py /usr/local/bin/
+RUN chmod +x /usr/local/bin/*.py
 
 ENV  LD_LIBRARY_PATH="/usr/local/lib/:/build/mtl/install/lib/x86_64-linux-gnu/dpdk/pmds-26.1/"
-ENTRYPOINT ["/usr/local/bin/mxl-to-rtsp.py", "/opt/bin/ffmpeg"]
+ENTRYPOINT ["/usr/local/bin/mxl-to-rtsp.py", "/usr/local/bin/st2110.py", "/opt/bin/ffmpeg"]
 
 LABEL org.opencontainers.image.source https://github.com/cbcrc/guidance-for-building-ffmpeg-with-mxl
 
