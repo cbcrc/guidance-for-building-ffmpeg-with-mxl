@@ -6,11 +6,12 @@ services:
     image: ghcr.io/cbcrc/ffmpeg-mxl-imtl:latest
     container_name: ffmpeg-st2110-to-mxl-v
     network_mode: "host"
-    user: ${UID}:${GUI}
     devices:
-      - /dev/vfio/
+      - /dev/vfio/ # Intel NIC
+      - /dev/infiniband/ # Mellanox/Nvidia
     cap_add:
       - SYS_NICE
+      - NET_ADMIN # Mellanox: requested by rdma-core/libverbs
     ulimits:
       memlock:
         soft: -1
@@ -35,11 +36,12 @@ services:
     depends_on:
       - ffmpeg-mxl-to-rtp
     network_mode: "host"
-    user: ${UID}:${GUI}
     devices:
       - /dev/vfio/
+      - /dev/infiniband/
     cap_add:
       - SYS_NICE
+      - NET_ADMIN # Mellanox: requested by rdma-core/libverbs
     ulimits:
       memlock:
         soft: -1
