@@ -2,9 +2,19 @@
 # But IPC_LOCK doesn't seem necessary.
 # see ../../docs/st_2110.md for detailsO
 services:
+  intel-mtl-manager:
+    image: ghcr.io/cbcrc/imtl-manager:latest
+    container_name: intel-mtl-manager
+    privileged: true
+    volumes:
+      - /var/run/imtl:/var/run/imtl
+      - /sys/fs/bpf:/sys/fs/bpf
+
   ffmpeg-st2110-to-mxl-v:
     image: ghcr.io/cbcrc/ffmpeg-mxl-imtl:latest
     container_name: ffmpeg-st2110-to-mxl-v
+    depends_on:
+      - intel-mtl-manager
     network_mode: "host"
     devices:
       - /dev/vfio/ # Intel NIC
@@ -29,6 +39,7 @@ services:
       - VIDEO_MCAST_IP=${RX_VIDEO_MCAST_IP}
       - MXL_DOMAIN=/domain
       - VIDEO_FLOW_ID=${VIDEO_FLOW_ID}
+      - DEINTERLACE=yes
 
   ffmpeg-mxl-to-st2110-v:
     image: ghcr.io/cbcrc/ffmpeg-mxl-imtl:latest
@@ -64,6 +75,8 @@ services:
     image: ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
     container_name: ffmpeg-mxl-to-rtp
     restart: unless-stopped
+    depends_on:
+      - ffmpeg-st2110-to-mxl-v
     network_mode: "host"
     volumes:
       - type: bind
