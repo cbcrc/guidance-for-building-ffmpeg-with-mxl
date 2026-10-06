@@ -1,0 +1,53 @@
+services:
+  ffmpeg-st2110-to-mxl-a:
+    image: ghcr.io/cbcrc/ffmpeg-mxl-imtl:latest
+    container_name: ffmpeg-st2110-to-mxl-a
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    network_mode: "host"
+    devices:
+      - /dev/vfio/ # Intel NIC
+      - /dev/infiniband/ # Mellanox/Nvidia
+    cap_add:
+      - SYS_NICE
+      - NET_ADMIN # Mellanox: requested by rdma-core/libverbs
+    volumes:
+      - /var/run/imtl:/var/run/imtl
+      - /dev/shm/mxl/st2110:/domain
+    entrypoint: [/opt/bin/ffmpeg]
+    command:
+      - -pacing_way
+      - tsc
+      - -p_port
+      - ${PCI_ADDR_A}
+      - -p_sip
+      - ${LOCAL_IFACE_IP}
+      - -p_rx_ip
+      - ${AUDIO_MCAST_IP}
+      - -udp_port
+      - "20000"
+      - -payload_type
+      - "97"
+      - -sample_rate
+      - "48000"
+      - -pcm_fmt
+      - pcm24
+      - -channels
+      - "2"
+      - -ptime
+      - "125us"
+      - -f
+      - mtl_st30p
+      - -i
+      - k
+      - -map
+      - "0:a:0"
+      - -c:a
+      - pcm_f32le
+      - -f
+      - mxl
+      - -audio_flow_id
+      - ${AUDIO_FLOW_ID}
+      - /domain
