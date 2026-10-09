@@ -1,0 +1,23 @@
+# Intel-MTL and DPDK system dependencies (apt packages)
+build-essential
+clang
+gcc-multilib
+libcap-ng-dev
+libcap2-bin
+libelf-dev
+libgtest-dev
+libjson-c-dev
+libnuma-dev
+libpcap-dev
+libsdl2-dev
+libsdl2-ttf-dev
+libssl-dev
+llvm
+m4
+meson
+pkg-config
+python3-dev
+python3-pip
+python3-pyelftools
+systemtap-sdt-dev
+zlib1g-dev

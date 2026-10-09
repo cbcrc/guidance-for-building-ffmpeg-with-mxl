@@ -25,10 +25,56 @@ Options:
   --no-ffplay   Do not build ffplay or link its dependent libraries.
   --streaming   Build with RTSP, Opus, and H.264 support.
   --fate        Build the FFmpeg FATE suite
+  --mtl         Enable Intel Media-Transport-Library (ST 2110) support.
+                Applies the MTL FFmpeg plugin patch and enables the mtl
+                in/out devices. Requires MTL and DPDK to be installed.
 
 Use --prod or --dev to select build variant, or else all variants are
 built.
 EOF
+}
+
+# Apply the MTL FFmpeg plugin patch and copy its source files into the
+# FFmpeg source tree. A sentinel file prevents double-patching on
+# subsequent builds.
+apply_mtl_patch() {
+    : "${SRC_DIR:?SRC_DIR is not set}"
+
+    local ffmpeg_src="$SRC_DIR/FFmpeg"
+    local mtl_submodule="$SCRIPT_DIR/../Media-Transport-Library"
+    local mtl_plugin="$mtl_submodule/ecosystem/ffmpeg_plugin"
+    local sentinel="$ffmpeg_src/.mtl-patch-applied"
+
+    if [[ -f "$sentinel" ]]; then
+        log "MTL FFmpeg patch already applied, skipping"
+        return
+    fi
+
+    local ffmpeg_version
+    # shellcheck source=/dev/null
+    ffmpeg_version=$(. "$mtl_submodule/versions.env" && echo "$FFMPEG_VERSION")
+
+    local patch_dir="$mtl_plugin/$ffmpeg_version"
+    [[ -d "$patch_dir" ]] || {
+        log_error "No MTL patch found for FFmpeg $ffmpeg_version (looked in $patch_dir)"
+        exit 1
+    }
+
+    pushd "$ffmpeg_src"
+
+    log "Copy MTL FFmpeg plugin source files to $ffmpeg_src/libavdevice/"
+    cp -f "$mtl_plugin"/mtl_* "./libavdevice/"
+
+    log "Apply MTL FFmpeg plugin patches (FFmpeg $ffmpeg_version)"
+    for patch_file in "$patch_dir"/*.patch; do
+        [[ -f "$patch_file" ]] || continue
+        log "  Applying: $patch_file"
+        patch -p1 < "$patch_file"
+    done
+
+    popd
+
+    touch "$sentinel"
 }
 
 ffmpeg_configure() {
@@ -113,7 +159,6 @@ build_variant() {
         )
         export LD_LIBRARY_PATH
         LD_LIBRARY_PATH=$(IFS=:; echo "${ld_library_path[*]}")        
-        log_cmd "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
         config_opts_files+=("deps/ffmpeg-configure-shared-options.txt")
     fi
 
@@ -124,7 +169,16 @@ build_variant() {
     if has_opt "--no-ffplay" "$@"; then
         config_opts_files+=("deps/ffmpeg-configure-noplay-options.txt")
     fi
-    
+
+    if has_opt "--mtl" "$@"; then
+        config_opts_files+=("deps/ffmpeg-configure-mtl-options.txt")
+        export LD_LIBRARY_PATH="/build/mtl/install/lib/x86_64-linux-gnu"
+        export PKG_CONFIG_PATH="$BUILD_DIR/mtl/install/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
+    fi
+
+    log_cmd "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+    log_cmd "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+
     mkdir -p "$build_dir"
     pushd "$build_dir"
 
@@ -158,6 +212,10 @@ main() {
     get_var BUILD_DIR "$@" && shift
 
     enforce_build_context
+
+    if has_opt "--mtl" "$@"; then
+        apply_mtl_patch
+    fi
 
     local mxl_gcc_preset="GCC"
     if has_opt "--mxl-gcc-preset" "$@"; then

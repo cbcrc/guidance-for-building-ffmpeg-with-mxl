@@ -613,15 +613,11 @@ def print_startup_configuration(
 def main():
     global ffmpeg_process
 
-    if len(sys.argv) < 2:
-        print(USAGE, end="")
-        return 1
-
     if sys.argv[1] in ("-h", "--help"):
         print(USAGE, end="")
         return 0
 
-    ffmpeg_bin = sys.argv[1]
+    ffmpeg_bin = env_or_default("FFMPEG_BIN", "/opt/bin/ffmpeg")
 
     if not os.path.isfile(ffmpeg_bin) or not os.access(ffmpeg_bin, os.X_OK):
         print(
