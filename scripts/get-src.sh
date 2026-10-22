@@ -83,16 +83,20 @@ clone_ffmpeg_repo() {
 
     case "$ffmpeg_version" in
         8.x-orig)
+            # original early release, no longer maintained
             clone_ffmpeg_branch "$src_dir" dmf-mxl/8.x-orig 5c5d59370e
             ;;
         8.1)
-            clone_ffmpeg_branch "$src_dir" dmf-mxl/8.1 9eddb90ac0
+            # includes "use MXL read indices as PTS" commit that fixes A/V sync
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/8.1 65dfee92fc
             ;;
         9.0)
-            clone_ffmpeg_branch "$src_dir" dmf-mxl/9.0 16abbf0413
+            # includes "use MXL read indices as PTS " commit that fixes A/V sync
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/9.0 24cbf8768a
             ;;
         master)
-            clone_ffmpeg_branch "$src_dir" dmf-mxl/master 361268ffa2
+            # includes "use MXL read indices as PTS " commit that fixes A/V sync
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/master 9a49d98afc
             ;;
         *)
             echo "Unsupported FFmpeg version: $ffmpeg_version" >&2
