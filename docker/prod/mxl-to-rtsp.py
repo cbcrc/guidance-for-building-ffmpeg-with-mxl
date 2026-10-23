@@ -105,13 +105,15 @@ Optional environment:
   A_ON_TOO_LATE
   V_ON_TOO_LATE
         Set the FFmpeg -on_too_late option.
-        Default: 1 (reset)
+        Allowed values: increment, reset
+        Default: reset
 
-  GRAIN_INDEX_INIT
-  A_GRAIN_INDEX_INIT
-  V_GRAIN_INDEX_INIT
-        Set the FFmpeg -grain_index_init option.
-        Default: 0 (current)
+  MXL_READ_INDEX_INIT
+  A_MXL_READ_INDEX_INIT
+  V_MXL_READ_INDEX_INIT
+        Set the FFmpeg -mxl_read_index_init option.
+        Allowed values: current, head, tail
+        Default: head
 
   BLOCKING
   V_BLOCKING
@@ -175,13 +177,13 @@ FFmpeg MXL demuxer options reference:
 $ ./ffmpeg -h demuxer=mxl
 mxl demuxer AVOptions:
   -blocking          <int>        .D......... Use blocking video read: auto (default), 0=non-blocking, 1=blocking (from -1 to 1) (default -1)
-  -grain_index_init  <int>        .D......... initial MXL grain index (from 0 to 2) (default current)
+  -mxl_read_index_init  <int>     .D......... initial MXL read index, enforcing index monotonicity (from 0 to 2) (default current)
      current         0            .D......... current time
      head            1            .D......... ring buffer head
      tail            2            .D......... ring buffer tail
-  -on_too_late       <int>        .D......... action when MXL reports grain index too late (from 0 to 1) (default increment)
-     increment       0            .D......... increment the grain index
-     reset           1            .D......... reset to position defined by grain_index_init
+  -on_too_late       <int>        .D......... action when MXL reports read index too late (from 0 to 1) (default increment)
+     increment       0            .D......... increment the read index
+     reset           1            .D......... reinitialize using mxl_read_index_init
   -diag_socket       <string>     .D......... Unix domain socket path for diagnostic monitoring
 
 Examples:
@@ -267,7 +269,7 @@ def build_mxl_input_options(
     input_url,
     *,
     on_too_late,
-    grain_init,
+    mxl_read_index_init,
     diag_socket,
     blocking=None,
 ):
@@ -283,8 +285,8 @@ def build_mxl_input_options(
         [
             "-on_too_late",
             on_too_late,
-            "-grain_index_init",
-            grain_init,
+            "-mxl_read_index_init",
+            mxl_read_index_init,
         ]
     )
 
@@ -302,7 +304,7 @@ def build_single_demux_input(
     audio_id,
     blocking,
     on_too_late,
-    grain_init,
+    mxl_read_index_init,
     diag_socket,
 ):
     query_parts = []
@@ -317,7 +319,7 @@ def build_single_demux_input(
         f"mxl://{mxl_domain}?{'&'.join(query_parts)}",
         blocking=blocking,
         on_too_late=on_too_late,
-        grain_init=grain_init,
+        mxl_read_index_init=mxl_read_index_init,
         diag_socket=diag_socket,
     )
 
@@ -329,8 +331,8 @@ def build_multi_demux_inputs(
     v_blocking,
     v_on_too_late,
     a_on_too_late,
-    v_grain_init,
-    a_grain_init,
+    v_mxl_read_index_init,
+    a_mxl_read_index_init,
     v_diag_socket,
     a_diag_socket,
 ):
@@ -348,7 +350,7 @@ def build_multi_demux_inputs(
                 f"mxl://{mxl_domain}?id={video_id}",
                 blocking=v_blocking,
                 on_too_late=v_on_too_late,
-                grain_init=v_grain_init,
+                mxl_read_index_init=v_mxl_read_index_init,
                 diag_socket=v_diag_socket,
             )
         )
@@ -362,7 +364,7 @@ def build_multi_demux_inputs(
             build_mxl_input_options(
                 f"mxl://{mxl_domain}?id={audio_id}",
                 on_too_late=a_on_too_late,
-                grain_init=a_grain_init,
+                mxl_read_index_init=a_mxl_read_index_init,
                 diag_socket=a_diag_socket,
             )
         )
@@ -483,9 +485,9 @@ def build_ffmpeg_cmd(
     diag_socket,
     a_diag_socket,
     v_diag_socket,
-    grain_init,
-    a_grain_init,
-    v_grain_init,
+    mxl_read_index_init,
+    a_mxl_read_index_init,
+    v_mxl_read_index_init,
     v_blocking,
     video_bitrate,
     ffmpeg_debug_ts,
@@ -511,7 +513,7 @@ def build_ffmpeg_cmd(
                 audio_id,
                 blocking,
                 on_too_late,
-                grain_init,
+                mxl_read_index_init,
                 diag_socket,
             )
         )
@@ -524,8 +526,8 @@ def build_ffmpeg_cmd(
                 v_blocking,
                 v_on_too_late,
                 a_on_too_late,
-                v_grain_init,
-                a_grain_init,
+                v_mxl_read_index_init,
+                a_mxl_read_index_init,
                 v_diag_socket,
                 a_diag_socket,
             )
@@ -695,13 +697,13 @@ def main():
 
     blocking = env_or_default("BLOCKING", "-1")
 
-    on_too_late = env_or_default("ON_TOO_LATE", "1")
-    a_on_too_late = env_or_default("A_ON_TOO_LATE", "1")
-    v_on_too_late = env_or_default("V_ON_TOO_LATE", "1")
+    on_too_late = env_or_default("ON_TOO_LATE", "reset")
+    a_on_too_late = env_or_default("A_ON_TOO_LATE", "reset")
+    v_on_too_late = env_or_default("V_ON_TOO_LATE", "reset")
 
-    grain_init = env_or_default("GRAIN_INDEX_INIT", "0")
-    a_grain_init = env_or_default("A_GRAIN_INDEX_INIT", "0")
-    v_grain_init = env_or_default("V_GRAIN_INDEX_INIT", "0")
+    mxl_read_index_init = env_or_default("MXL_READ_INDEX_INIT", "head")
+    a_mxl_read_index_init = env_or_default("A_MXL_READ_INDEX_INIT", "head")
+    v_mxl_read_index_init = env_or_default("V_MXL_READ_INDEX_INIT", "head")
 
     v_blocking = env_or_default("V_BLOCKING", "-1")
 
@@ -731,9 +733,9 @@ def main():
         diag_socket,
         a_diag_socket,
         v_diag_socket,
-        grain_init,
-        a_grain_init,
-        v_grain_init,
+        mxl_read_index_init,
+        a_mxl_read_index_init,
+        v_mxl_read_index_init,
         v_blocking,
         video_bitrate,
         ffmpeg_debug_ts,
