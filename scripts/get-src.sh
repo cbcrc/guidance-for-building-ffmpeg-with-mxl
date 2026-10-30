@@ -87,16 +87,16 @@ clone_ffmpeg_repo() {
             clone_ffmpeg_branch "$src_dir" dmf-mxl/8.x-orig 5c5d59370e
             ;;
         8.1)
-            # includes "use MXL read indices as PTS" commit that fixes A/V sync
-            clone_ffmpeg_branch "$src_dir" dmf-mxl/8.1 65dfee92fc
+            # includes "add PTS-derived muxer write indices for MXL index preserving transcoding"
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/8.1 48e24923c4
             ;;
         9.0)
-            # includes "use MXL read indices as PTS " commit that fixes A/V sync
-            clone_ffmpeg_branch "$src_dir" dmf-mxl/9.0 24cbf8768a
+            # includes "add PTS-derived muxer write indices for MXL index preserving transcoding"
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/9.0 58d8862389
             ;;
         master)
-            # includes "use MXL read indices as PTS " commit that fixes A/V sync
-            clone_ffmpeg_branch "$src_dir" dmf-mxl/master 9a49d98afc
+            # includes "add PTS-derived muxer write indices for MXL index preserving transcoding"
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/master 708f11cf85
             ;;
         *)
             echo "Unsupported FFmpeg version: $ffmpeg_version" >&2
