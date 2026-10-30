@@ -8,6 +8,31 @@ indices. This allows the indices to be preserved through an FFmpeg
 processing pipeline, provided the original timestamp mapping is
 maintained.
 
+```mermaid
+flowchart LR
+    VIn["MXL Input Flow<br/>Video grain indices"]
+    AIn["MXL Input Flow<br/>Audio sample indices"]
+
+    Demux["MXL Demuxer<br/>Encode read indices in PTS"]
+
+    VFilter["Video Filtering<br/>Preserve PTS"]
+    AFilter["Audio Filtering<br/>Preserve PTS"]
+
+    Mux["MXL Muxer<br/>Derive write indices from PTS"]
+
+    VOut["MXL Output Flow<br/>Video grain indices preserved"]
+    AOut["MXL Output Flow<br/>Audio sample indices preserved"]
+
+    VIn --> Demux
+    AIn --> Demux
+
+    Demux --> VFilter --> Mux
+    Demux --> AFilter --> Mux
+
+    Mux --> VOut
+    Mux --> AOut
+```
+
 ## Example
 
 The following command is adapted from the MXL demux-to-mux FATE test
