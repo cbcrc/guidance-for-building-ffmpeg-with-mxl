@@ -27,9 +27,9 @@ The FFmpeg/MXL integration currently supports Linux only.
 |-----------|------------|--------|------------|
 | MXL | [/dmf-mxl/mxl](https://github.com/dmf-mxl/mxl/tree/release/v1.0) | release/1.0 | 80623d7 |
 | FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/8.x-orig) | dmf-mxl/8.x-orig | 5c5d59370e |
-| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/8.1) | dmf-mxl/8.1 | 9eddb90ac0 |
-| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/9.0) | dmf-mxl/9.0 | 16abbf0413 |
-| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/master) | dmf-mxl/master | 361268ffa2 |
+| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/8.1) | dmf-mxl/8.1 | 48e24923c4 |
+| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/9.0) | dmf-mxl/9.0 | 58d8862389 |
+| FFmpeg | [/cbcrc/ffmpeg](https://github.com/cbcrc/FFmpeg/tree/dmf-mxl/master) | dmf-mxl/master | 708f11cf85 |
 
 The FFmpeg rows are the supported FFmpeg variants. `8.x-orig`
 preserves the original FFmpeg/MXL development integration and is based
@@ -67,6 +67,7 @@ See the code structure, how to compile manually and test regressions [here](./do
 - [Simple examples](./docs/usage.md)
 - [Streaming example](./docs/streaming.md)
 - [Measurements tools](./tools/)
+- [MXL Index-Preserving Transcode](./docs/mxl-transcode.md)
 
 ## Known Limitations & Future Work
 
