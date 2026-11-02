@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import shlex
 import signal
 import subprocess
@@ -47,10 +48,12 @@ Required environment (both directions):
         Path to the MXL domain directory.
         Example: /domain
 
-  VIDEO_FLOW_ID
-        MXL video flow ID (UUID).
-        In 'rx' mode, this is the flow written to the MXL domain.
-        In 'tx' mode, this is the flow read from the MXL domain.
+  VIDEO_FLOW_IDs
+        Space- or comma-separated list of MXL video flow IDs (UUIDs),
+        one per session.
+        In 'rx' mode, these are the flows written to the MXL domain.
+        In 'tx' mode, these are the flows read from the MXL domain.
+        Must have as many entries as RX_VIDEO_MCAST_IP / TX_VIDEO_MCAST_IP.
 
   LOCAL_IFACE_IP
         IP address assigned to the local ST 2110 interface (-p_sip).
@@ -59,11 +62,15 @@ Required environment (both directions):
         PCI address of the (virtual) NIC function bound to the
         ST 2110 interface (-p_port).
 
-  VIDEO_MCAST_IP
-        In 'rx' mode, the source multicast IP address of the
-        incoming ST 2110-20 video stream (-p_rx_ip).
-        In 'tx' mode, the destination multicast IP address for the
-        outgoing ST 2110-20 video stream (-p_tx_ip).
+  RX_VIDEO_MCAST_IPs  (DIRECTION=rx only)
+        Space- or comma-separated list of source multicast IP addresses
+        of the incoming ST 2110-20 video streams (-p_rx_ip), one per
+        Rx session.
+
+  TX_VIDEO_MCAST_IPs  (DIRECTION=tx only)
+        Space- or comma-separated list of destination multicast IP
+        addresses for the outgoing ST 2110-20 video streams (-p_tx_ip),
+        one per Tx session.
 
 Optional environment (both directions):
   UDP_PORT
@@ -130,19 +137,19 @@ Examples:
   ST 2110 -> MXL:
     DIRECTION=rx
     MXL_DOMAIN=/domain
-    VIDEO_FLOW_ID=fe781cad-8a82-4b8e-a3c2-f833c70ac73e
+    VIDEO_FLOW_IDs="fe781cad-8a82-4b8e-a3c2-f833c70ac730 fe781cad-8a82-4b8e-a3c2-f833c70ac731"
     LOCAL_IFACE_IP=192.168.1.10
     PCI_ADDR=0000:2a:11.0
-    VIDEO_MCAST_IP=239.1.1.1
+    RX_VIDEO_MCAST_IPs="239.1.1.1 239.1.1.3"
     ./st2110.py /path/to/ffmpeg
 
   MXL -> ST 2110:
     DIRECTION=tx
     MXL_DOMAIN=/domain
-    VIDEO_FLOW_ID=fe781cad-8a82-4b8e-a3c2-f833c70ac73e
+    VIDEO_FLOW_IDs="fe781cad-8a82-4b8e-a3c2-f833c70ac730 fe781cad-8a82-4b8e-a3c2-f833c70ac731"
     LOCAL_IFACE_IP=192.168.1.10
     PCI_ADDR=0000:2a:11.1
-    VIDEO_MCAST_IP=239.1.1.2
+    TX_VIDEO_MCAST_IPs="239.1.1.2 239.1.1.4"
     ./st2110.py /path/to/ffmpeg
 """
 
@@ -150,6 +157,10 @@ Examples:
 def env_or_default(name, default):
     value = os.environ.get(name)
     return default if value is None or value == "" else value
+
+
+def env_list(name):
+    return [item for item in re.split(r"[\s,]+", os.environ.get(name, "")) if item]
 
 
 def env_flag_enabled(name):
@@ -170,10 +181,10 @@ def build_rx_cmd(
     ffmpeg_bin,
     loglevel,
     mxl_domain,
-    video_flow_id,
+    video_flow_ids,
     local_iface_ip,
     pci_addr,
-    video_mcast_ip,
+    video_mcast_ips,
     udp_port,
     payload_type,
     fps,
@@ -184,52 +195,57 @@ def build_rx_cmd(
     deinterlace,
     mxl_video_codec,
 ):
-    cmd = [
-        ffmpeg_bin,
-        "-hide_banner",
-        "-nostats",
-        "-loglevel",
-        loglevel,
-        "-pacing_way",
-        pacing_way,
-        "-interlaced",
-        interlaced,
-        "-p_port",
-        pci_addr,
-        "-p_sip",
-        local_iface_ip,
-        "-p_rx_ip",
-        video_mcast_ip,
-        "-udp_port",
-        udp_port,
-        "-payload_type",
-        payload_type,
-        "-fps",
-        fps,
-        "-pix_fmt",
-        pix_fmt,
-        "-video_size",
-        video_size,
-        "-f",
-        "mtl_st20p",
-        "-i",
-        "k",
-    ]
+    cmd = [ffmpeg_bin, "-hide_banner", "-nostats", "-loglevel", loglevel]
 
-    if deinterlace:
-        cmd.extend(["-vf", "yadif"])
+    # One ST 2110 input per Rx session
+    for index, mcast_ip in enumerate(video_mcast_ips):
+        cmd.extend(
+            [
+                "-pacing_way",
+                pacing_way,
+                "-interlaced",
+                interlaced,
+                "-p_port",
+                pci_addr,
+                "-p_sip",
+                local_iface_ip,
+                "-p_rx_ip",
+                mcast_ip,
+                "-udp_port",
+                udp_port,
+                "-payload_type",
+                payload_type,
+                "-fps",
+                fps,
+                "-pix_fmt",
+                pix_fmt,
+                "-video_size",
+                video_size,
+                "-f",
+                "mtl_st20p",
+                "-i",
+                f"rx{index}",
+            ]
+        )
 
-    cmd.extend(
-        [
-            "-c:v",
-            mxl_video_codec,
-            "-f",
-            "mxl",
-            "-video_flow_id",
-            video_flow_id,
-            mxl_domain,
-        ]
-    )
+    # One MXL output per Rx session
+    for index, flow_id in enumerate(video_flow_ids):
+        cmd.extend(["-map", f"{index}:v:0"])
+
+        if deinterlace:
+            cmd.extend(["-vf", "yadif"])
+
+        cmd.extend(
+            [
+                "-c:v",
+                mxl_video_codec,
+                "-f",
+                "mxl",
+                "-video_flow_id",
+                flow_id,
+                mxl_domain,
+            ]
+        )
 
     return cmd
 
@@ -238,10 +254,10 @@ def build_tx_cmd(
     ffmpeg_bin,
     loglevel,
     mxl_domain,
-    video_flow_id,
+    video_flow_ids,
     local_iface_ip,
     pci_addr,
-    video_mcast_ip,
+    video_mcast_ips,
     udp_port,
     payload_type,
     fps,
@@ -262,50 +278,61 @@ def build_tx_cmd(
         loglevel,
         "-threads",
         "1",
-        "-f",
-        "mxl",
-        "-blocking",
-        blocking,
-        "-on_too_late",
-        on_too_late,
-        "-grain_index_init",
-        grain_init,
     ]
 
-    if diag_socket:
-        cmd.extend(["-diag_socket", diag_socket])
+    # One MXL input per Tx session
+    for flow_id in video_flow_ids:
+        cmd.extend(
+            [
+                "-f",
+                "mxl",
+                "-blocking",
+                blocking,
+                "-on_too_late",
+                on_too_late,
+                "-grain_index_init",
+                grain_init,
+            ]
+        )
 
-    cmd.extend(
-        [
-            "-i",
-            f"mxl://{mxl_domain}?id={video_flow_id}",
-            "-pix_fmt",
-            pix_fmt,
-            "-vcodec",
-            "rawvideo",
-            "-pacing_way",
-            pacing_way,
-            "-video_size",
-            video_size,
-            "-fps",
-            fps,
-            "-interlaced",
-            interlaced,
-            "-p_port",
-            pci_addr,
-            "-p_sip",
-            local_iface_ip,
-            "-p_tx_ip",
-            video_mcast_ip,
-            "-udp_port",
-            udp_port,
-            "-payload_type",
-            payload_type,
-            "-f",
-            "mtl_st20p",
-            "-",
-        ]
-    )
+        if diag_socket:
+            cmd.extend(["-diag_socket", diag_socket])
+
+        cmd.extend(["-i", f"mxl://{mxl_domain}?id={flow_id}"])
+
+    # One ST 2110 output per Tx session
+    for index, mcast_ip in enumerate(video_mcast_ips):
+        cmd.extend(
+            [
+                "-map",
+                f"{index}:v:0",
+                "-pix_fmt",
+                pix_fmt,
+                "-vcodec",
+                "rawvideo",
+                "-pacing_way",
+                pacing_way,
+                "-video_size",
+                video_size,
+                "-fps",
+                fps,
+                "-interlaced",
+                interlaced,
+                "-p_port",
+                pci_addr,
+                "-p_sip",
+                local_iface_ip,
+                "-p_tx_ip",
+                mcast_ip,
+                "-udp_port",
+                udp_port,
+                "-payload_type",
+                payload_type,
+                "-f",
+                "mtl_st20p",
+                "-",
+            ]
+        )
 
     return cmd
 
@@ -314,7 +341,7 @@ def print_configuration(label, value):
     print(f"{label:<15}{value}", flush=True)
 
 
-def print_startup_configuration(direction, ffmpeg_bin, loglevel, mxl_domain, video_flow_id, extra):
+def print_startup_configuration(direction, ffmpeg_bin, loglevel, mxl_domain, video_flow_ids, extra):
     print(
         f"Starting FFmpeg MXL <-> ST 2110 bridge ({direction})",
         flush=True,
@@ -322,7 +349,7 @@ def print_startup_configuration(direction, ffmpeg_bin, loglevel, mxl_domain, vid
     print_configuration("FFmpeg:", ffmpeg_bin)
     print_configuration("Loglevel:", loglevel)
     print_configuration("MXL Domain:", mxl_domain)
-    print_configuration("Video Flow:", video_flow_id)
+    print_configuration("Video Flows:", video_flow_ids)
 
     for label, value in extra:
         if value:
@@ -356,17 +383,18 @@ def main():
         return 1
 
     mxl_domain = os.environ.get("MXL_DOMAIN")
-    video_flow_id = os.environ.get("VIDEO_FLOW_ID")
+    video_flow_ids = env_list("VIDEO_FLOW_IDs")
     local_iface_ip = os.environ.get("LOCAL_IFACE_IP")
     pci_addr = os.environ.get("PCI_ADDR")
-    video_mcast_ip = os.environ.get("VIDEO_MCAST_IP")
+    mcast_var = "RX_VIDEO_MCAST_IPs" if direction == "rx" else "TX_VIDEO_MCAST_IPs"
+    video_mcast_ips = env_list(mcast_var)
 
     required = [
         ("MXL_DOMAIN", mxl_domain),
-        ("VIDEO_FLOW_ID", video_flow_id),
+        ("VIDEO_FLOW_IDs", video_flow_ids),
         ("LOCAL_IFACE_IP", local_iface_ip),
         ("PCI_ADDR", pci_addr),
-        ("VIDEO_MCAST_IP", video_mcast_ip),
+        (mcast_var, video_mcast_ips),
     ]
 
     missing = [name for name, value in required if not value]
@@ -375,6 +403,15 @@ def main():
         print(
             f"Error: Missing required environment variables: "
             f"{', '.join(missing)}",
+            file=sys.stderr,
+        )
+        return 1
+
+    if len(video_mcast_ips) != len(video_flow_ids):
+        print(
+            f"Error: {mcast_var} ({len(video_mcast_ips)} entries) and VIDEO_FLOW_IDs "
+            f"({len(video_flow_ids)} entries) must have the same number of "
+            f"entries",
             file=sys.stderr,
         )
         return 1
@@ -399,10 +436,10 @@ def main():
             ffmpeg_bin,
             ffmpeg_loglevel,
             mxl_domain,
-            video_flow_id,
+            video_flow_ids,
             local_iface_ip,
             pci_addr,
-            video_mcast_ip,
+            video_mcast_ips,
             udp_port,
             payload_type,
             fps,
@@ -416,7 +453,7 @@ def main():
 
         extra = [
             ("PCI Addr:", pci_addr),
-            ("Mcast IP:", video_mcast_ip),
+            ("Mcast IPs:", video_mcast_ips),
             ("Local IP:", local_iface_ip),
             ("Video Size:", video_size),
             ("FPS:", fps),
@@ -434,10 +471,10 @@ def main():
             ffmpeg_bin,
             ffmpeg_loglevel,
             mxl_domain,
-            video_flow_id,
+            video_flow_ids,
             local_iface_ip,
             pci_addr,
-            video_mcast_ip,
+            video_mcast_ips,
             udp_port,
             payload_type,
             fps,
@@ -453,7 +490,7 @@ def main():
 
         extra = [
             ("PCI Addr:", pci_addr),
-            ("Mcast IP:", video_mcast_ip),
+            ("Mcast IP:", video_mcast_ips),
             ("Local IP:", local_iface_ip),
             ("Video Size:", video_size),
             ("FPS:", fps),
@@ -466,7 +503,7 @@ def main():
         ffmpeg_bin,
         ffmpeg_loglevel,
         mxl_domain,
-        video_flow_id,
+        video_flow_ids,
         extra,
     )
 

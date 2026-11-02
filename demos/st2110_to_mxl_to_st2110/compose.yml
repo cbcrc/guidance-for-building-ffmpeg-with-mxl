@@ -36,9 +36,9 @@ services:
       - DIRECTION=rx
       - PCI_ADDR=${RX_PCI_ADDR}
       - LOCAL_IFACE_IP=${LOCAL_IFACE_IP}
-      - VIDEO_MCAST_IP=${RX_VIDEO_MCAST_IP}
+      - RX_VIDEO_MCAST_IPs=${RX_VIDEO_MCAST_IPs}
       - MXL_DOMAIN=/domain
-      - VIDEO_FLOW_ID=${VIDEO_FLOW_ID}
+      - VIDEO_FLOW_IDs=${VIDEO_FLOW_IDs}
       - DEINTERLACE=yes
 
   ffmpeg-mxl-to-st2110-v:
@@ -66,10 +66,10 @@ services:
     environment:
       - DIRECTION=tx
       - MXL_DOMAIN=/domain
-      - VIDEO_FLOW_ID=${VIDEO_FLOW_ID}
+      - VIDEO_FLOW_IDs=${VIDEO_FLOW_IDs}
       - PCI_ADDR=${TX_PCI_ADDR}
       - LOCAL_IFACE_IP=${LOCAL_IFACE_IP}
-      - VIDEO_MCAST_IP=${TX_VIDEO_MCAST_IP}
+      - TX_VIDEO_MCAST_IPs=${TX_VIDEO_MCAST_IPs}
 
   ffmpeg-mxl-to-rtp:
     image: ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
