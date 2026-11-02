@@ -59,7 +59,7 @@ ffmpeg -hide_banner -loglevel info \
 
 | Option | Purpose |
 |---|---|
-| `-copytb 1` | Use the MXL demuxer time base for stream copying, preserving the original timestamp units and avoiding PTS rescaling that could alter the MXL write indices. For example, changing the time base from 1/48000 to 1/90000 would rescale a PTS of 48000 to 90000, and would change the PTS values, even though both represent 1 second. |
+| `-copytb 1` | Use the MXL demuxer time base for stream copying, preserving the original timestamp units and avoiding PTS rescaling that could alter the MXL write indices. For example, changing the time base from 1/48000 to 1/96000 would rescale a PTS of 48000 to 96000, and would change the PTS values, even though both represent 1 second. |
 | `-copyts` | Prevent FFmpeg from removing the initial timestamp offset (rebasing). |
 | `-avoid_negative_ts disabled` | Disable timestamp shifting by FFmpeg's output muxing layer. Even with `-copyts`, FFmpeg may adjust output timestamps, depending on the muxer configuration. For example, shifting the first PTS from 48000 to 0 would also shift all subsequent PTS values, changing the MXL write indices. This option prevents such adjustments. |
 | `-mxl_write_index pts` | Use packet PTS in the MXL muxer to derive destination MXL indices instead of generating new indices (the default). |
