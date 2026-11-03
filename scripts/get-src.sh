@@ -88,15 +88,15 @@ clone_ffmpeg_repo() {
             ;;
         8.1)
             # includes "add PTS-derived muxer write indices for MXL index preserving transcoding"
-            clone_ffmpeg_branch "$src_dir" dmf-mxl/8.1 48e24923c4
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/8.1 e99438e12c
             ;;
         9.0)
             # includes "add PTS-derived muxer write indices for MXL index preserving transcoding"
-            clone_ffmpeg_branch "$src_dir" dmf-mxl/9.0 58d8862389
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/9.0 6a2a757db4
             ;;
         master)
             # includes "add PTS-derived muxer write indices for MXL index preserving transcoding"
-            clone_ffmpeg_branch "$src_dir" dmf-mxl/master 708f11cf85
+            clone_ffmpeg_branch "$src_dir" dmf-mxl/master f0057b3f19
             ;;
         *)
             echo "Unsupported FFmpeg version: $ffmpeg_version" >&2

@@ -190,14 +190,14 @@ build_variant() {
             make fate-rsync
         fi
         log Run full FATE test suite
-        log_cmd make fate
-        make -j fate
+        log_cmd make -j"$(nproc)" fate
+        make -j"$(nproc)" fate
     else
         log Run only MXL FATE tests
         # shellcheck disable=SC2046
-        log_cmd make -j $(make fate-list | grep mxl)
+        log_cmd make -j"$(nproc)" $(make fate-list | grep mxl)
         # shellcheck disable=SC2046
-        make -j $(make fate-list | grep mxl)
+        make -j"$(nproc)" $(make fate-list | grep mxl)
     fi
     make install
 
