@@ -125,9 +125,10 @@ Optional environment, DIRECTION=tx only:
         Set the FFmpeg MXL demuxer -on_too_late option.
         Default: '1' (reset)
 
-  GRAIN_INDEX_INIT
-        Set the FFmpeg MXL demuxer -grain_index_init option.
-        Default: '0' (current)
+  MXL_READ_INDEX_INIT
+        Set the FFmpeg -mxl_read_index_init option.
+        Allowed values: current, head, tail
+        Default: head
 
   DIAG_SOCKET
         Diagnostic socket path for the MXL demuxer.
@@ -267,7 +268,7 @@ def build_tx_cmd(
     pacing_way,
     blocking,
     on_too_late,
-    grain_init,
+    mxl_read_index_init,
     diag_socket,
 ):
     cmd = [
@@ -290,8 +291,8 @@ def build_tx_cmd(
                 blocking,
                 "-on_too_late",
                 on_too_late,
-                "-grain_index_init",
-                grain_init,
+                "-mxl_read_index_init",
+                mxl_read_index_init,
             ]
         )
 
@@ -464,7 +465,7 @@ def main():
     else:
         blocking = env_or_default("BLOCKING", "-1")
         on_too_late = env_or_default("ON_TOO_LATE", "1")
-        grain_init = env_or_default("GRAIN_INDEX_INIT", "0")
+        mxl_read_index_init = env_or_default("MXL_READ_INDEX_INIT", "head")
         diag_socket = env_or_default("DIAG_SOCKET", "")
 
         cmd = build_tx_cmd(
@@ -484,7 +485,7 @@ def main():
             pacing_way,
             blocking,
             on_too_late,
-            grain_init,
+            mxl_read_index_init,
             diag_socket,
         )
 
