@@ -5,7 +5,6 @@ services:
   intel-mtl-manager:
     image: ghcr.io/cbcrc/imtl-manager:latest
     container_name: intel-mtl-manager
-    privileged: true
     volumes:
       - /var/run/imtl:/var/run/imtl
       - /sys/fs/bpf:/sys/fs/bpf
@@ -70,6 +69,7 @@ services:
       - PCI_ADDR=${TX_PCI_ADDR}
       - LOCAL_IFACE_IP=${LOCAL_IFACE_IP}
       - TX_VIDEO_MCAST_IPs=${TX_VIDEO_MCAST_IPs}
+      - PACING_WAY=rl
 
   ffmpeg-mxl-to-rtp:
     image: ghcr.io/cbcrc/ffmpeg-mxl-prod:latest
