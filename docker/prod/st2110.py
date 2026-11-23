@@ -277,8 +277,6 @@ def build_tx_cmd(
         "-nostats",
         "-loglevel",
         loglevel,
-        "-threads",
-        "1",
     ]
 
     # One MXL input per Tx session
@@ -307,6 +305,8 @@ def build_tx_cmd(
             [
                 "-map",
                 f"{index}:v:0",
+                "-fps_mode",
+                "passthrough",
                 "-pix_fmt",
                 pix_fmt,
                 "-vcodec",
